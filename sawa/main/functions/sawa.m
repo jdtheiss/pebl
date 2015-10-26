@@ -35,6 +35,9 @@ if ~isempty(findobj('type','figure','name','subject array and wrapper automation
     close('subject array and wrapper automation'); sawa; return;
 end
 
+% get fileName
+fileName = choose_SubjectArray; if isempty(fileName), fileName = ''; end;
+
 % clear and welcome
 clc; disp('welcome');
 flds = main_Callback;
@@ -44,6 +47,7 @@ structure.name = 'subject array and wrapper automation';
 [structure.push(1:5).string] = deal('subject array','main','choose','help','exit');
 [structure.push.callback] = deal(@array_Callback,@main_Callback,@choose_Callback,@help_Callback,@exit_Callback);
 [structure.push.tag] = deal(structure.push.string);
+structure.push(1).tooltipstring = fileName;
 structure.listbox.string = flds; structure.listbox.position = 'right';
 structure.listbox.height = 175; structure.listbox.width = 175;
 structure.listbox.tag = 'listbox';
