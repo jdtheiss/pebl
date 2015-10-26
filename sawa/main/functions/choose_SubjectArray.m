@@ -21,7 +21,7 @@ varargout = cell(1,nargout);
 if nargin==0||isempty(fileName)
 if nargin==0 % if no inputs, return fileName
 try load([mfilename('fullpath') '_filename.mat']); catch; fileName = []; end;
-return;
+varargout{1} = fileName; return;
 end
 
 % if inputs but no file, get
