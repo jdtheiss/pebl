@@ -4,7 +4,7 @@ function varargout = auto_cmd(cmd,varargin)
 % funname and then run the function.
 %
 % Inputs:
-% cmd - command to use (i.e. 'choose_subjects','set_env','add_funciton','run_cmd')
+% cmd - command to use (i.e. 'add_funciton','set_options','auto_run')
 % varargin - arguments to be passed to cmd
 %
 % Outputs: 

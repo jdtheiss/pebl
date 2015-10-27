@@ -19,7 +19,7 @@ function sawa(funcs,sv,savedvars)
 % 
 % Note: if no function is input, the sawa gui will load.
 %
-% requires: auto_gui choose_SubjectArray sawa_setvars sawa_system
+% requires: make_gui choose_SubjectArray sawa_setvars sawa_system
 %
 % Created by Justin Theiss
 
@@ -42,7 +42,7 @@ fileName = choose_SubjectArray; if isempty(fileName), fileName = ''; end;
 clc; disp('welcome');
 flds = main_Callback;
 
-% set up auto_gui structure
+% set up make_gui structure
 structure.name = 'subject array and wrapper automation';
 [structure.push(1:5).string] = deal('subject array','main','choose','help','exit');
 [structure.push.callback] = deal(@array_Callback,@main_Callback,@choose_Callback,@help_Callback,@exit_Callback);
@@ -51,8 +51,8 @@ structure.push(1).tooltipstring = fileName;
 structure.listbox.string = flds; structure.listbox.position = 'right';
 structure.listbox.height = 175; structure.listbox.width = 175;
 structure.listbox.tag = 'listbox';
-% run auto_gui without pages
-auto_gui(structure,struct('nodone',1,'nowait',1));
+% run make_gui without pages
+make_gui(structure,struct('nodone',1,'nowait',1));
 
 else % if args, run_Callback
 % init vars
@@ -142,8 +142,8 @@ newstructure.listbox.string = funcs; newstructure.listbox.tag = 'funcs';
 newstructure.listbox.position = 'right';
 newstructure.listbox.height = 175; newstructure.listbox.width = 175;
 
-% run auto_gui without pages
-auto_gui(newstructure,struct('nodone',1,'nowait',1));
+% run make_gui without pages
+make_gui(newstructure,struct('nodone',1,'nowait',1));
 
 else % otherwise update funcs
 set(findobj('tag','funcs'),'string',funcs);    

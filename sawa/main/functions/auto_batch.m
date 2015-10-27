@@ -4,7 +4,7 @@ function varargout = auto_batch(cmd,varargin)
 % funname and then run the function.
 %
 % Inputs:
-% cmd - command to use (i.e. 'choose_subjects','setup_job','enter_variables','run_batch')
+% cmd - command to use (i.e. 'add_funciton','set_options','auto_run')
 % varargin - arguments to be passed to cmd
 %
 % Outputs: 
@@ -28,7 +28,7 @@ function varargout = auto_batch(cmd,varargin)
 % Created by Justin Theiss
 
 % init vars
-if ~exist('cmd','var')||isempty(cmd), cmd = {'setup_job','enter_variables','auto_run'}; end;
+if ~exist('cmd','var')||isempty(cmd), cmd = {'add_function','set_options','auto_run'}; end;
 if ~iscell(cmd), cmd = {cmd}; end; 
 if isempty(varargin), varargin = {struct}; end;
 % run chosen cmds
@@ -38,7 +38,7 @@ if ~iscell(varargin{1}), varargin{1} = varargin(1); end;
 varargout = varargin{1};
 
 % callback functions
-function fp = setup_job(fp)
+function fp = add_function(fp)
 % create vars from fp
 funpass(fp,{'funcs','itemidx','str','sawafile','sa','subrun'});
 % init vars
@@ -67,8 +67,8 @@ end
 
 % get names
 for m = 1:numel(funcs)
-clear contents; [~,~,contents{m}]=cfg_util('listmod',cjob,mod_ids{m},[],...
-cfg_findspec({{'hidden',false}}),cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'name','all_set_item'});
+[~,~,contents{m}]=cfg_util('listmod',cjob,mod_ids{m},[],cfg_findspec({{'hidden',false}}),...
+    cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'name','all_set_item'});
 itemnames{m} = contents{m}{1}; names{m} = contents{m}{1}{1};
 end
 
@@ -95,7 +95,7 @@ end
 
 % check if complete
 job_sts = 'Complete';
-for m = 1:numel(funcs)
+for m = 1:numel(funcs), 
 if ~all(cell2mat(contents{m}{2}(~ismember(1:numel(contents{m}{2}),itemidx{m})))), 
 job_sts = 'Incomplete'; break; % if any not set (other than itemidx), incomplete
 end
@@ -123,7 +123,7 @@ end
 fp = funpass(fp,{'spmver','funcs','itemidx','str','names','jobsavfld','jobname','saveorrun','overwrite'});
 return;
 
-function fp = enter_variables(fp)
+function fp = set_options(fp)
 % get vars from fp
 funpass(fp,{'funcs','idx','itemidx','options','sa','subrun','funrun','iter'});
 
@@ -147,6 +147,9 @@ end
 [id,~,contents]=cfg_util('listmod',cjob,mod_ids{idx},[],cfg_findspec({{'hidden',false}}),...
 cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'name','class','level'});
 itemnames{idx} = contents{1}(itemidx{idx});
+
+% if empty itemidx, skip
+if ~isempty(itemidx{idx}), 
 
 % set options for chosen itemidx
 for v = listdlg('PromptString','Choose items to set:','ListString',itemnames{idx});
@@ -199,6 +202,7 @@ for v = listdlg('PromptString','Choose items to set:','ListString',itemnames{idx
 
     % set to options
     options{idx,v}(iter,1) = sawa_setfield(options{idx,v},iter,[],[],val{:});
+end
 end
 
 % set vars to fp

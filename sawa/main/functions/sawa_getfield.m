@@ -1,12 +1,14 @@
-function [vals,tags,reps] = sawa_getfield(A, irep, itag)
+function [vals,tags,reps] = sawa_getfield(A, irep, itag, refs)
 % [values, tags, reps] = sawa_getfield(A, irep, itag);
 % Gets values, tags, and reps (string representations) of structures or objects
 %
 % Inputs:
-% A - array, object, or cell array
+% A - array, object, or cell array (does not work for numeric handles)
 % irep - input string representation of array A
 % itag - input regular expression of a tag or component of array A that you
 % want to return (default is '.$'). if itag = '', all values will be returned.
+% refs - (optional) number of times a field tag can be referenced before
+% stopping (see Note2). default is 1
 % 
 % Outputs:
 % values - the returned values from each getfield(A,itag)
@@ -26,19 +28,22 @@ function [vals,tags,reps] = sawa_getfield(A, irep, itag)
 % NOTE: Searching for itag uses regexp (i.e. 'subj.s' will find 'subj_s', 
 % and 'subj.*s' will find 'subjFolders' or 'subj_s'). Additionally, itag 
 % should use regexp notation (use regexptranslate to automatically input escape characters)
-% NOTE2: For handles: unless Parent is included in itag, the .Parent field of handles
+% NOTE2: in order to avoid self-referenceing loops in handles, refs is used
+% as the number of times a field tag (e.g. .UserData) may exist in a single
+% rep (e.g., .CurrentAxes.UserData.Axes(2).UserData has two refs).
+% NOTE3: For handles: unless Parent is included in itag, the .Parent field of handles
 % is not used to avoid infinite loop of ".Parent.Children.Parent".
 %
 % requires: sawa_cat
 %
 % Created by Justin Theiss
 
-
 % init vars
 vals = {}; tags = {}; reps = {};
 if ~exist('A','var')||isempty(A), return; end;
 if ~exist('irep', 'var')||isempty(irep), irep=''; end;
 if ~exist('itag', 'var')||~ischar(itag), itag = '.$'; end;
+if ~exist('refs','var')||isempty(refs), refs = 1; end;
 
 % get class of A
 if iscell(A)
@@ -59,22 +64,14 @@ elseif ~isnumeric(A)&&(isstruct(A)||any(any(ishandle(A))))
     if any(regexp(irep,itag)), return; end;
     % if only 1, get each fld 
     if numel(A)==1,    
-    clear vals tags reps;
+    vals = {}; tags = {}; reps = {};
     % get fieldnames
-    if ~isnumeric(A), % non-numeric handles/structs
-        flds = fieldnames(A); 
-    else % numeric handles 
-        flds = fieldnames(get(A)); 
-    end; 
+    flds = fieldnames(A); 
     % do not go to parent unless in itag
     if ~any(regexp(itag,'Parent'))&&ishandle(A), flds = flds(~strcmp(flds,'Parent')); end;
     % set vals to A.flds
     for x = 1:numel(flds), 
-        if ~isnumeric(A) % non-numeric handles/structs
-            vals{x} = A.(flds{x}); 
-        else % numeric handles
-            vals{x} = get(A, flds{x}); 
-        end; 
+        vals{x} = A.(flds{x});
     end % set tags
     tags = flds';
     % set reps
@@ -92,20 +89,26 @@ else % anything else, return
     return;
 end 
 
-% if any matches, return
+% find matches
 fnd = ~cellfun('isempty',regexp(reps,itag)); 
 
 % for each value, run sawa_getfield
-for x = find(~fnd), [vals{x},tags{x},reps{x}] = sawa_getfield(vals{x},reps{x},itag); end;
+for x = find(~fnd), 
+    % if multiple references to same name, 
+    if numel(strfind(reps{x},tags{x})) > refs, continue; end;
+    % run sawa_getfield with vals
+    [vals{x},tags{x},reps{x}] = sawa_getfield(vals{x},reps{x},itag,refs);
+end;
 
 % output
 if any(cellfun('isclass',vals,'cell')), 
-    vals = sawa_cat(2,vals{:}); tags = sawa_cat(2,tags{:}); reps = sawa_cat(2,reps{:}); 
+vals = sawa_cat(2,vals{:}); tags = sawa_cat(2,tags{:}); reps = sawa_cat(2,reps{:}); 
 end;
 
 function tags = set_tags(mn,sep)
 % init tags
 tags = {''}; 
+if ~isnumeric(mn), mn = size(mn); end;
 % if all 1 and not cell, return
 if all(mn==1)&&~strcmp(sep,'{}'), return; end;
 if all(mn>1), % rows,columns

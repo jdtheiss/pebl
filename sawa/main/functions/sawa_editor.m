@@ -1,7 +1,7 @@
 function fp = sawa_editor(cmd,varargin)
 % sawa_editor(sawafile, sv, savedvars)
 % Loads/runs sawafile functions (e.g., auto_batch, auto_cmd, auto_wrap) with
-% auto_gui.
+% make_gui.
 %
 % Inputs: 
 % cmd - function to be called (i.e. 'load_sawafile','set_environments',
@@ -14,7 +14,7 @@ function fp = sawa_editor(cmd,varargin)
 %
 % Note: default cmd is 'load_sawafile', and the sawa file to be loaded should
 % be a .mat file with the following varaibles (created during call to save_presets): 
-% - structure - the auto_gui structure that will be used
+% - structure - the make_gui structure that will be used
 % - fp - funpass structure with "sawafile", "funcs", and "options"
 % sawafile is the fullpath to this .mat file, funcs is a cellstr of
 % functions to run, and options is a cell array of options to use with
@@ -22,7 +22,7 @@ function fp = sawa_editor(cmd,varargin)
 % - program - string name of the program to run (e.g., 'auto_batch')
 % See Batch_Editor.mat, Command_Line.mat, Wrap_Functions.mat for examples.
 %
-% requires: auto_gui funpass printres sawa_subrun
+% requires: make_gui funpass printres sawa_subrun
 %
 % Created by Justin Theiss
 
@@ -37,7 +37,7 @@ end
 % for each cmd, run
 for x = 1:numel(cmd), fp = feval(cmd{x},varargin{:}); end;
 
-% load sawafile and run auto_gui
+% load sawafile and run make_gui
 function fp = load_sawafile(sawafile,sv,savedvars)
 % load sawafile
 load(sawafile);
@@ -72,9 +72,9 @@ end;
 if ~exist('names','var'), names = funcs; end;
 structure.listbox.string = names; 
 
-% run auto_gui
+% run make_gui
 if ~sv 
-fp = auto_gui(structure,struct('data',fp));
+fp = make_gui(structure,struct('data',fp));
 else % using savedvars
 fp.lsr = 'run'; fp = loadsaverun(fp);    
 end

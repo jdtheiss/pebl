@@ -1,5 +1,5 @@
-function d = auto_gui(structure,opt)
-% data = auto_gui(structure)
+function d = make_gui(structure,opt)
+% data = make_gui(structure)
 % This function will create a gui based on a "structure" of gui properties
 % structure should be a cell array of structures corresponding to number of
 % "pages" for the gui
@@ -32,7 +32,7 @@ function d = auto_gui(structure,opt)
 % structure{2}.edit(2).string = 'Favorite Food';
 %
 % FUNCTION:
-% d = auto_gui(structure);
+% d = make_gui(structure);
 %
 % OUTPUT:
 % d.age_edit = '24';
@@ -71,7 +71,7 @@ end
 % set properties
 for i = 1:numel(f)
 % set tag
-set(f{i},'tag',['Auto_Gui_' num2str(i)]);
+set(f{i},'tag',['make_gui_' num2str(i)]);
 
 % set position, if field
 if isfield(structure{i},'position'), 
@@ -183,7 +183,7 @@ if ~isfield(opt,'nowait'), uiwait(f{1}); end;
 % next, previous, and done callbacks
 function nextbutton_Callback(source,eventdata,f)
 % get current i
-i = get(gcf,'tag'); i = str2double(regexprep(i,'Auto_Gui_',''))+1; 
+i = get(gcf,'tag'); i = str2double(regexprep(i,'make_gui_',''))+1; 
 % set guidata
 guidata(f{i},guidata(gcf));
 % set off
@@ -194,7 +194,7 @@ return;
 
 function prevbutton_Callback(source,eventdata,f)
 % get current i
-i = get(gcf,'tag'); i = str2double(regexprep(i,'Auto_Gui_',''))-1; 
+i = get(gcf,'tag'); i = str2double(regexprep(i,'make_gui_',''))-1; 
 % set guidata
 guidata(f{i},guidata(gcf));
 % set off

@@ -44,7 +44,7 @@ function [sa, subrun] = subjectarray(cmd,varargin)
 %   
 %   2   3
 %
-% requires: auto_gui cell2strtable choose_SubjectArray choose_fields funpass
+% requires: make_gui cell2strtable choose_SubjectArray choose_fields funpass
 % printres savesubjfile sawa sawa_createvars sawa_dlmread sawa_getfield 
 % sawa_setfield sawa_strjoin sawa_subrun sawa_xlsread update_array
 % 
@@ -72,7 +72,7 @@ function fp = subjectarray_gui(fp)
 % get vars from fp
 funpass(fp);
 
-% setup structure for auto_gui
+% setup structure for make_gui
 structure.name = 'Subject Array';
 structure.edit1.string = 'Subject Array Name'; 
 structure.edit1.tag = structure.edit1.string;
@@ -90,8 +90,8 @@ structure.listbox.position = 'right'; structure.listbox.tag = [mfilename 'listbo
 structure.listbox.height = 165; structure.listbox.width = 175;
 structure.listbox.callback = @(x,y)guidata(gcf,createfield_Callback(guidata(gcf),get(x,'value')));
 
-% run auto_gui
-fp = auto_gui(structure,struct('data',fp));
+% run make_gui
+fp = make_gui(structure,struct('data',fp));
 
 % get vars from fp
 fp = funpass(fp,who);

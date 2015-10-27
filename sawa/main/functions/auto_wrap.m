@@ -4,7 +4,7 @@ function varargout = auto_wrap(cmd,varargin)
 % function and subjects.
 % 
 % Inputs:
-% cmd - command to use (i.e. 'add_funciton','set_args','run_cmd')
+% cmd - command to use (i.e. 'add_funciton','set_options','run_cmd')
 % varargin - arguments to be passed to cmd
 %
 % Outputs: 
@@ -40,7 +40,7 @@ function varargout = auto_wrap(cmd,varargin)
 % Created by Justin Theiss
 
 % init vars
-if ~exist('cmd','var')||isempty(cmd), cmd = {'add_function','set_args','auto_run'}; end;
+if ~exist('cmd','var')||isempty(cmd), cmd = {'add_function','set_options','auto_run'}; end;
 if ~iscell(cmd), cmd = {cmd}; end; 
 if isempty(varargin), varargin = {struct}; end;
 % run chosen cmds
@@ -70,7 +70,7 @@ fp = funpass(fp,{'funcs'});
 return;
 
 % set input/output args
-function fp = set_args(fp)
+function fp = set_options(fp)
 % get vars from fp
 funpass(fp);
 
