@@ -241,8 +241,10 @@ switch lower(lsr)
 
 case {'load','save'} % load or save
 curdir = pwd; % get current dir
-% load homepath, cd to jobs folder
-load('sawa_home.mat'); cd(fullfile(homepath,'main','jobs'));
+% cd to jobs folder
+cd(fileparts(fileparts(mfilename('fullpath'))));
+if ~isdir('jobs'), mkdir('jobs'); end;
+cd('jobs');
 if strcmpi(lsr,'load') % load
 savedvars = uigetfile('*savedvars*.mat','Load savedvars file to use:');
 if ~any(savedvars), return; end; % return if none chosen

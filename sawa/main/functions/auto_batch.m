@@ -132,6 +132,7 @@ if ~exist('funcs','var'), return; elseif ~iscell(funcs), funcs = {funcs}; end;
 if ~exist('idx','var'), idx = get(findobj('tag','batch_listbox'),'value'); end;
 if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('itemidx','var'), return; elseif ~iscell(itemidx), itemidx{idx} = itemidx; end;
+if ~exist('rep','var'), rep{idx} = zeros(size(itemidx{idx})); end;
 if ~exist('options','var')||idx>numel(options), options(idx,1:numel(itemidx{idx})) = {{}}; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var'), if isempty(subrun), funrun = []; else funrun = subrun; end; end;
@@ -216,6 +217,8 @@ funpass(fp);
 % init vars
 if ~exist('funcs','var')||isempty(funcs), return; elseif ~iscell(funcs), funcs = {funcs}; end;
 if ~exist('itemidx','var'), return; elseif ~iscell(itemidx), itemidx{idx} = itemidx; end;
+if ~exist('rep','var')||isempty(rep), rep{1} = zeros(size(itemidx{1})); end;
+if numel(rep)<numel(funcs), for x = numel(rep)+1:numel(funcs), rep{x} = zeros(size(itemidx{x})); end; end;
 if ~exist('options','var'), options(1:numel(funcs),1:max(cellfun('size',itemidx,2))) = {repmat({{}},[numel(iter),1])}; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var')||isempty(funrun), if isempty(subrun), funrun = 1; else funrun = subrun; end; end;
@@ -252,13 +255,13 @@ fp = funpass(fp,{'options','itemnames','itemidx','rep','iter','sa','hres'});
 
 % print current variables
 for m = 1:numel(matlabbatch)
-prntidx = ~ismember(1:numel(itemnames{m}),itemidx{m});
+prntidx{m} = ~ismember(1:numel(itemnames{m}),itemidx{m});
 % print itemnames and string rep of values for non-itemidx
-cellfun(@(x,y){printres([x ': ' sawa_strjoin(y,'\n')],hres)},itemnames{m}(prntidx),contents{m}{2}(prntidx));
+cellfun(@(x,y){printres([x ': ' sawa_strjoin(y,'\n')],hres)},itemnames{m}(prntidx{m}),contents{m}{2}(prntidx{m}));
 end; % print variables to input
 printres('Variables to input:',hres);
-for m = find(~cellfun('isempty',preidx)), 
-cellfun(@(x,y){printres([x ': ' sawa_strjoin(y,'\n')],hres)},itemnames{m}(~prntidx),options(m,1:numel(itemidx{m})));
+for m = find(~cellfun('isempty',preidx)),
+cellfun(@(x,y){printres([x ': ' sawa_strjoin(y,'\n')],hres)},itemnames{m}(~prntidx{m}),options(m,1:numel(itemidx{m})));
 end;
 printres(repmat('-',1,75),hres); 
 
