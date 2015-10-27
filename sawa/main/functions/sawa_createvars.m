@@ -49,11 +49,9 @@ if isempty(chc), return; end;
 switch lower(choices{chc})
 case {'string','number','evaluate'} % input
     vars = cell2mat(inputdlg(['Set ' varnam],varnam,2));
-    vars = deblank(arrayfun(@(x){vars(x,:)},1:size(vars,1)));
-    if chc == 2, % number
-        vars = cellfun(@(x){str2double(x)},vars);
-    elseif chc == 3 % evaluate
-        vars = cellfun(@(x){eval(x)},vars);
+    vars = strtrim(arrayfun(@(x){vars(x,:)},1:size(vars,1)));
+    if chc > 1 % number or evaluate
+        vars = cellfun(@(x){eval(['[' x ']'])},vars);
     end
 case 'structure' % struct
     vars = struct; done = 0; 

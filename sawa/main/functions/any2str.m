@@ -13,8 +13,10 @@ function out = any2str(maxrow,varargin)
 % out = any2str(2,'test',{'test';10},[1,2,3],@disp,{struct('testing',{'this'}),12,'testing'})
 % out = 
 %
-%   'test'  {'test'}  [1 2 3]   @disp   {[1x1 struct]} {12} {'testing'}
-%           {10}
+%   'test'  'test'  [1 2 3]   @disp   {[1x1 struct] 12 'testing'}
+%           10
+%
+% Note: for vertical cell arrays, no '{}'s are added (see example above).
 %
 % Created by Justin Theiss
 
@@ -37,10 +39,11 @@ case 'char' % char
     out{v} = strcat('''', varargin{v}, '''');
     out{v} = char(out{v});
 case 'cell' % run any2str for cell
-    out{v} = strcat('{',cellfun(@(x){any2str(maxrow,x)},varargin{v}),'}');
+    out{v} = cellfun(@(x){any2str(maxrow,x)},varargin{v});
     r = size(out{v},1); % get rows
     clear tmp; tmp = arrayfun(@(x){sprintf('%s ',out{v}{x,:})},1:r);
-    out{v} = char(tmp{:});
+    if r ==1, tmp{1} = ['{' tmp{1}]; tmp{end} = [deblank(tmp{end}) '}']; end; % set {}
+    out{v} = char(tmp{:}); 
 case 'double' % mat2str
     out{v} = mat2str(varargin{v});
 case 'function_handle' % put @ in front
