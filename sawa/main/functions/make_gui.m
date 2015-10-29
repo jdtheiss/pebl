@@ -7,6 +7,7 @@ function d = make_gui(structure,opt)
 % Inputs:
 % structure - each structure cell should contain the following fields:
 % - "name" - the name/title of the corresponding "page"
+% - "position" - position of figure (pixel units)
 % - uicontrol fields - uicontrol properties (e.g., edit, pushbutton) to use with subfields
 % corresponding to properties (e.g., tag, string, position, callback; see example)
 % opt (optional) - struct option to be used 
@@ -57,9 +58,11 @@ if ~iscell(structure), structure = {structure}; end;
 if ~exist('data','var'), d = struct; end;
 if ~exist('opt','var'), opt = struct; end;
 
-% set defaults
+% get/set defaults
+defUfont = get(0,'defaultUicontrolFontSize'); defAfont = get(0,'defaultAxesFontSize');
+defTfont = get(0,'defaultTextFontSize'); 
 set(0,'defaultUicontrolFontSize',12); set(0,'defaultAxesFontSize',12);
-set(0,'defaultTextFontSize',12);
+set(0,'defaultTextFontSize',12); 
 
 % for each structure, initialize
 for i = 1:numel(structure)
@@ -75,9 +78,9 @@ set(f{i},'tag',['make_gui_' num2str(i)]);
 
 % set position, if field
 if isfield(structure{i},'position'), 
-    set(f{i},'position',structure{i}.position); 
+    set(f{i},'units','pixels','position',structure{i}.position); 
 else % set position otherwise
-    set(f{i},'position',[360,500,450,300]); 
+    set(f{i},'units','pixels','position',[360,500,450,300]); 
 end; % set figure position to structure
 structure{i}.position = get(f{i},'position'); 
 
@@ -179,6 +182,10 @@ set(f{1},'visible','on');
 
 % wait until done
 if ~isfield(opt,'nowait'), uiwait(f{1}); end;
+
+% reset defaults
+set(0,'defaultUicontrolFontSize',defUfont); set(0,'defaultAxesFontSize',defAfont);
+set(0,'defaultTextFontSize',defTfont); 
     
 % next, previous, and done callbacks
 function nextbutton_Callback(source,eventdata,f)

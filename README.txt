@@ -1,7 +1,7 @@
 # sawa
 subject array and wrapper automation
   -version 1-
-	created by Justin Theiss 2015
+  	Copyright (C) Justin Theiss 2015
 
 
 Introduction:
@@ -15,11 +15,16 @@ Finally, as a way to record analyses that users have run, SAWA also prints input
 Installation:
 After you have downloaded the zipped file folder, move the “sawa” folder to your desired destination. Then go into the “sawa/main/functions” folder and open “sawa.m” in matlab. Simply run the function, and SAWA will be automatically added to your matlab path. At this point, you may close the “sawa.m” file and begin using SAWA through the graphical user interface (GUI) or by calling functions from the command prompt.
 
-Requires: SPM (for batch editor), xlwrite (for mac users), findjobj (for horizontal scrollbar in notes)
+Highly Suggested: 
+-SPM (for batch editor): http://www.fil.ion.ucl.ac.uk/spm/software/ 
 
-Functions:
+-xlwrite (for mac users): http://www.mathworks.com/matlabcentral/fileexchange/38591-xlwrite--generate-xls-x--files-without-excel-on-mac-linux-win
 
-any2str
+-findjobj (for horizontal scrollbar in notes): http://www.mathworks.com/matlabcentral/fileexchange/14317-findjobj-find-java-handles-of-matlab-graphic-objects
+
+SAWA Functions:
+
+any2str.m
   out = any2str(maxrow,varargin)
   This function will convert any class to its string representation.
   
@@ -34,18 +39,20 @@ any2str
   out = any2str(2,'test',{'test';10},[1,2,3],@disp,{struct('testing',{'this'}),12,'testing'})
   out = 
  
-    'test'  {'test'}  [1 2 3]   @disp   {[1x1 struct]} {12} {'testing'}
-            {10}
+    'test'  'test'  [1 2 3]   @disp   {[1x1 struct] 12 'testing'}
+            10
+ 
+  Note: for vertical cell arrays, no '{}'s are added (see example above).
  
   Created by Justin Theiss
 
-auto_batch
+auto_batch.m
   varargout = auto_batch(cmd,varargin)
   This function will allow you to set arguments for the command line function
   funname and then run the function.
  
   Inputs:
-  cmd - command to use (i.e. 'choose_subjects','setup_job','enter_variables','run_batch')
+  cmd - command to use (i.e. 'add_funciton','set_options','auto_run')
   varargin - arguments to be passed to cmd
  
   Outputs: 
@@ -68,13 +75,13 @@ auto_batch
  
   Created by Justin Theiss
 
-auto_cmd
+auto_cmd.m
   varargout = auto_cmd(cmd,varargin)
   This function will allow you to set arguments for the command line function
   funname and then run the function.
  
   Inputs:
-  cmd - command to use (i.e. 'choose_subjects','set_env','add_funciton','run_cmd')
+  cmd - command to use (i.e. 'add_funciton','set_options','auto_run')
   varargin - arguments to be passed to cmd
  
   Outputs: 
@@ -107,65 +114,13 @@ auto_cmd
  
   Created by Justin Theiss
 
-auto_gui
-  data = auto_gui(structure)
-  This function will create a gui based on a "structure" of gui properties
-  structure should be a cell array of structures corresponding to number of
-  "pages" for the gui
-  
-  Inputs:
-  structure - each structure cell should contain the following fields:
-  - "name" - the name/title of the corresponding "page"
-  - uicontrol fields - uicontrol properties (e.g., edit, pushbutton) to use with subfields
-  corresponding to properties (e.g., tag, string, position, callback; see example)
-  opt (optional) - struct option to be used 
-  - data - structure to set to guidata for use with callbacks etc.
-  - nowait - does not wait for figure to be closed (also prevents setting guidata)
-  - nodone - prevents "done" button (still able to be closed)
- 
-  Outputs: 
-  d - structure of fields set from guidata (see example)
- 
-  Example:
- 
-  INPUT:
-  structure{1}.name = 'Info';
-  structure{1}.edit.tag = 'age_edit';
-  structure{1}.edit.string = 'Enter Age';
-  % structure{1}.edit.position = [100,250,100,25];
-  structure{1}.pushbutton.string = 'Calculate Birth Year';
-  % structure{1}.pushbutton.position = [100,225,200,25];
-  structure{1}.pushbutton.callback = {@(x,y)disp(2015-str2double(get(findobj('tag','age_edit'),'string')))};
-  structure{2}.edit.string = 'Enter Name';
-  structure{2}.edit(2).tag = 'food_edit';
-  structure{2}.edit(2).string = 'Favorite Food';
- 
-  FUNCTION:
-  d = auto_gui(structure);
- 
-  OUTPUT:
-  d.age_edit = '24';
-  d.gui_2_edit_1 = 'Justin';
-  d.food_edit = 'smores';
- 
-  Note: if no 'callback' is listed, the default callback creates a variable
-  (name = tag or 'gui_#_type_#') which is stored in the guidata of the gcf.
- 
-  Note2: if no 'position' properties are included for a "page", the objects
-  will be distributed starting at the top left corner
- 
-  Note3: if 'nodone' is used, data will be an empty structure (or equal to
-  the opt.guidata)
- 
-  Created by Justin Theiss
-
-auto_wrap
+auto_wrap.m
   varargout = auto_wrap(cmd,varargin)
   This function will automatically create a wrapper to be used with chosen
   function and subjects.
   
   Inputs:
-  cmd - command to use (i.e. 'add_funciton','set_args','run_cmd')
+  cmd - command to use (i.e. 'add_funciton','set_options','run_cmd')
   varargin - arguments to be passed to cmd
  
   Outputs: 
@@ -200,7 +155,7 @@ auto_wrap
  
   Created by Justin Theiss
 
-cell2strtable
+cell2strtable.m
   strtable = cell2strtable(celltable,delim)
   Create string table from a cell table (different from matlab's table)
   with a specified delimiter separating columns.
@@ -227,7 +182,7 @@ cell2strtable
  
   Created by Justin Theiss
 
-choose_SubjectArray
+choose_SubjectArray.m
   varargout = SubjectArray(fileName,task)
   holder for subjects.mat location
  
@@ -243,7 +198,7 @@ choose_SubjectArray
  
   Created by Justin Theiss
 
-choose_fields
+choose_fields.m
   flds = choose_fields(sa, subrun, msg)
   Choose string represntations of fields from subject array
   
@@ -265,12 +220,12 @@ choose_fields
   [chose indices '1' and '2']
   flds = 
     'age{1}'   'age{2}'
-
+ 
   requires: sawa_subrun
  
   Created by Justin Theiss
 
-choose_spm
+choose_spm.m
   choose_spm
   This function will allow choosing between multiple SPM versions
  
@@ -285,7 +240,7 @@ choose_spm
  
   Created by Justin Theiss
 
-closedlg
+closedlg.m
   closedlgs(figprops,btnprops)
   This function will set a timer object to wait until a certain
   dialog/message/object is found using findobj and will then perform a
@@ -314,7 +269,7 @@ closedlg
  
   Created by Justin Theiss
 
-common_str
+common_str.m
   str = commmon_str(strs)
  
   This function will find the greatest common string (str) among a cell 
@@ -333,7 +288,7 @@ common_str
  
   Created by Justin Theiss
 
-convert_paths
+convert_paths.m
   sa = convert_paths(sa,task,fileName)
   This function will convert the paths in the subject array sa from Mac to 
   PC or vice versa.
@@ -360,7 +315,7 @@ convert_paths
  
   Created by Justin Theiss
 
-funpass
+funpass.m
   funpass(structure,vars)
   This function allows you to pass variable structures between functions
   easily. If only one input argument is entered, structure will be returned
@@ -408,7 +363,7 @@ funpass
  
   Created by Justin Theiss
 
-getargs
+getargs.m
   [outparams,inparams] = getargs(func)
   This function will retreive the out parameters and in parameters for a
   function.
@@ -433,7 +388,79 @@ getargs
  
   Created by Justin Theiss
 
-match_string
+jsfilemenufcn.m
+ FILEMENUFCN Implements part of the figure file menu.
+   FILEMENUFCN(CMD) invokes file menu command CMD on figure GCBF.
+   FILEMENUFCN(H, CMD) invokes file menu command CMD on figure H.
+   FILEMENUFCN(H, CMD, SNAME, STYPE) allows saving with filename input and
+   file type input
+   CMD can be one of the following:
+ 
+     FileClose
+     FileExportSetup
+     FileNew
+     FileOpen
+     FilePageSetup
+     FilePreferences
+     FilePrintPreview
+     FilePrintSetup
+     FileSave
+     FileSaveAs
+
+make_gui.m
+  data = make_gui(structure)
+  This function will create a gui based on a "structure" of gui properties
+  structure should be a cell array of structures corresponding to number of
+  "pages" for the gui
+  
+  Inputs:
+  structure - each structure cell should contain the following fields:
+  - "name" - the name/title of the corresponding "page"
+  - "position" - position of figure (pixel units)
+  - uicontrol fields - uicontrol properties (e.g., edit, pushbutton) to use with subfields
+  corresponding to properties (e.g., tag, string, position, callback; see example)
+  opt (optional) - struct option to be used 
+  - data - structure to set to guidata for use with callbacks etc.
+  - nowait - does not wait for figure to be closed (also prevents setting guidata)
+  - nodone - prevents "done" button (still able to be closed)
+ 
+  Outputs: 
+  d - structure of fields set from guidata (see example)
+ 
+  Example:
+ 
+  INPUT:
+  structure{1}.name = 'Info';
+  structure{1}.edit.tag = 'age_edit';
+  structure{1}.edit.string = 'Enter Age';
+  % structure{1}.edit.position = [100,250,100,25];
+  structure{1}.pushbutton.string = 'Calculate Birth Year';
+  % structure{1}.pushbutton.position = [100,225,200,25];
+  structure{1}.pushbutton.callback = {@(x,y)disp(2015-str2double(get(findobj('tag','age_edit'),'string')))};
+  structure{2}.edit.string = 'Enter Name';
+  structure{2}.edit(2).tag = 'food_edit';
+  structure{2}.edit(2).string = 'Favorite Food';
+ 
+  FUNCTION:
+  d = make_gui(structure);
+ 
+  OUTPUT:
+  d.age_edit = '24';
+  d.gui_2_edit_1 = 'Justin';
+  d.food_edit = 'smores';
+ 
+  Note: if no 'callback' is listed, the default callback creates a variable
+  (name = tag or 'gui_#_type_#') which is stored in the guidata of the gcf.
+ 
+  Note2: if no 'position' properties are included for a "page", the objects
+  will be distributed starting at the top left corner
+ 
+  Note3: if 'nodone' is used, data will be an empty structure (or equal to
+  the opt.guidata)
+ 
+  Created by Justin Theiss
+
+match_string.m
   match string
   [gcstr,idx] = match_string(str)
   This function will find the greatest common string derivative of str 
@@ -455,7 +482,7 @@ match_string
  
   Created by Justin Theiss
 
-printres
+printres.m
   [hres,fres,outtxt] = printres(varargin)
   Create Results Figure
   
@@ -488,7 +515,7 @@ printres
  
   Created by Justin Theiss
 
-savesubjfile
+savesubjfile.m
   sa = savesubjfile(fileName, task, sa)
   Saves subjects.mat file and copies previous to backup folder
  
@@ -505,7 +532,7 @@ savesubjfile
   
   Created by Justin Theiss
 
-sawa
+sawa.m
   subject array and wrapper automation (sawa)
   This toolbox will allow you to build pipelines for analysis by wrapping any
   command line, matlab, or batch functions with input variables from subject
@@ -526,11 +553,11 @@ sawa
   
   Note: if no function is input, the sawa gui will load.
  
-  requires: auto_gui choose_SubjectArray sawa_setvars sawa_system
+  requires: make_gui choose_SubjectArray sawa_setvars sawa_system
  
   Created by Justin Theiss
 
-sawa_cat
+sawa_cat.m
   out = sawa_cat(dim,A1,A2,...)
   This function will force the directional concatenation of the set of
   inputs A1, A2, etc. by padding inconsistencies with cells.
@@ -551,7 +578,7 @@ sawa_cat
  
   Created by Justin Theiss
 
-sawa_createvars
+sawa_createvars.m
   vars = sawa_createvars(varnam,msg,subrun,sa)
   Creates variables for specific use in auto_batch, auto_cmd, auto_wrap.
   
@@ -580,13 +607,13 @@ sawa_createvars
  
   Created by Justin Theiss
 
-sawa_dlmread
+sawa_dlmread.m
   raw = sawa_dlmread(file,delim)
   This function will read csv/txt files and create a cell array based on
   delimiters. 
  
   Input:
-  -file - file path for .csv, .txt files
+  -file - file path for .csv, .txt files or actual string to delimit
   -delim - (optional) string delimiter (default is |)
  
   Output:
@@ -604,10 +631,10 @@ sawa_dlmread
  
   Created by Justin Theiss
 
-sawa_editor
+sawa_editor.m
   sawa_editor(sawafile, sv, savedvars)
   Loads/runs sawafile functions (e.g., auto_batch, auto_cmd, auto_wrap) with
-  auto_gui.
+  make_gui.
  
   Inputs: 
   cmd - function to be called (i.e. 'load_sawafile','set_environments',
@@ -620,7 +647,7 @@ sawa_editor
  
   Note: default cmd is 'load_sawafile', and the sawa file to be loaded should
   be a .mat file with the following varaibles (created during call to save_presets): 
-  - structure - the auto_gui structure that will be used
+  - structure - the make_gui structure that will be used
   - fp - funpass structure with "sawafile", "funcs", and "options"
   sawafile is the fullpath to this .mat file, funcs is a cellstr of
   functions to run, and options is a cell array of options to use with
@@ -628,11 +655,11 @@ sawa_editor
   - program - string name of the program to run (e.g., 'auto_batch')
   See Batch_Editor.mat, Command_Line.mat, Wrap_Functions.mat for examples.
  
-  requires: auto_gui funpass printres sawa_subrun
+  requires: make_gui funpass printres sawa_subrun
  
   Created by Justin Theiss
 
-sawa_evalchar
+sawa_evalchar.m
   out = sawa_evalchar(str,expr)
   evaluate strings using subject array (or evaluate expr within str)
  
@@ -660,7 +687,7 @@ sawa_evalchar
  
   Created by Justin Theiss
 
-sawa_evalvars
+sawa_evalvars.m
   valf = sawa_evalvars(val,subrun,sa)
   Evaluate variables created from sawa_createvars
   
@@ -702,7 +729,7 @@ sawa_evalvars
  
   Created by Justin Theiss
 
-sawa_fileparts
+sawa_fileparts.m
   outputs = sawa_fileparts(inptus, part, str2rep, repstr)
   function to get fileparts of multiple cells, remove parts of all strings
  
@@ -729,7 +756,7 @@ sawa_fileparts
  
   Created by Justin Theiss
 
-sawa_find
+sawa_find.m
   [fnd,vals,tags,reps]=sawa_find(fun,search,varargin)
   searches array or obj for search using function fun
  
@@ -782,15 +809,17 @@ sawa_find
  
   Created by Justin Theiss
 
-sawa_getfield
+sawa_getfield.m
   [values, tags, reps] = sawa_getfield(A, irep, itag);
   Gets values, tags, and reps (string representations) of structures or objects
  
   Inputs:
-  A - array, object, or cell array
+  A - array, object, or cell array (does not work for numeric handles)
   irep - input string representation of array A
   itag - input regular expression of a tag or component of array A that you
   want to return (default is '.$'). if itag = '', all values will be returned.
+  refs - (optional) number of times a field tag can be referenced before
+  stopping (see Note2). default is 1
   
   Outputs:
   values - the returned values from each getfield(A,itag)
@@ -810,14 +839,17 @@ sawa_getfield
   NOTE: Searching for itag uses regexp (i.e. 'subj.s' will find 'subj_s', 
   and 'subj.*s' will find 'subjFolders' or 'subj_s'). Additionally, itag 
   should use regexp notation (use regexptranslate to automatically input escape characters)
-  NOTE2: For handles: unless Parent is included in itag, the .Parent field of handles
+  NOTE2: in order to avoid self-referenceing loops in handles, refs is used
+  as the number of times a field tag (e.g. .UserData) may exist in a single
+  rep (e.g., .CurrentAxes.UserData.Axes(2).UserData has two refs).
+  NOTE3: For handles: unless Parent is included in itag, the .Parent field of handles
   is not used to avoid infinite loop of ".Parent.Children.Parent".
  
   requires: sawa_cat
  
   Created by Justin Theiss
 
-sawa_savebatchjob
+sawa_savebatchjob.m
   savepath = sawa_savebatchjob(savedir, jobname, matlabbatch)
   Save Batch Job
  
@@ -831,7 +863,30 @@ sawa_savebatchjob
  
   Created by Justin Theiss
 
-sawa_searchdir
+sawa_screencapture.m
+  filename = sawa_screencapture(hfig,filename,ext)
+  This function simply screencaptures a figure using the hgexport function.
+  
+  Inputs:
+  hfig - (optional) figure handle to screen capture default is gcf
+  filename - (optional) filepath and name to save. default is
+  get(hfig,'Name')
+  ext - (optional) extension type to save as (e.g. 'png') default is ext of
+  filename
+ 
+  Outputs:
+  filename - fullpath filename if successful, otherwise []
+ 
+  Example:
+  uicontrol(figure,'style','text','string','this is a test','position',[100,100,100,100])
+  filename = sawa_screencapture(gcf,'output','png')
+  filename = 
+ 
+  /Applications/sawa/output.png
+  
+  Created by Justin Theiss
+
+sawa_searchdir.m
   [files,fullfiles] = sawa_searchdir(fld, search)
   search for files or folders within fld 
  
@@ -854,7 +909,7 @@ sawa_searchdir
  
   Created by Justin Theiss
 
-sawa_searchfile
+sawa_searchfile.m
   [files, pos] = sawa_searchfile(str,folder,filetype)
   search for str within each .m file (default) in folder
  
@@ -871,7 +926,7 @@ sawa_searchfile
  
   Created by Justin Theiss
 
-sawa_setbatch
+sawa_setbatch.m
   [matlabbatch,chngidx,sts]=sawa_setbatch(matlabbatch,val,itemidx,rep,m)
   Set matlabbatch structure items to vals.
  
@@ -890,7 +945,20 @@ sawa_setbatch
  
   Created by Justin Theiss
 
-sawa_setdeps
+sawa_setcoords.m
+  k = sawa_setspmcoords(hfig,coords)
+  This function will change the coordinates for the spm based axes in
+  figure hfig using coordinates coords.
+ 
+  Inputs:
+  hfig - (optional) figure with spm axes. default is gcf
+  coords - (optional) coordinates to change to. default is global max
+ 
+  Outputs:
+  k - 0/1 for failure/success
+  Example:
+
+sawa_setdeps.m
   matlabbatch = sawa_setdeps(prebatch, matlabbatch)
   this function will set dependencies for fields that change (e.g. if a
   dependency is set for Session 1 and new Sessions are added, new
@@ -914,7 +982,7 @@ sawa_setdeps
  
   Created by Justin Theiss
 
-sawa_setfield
+sawa_setfield.m
   structure = sawa_setfield(structure,idx,field,sub,varargin)
   Set fields for structure indices
  
@@ -942,27 +1010,46 @@ sawa_setfield
  
   Created by Justin Theiss
 
-sawa_setupjob
-  [matlabbatch, itemidx, str] = sawa_setupjob(varargin)
-  sets up the job using the cfg_ui function
-  records matlabbatch, field, tags, and string of the batch editor
- 
+sawa_setupjob.m
+  [matlabbatch, itemidx, str] = sawa_setupjob(matlabbatch, itemidx)
+  Opens matlabbatch job using batch editor (cfg_ui) and records items to be 
+  used as sawa variables as well as the input user data.
+  
   Inputs:
-  matlabbatch - (optional) matlabbatch to load
-  itemidx - (optional) cell array of numeric indices for each item to be set 
-  (based on place in display)
-  str - (optional) cell array of strings corresponding to the matlabbatch
+  matlabbatch - (optional) job to be loaded. default is empty job
+  itemidx - (optional) item indices to be set as sawa variables. default is
+  empty
+  
+  Outputs: 
+  matlabbatch - final job returned with user data
+  itemidx - item indices to be set as sawa variables
+  str - string of cfg_ui display for chosen modules
+  
+  Example:
+  [matlabbatch, itemidx, str] = sawa_setupjob;
+  [choose "Call MATLAB function" from BasicIO tab]
+  [choose "New: String" from Inputs]
+  [press right arrow to set item as sawa variable]
+  [enter @disp into "Function to be called"]
+  [close the Batch Editor]
  
-  Outputs:
-  matlabbatch - matlabbatch array 
-  itemidx - cell array of numeric indices for each item to be set
-  str - cell array of strings corresponding to the matlabbatch 
+  matlabbatch{1} = 
+    cfg_basicio: [1x1 struct]
+  itemidx =
+    [3]
+  str{1} = 
+    'Help on: Call MATLAB function                            ...'
+    'Inputs                                                   ...'
+    '----sawa variable----'
+    'Outputs                                                  ...'
+    'Function to be called                                    ...'
  
-  requires: subidx
+  Note: each item index relates to its index in the display (i.e., itemidx
+  3 relates to str{1}{3}).
  
   Created by Justin Theiss
 
-sawa_setvars
+sawa_setvars.m
   savedvars = setvars(mfil)
   Set variables for running multiple functions in GUI for either
   scripts or .mat functions
@@ -991,7 +1078,7 @@ sawa_setvars
  
   Created by Justin Theiss
 
-sawa_strjoin
+sawa_strjoin.m
   str = sawa_strjoin(C, delim)
   This function will concatenate any input as string with delimiter.
   
@@ -1017,7 +1104,7 @@ sawa_strjoin
  
   Created by Justin Theiss
 
-sawa_subrun
+sawa_subrun.m
   [subrun,sa,task,fileName] = sawa_subrun(sa,subrun,isubrun) 
   Choose fileName, task, subjects, and refine subjects based on subject
   fields
@@ -1053,7 +1140,7 @@ sawa_subrun
  
   Created by Justin Theiss
 
-sawa_system
+sawa_system.m
   [sts,msg] = sawa_system(fun,opts)
   This function will run "system" but uses the wine function if running a 
   .exe on mac.
@@ -1070,7 +1157,7 @@ sawa_system
  
   Created by Justin Theiss
 
-sawa_xlsread
+sawa_xlsread.m
   raw = sawa_xlsread(xfil)
   This function is mainly used since xlsread does not work consistently
   with .xlsx files on mac. However, this will not slow down the ability the
@@ -1086,7 +1173,7 @@ sawa_xlsread
  
   Created by Justin Theiss
 
-settimeleft
+settimeleft.m
   hobj = settimeleft(varargin)
   sets time left display
  
@@ -1114,7 +1201,7 @@ settimeleft
  
   Created by Justin Theiss
 
-subidx
+subidx.m
   out = subidx(item,idx)
   Index item as item(idx)
  
@@ -1147,60 +1234,14 @@ subidx
  
   Created by Justin Theiss
 
-subjectarray
-  [sa, subrun] = subjectarray(cmd, varargin)
-  This is the first step to using the Subject Array and Study Organizer.
- 
-  Inputs:
-  cmd - cellstr array of subfunction(s) to run
-  varargin - arguments to pass to subfunction 
-  if no inputs, subjectarray will run its gui (see example)
-  
-  Outputs (only returned from command prompt call):
-  sa - subject array
-  subrun - subject indices of sa 
- 
-  Example1 (no inputs):
-  - Subject Array Name: Enter a name for the subject array (e.g., gonogo).
-  - Subjects.mat File: This is the file that will hold the subject array.
-  You may add a subject array to a previous subjects.mat file or create one.
-  - Enter Subjects: Choose subjects/add subjects to subject array.
-  - Subject Folders: Choose the main folders for each subject (and
-  optionally create them)
-  - Create New Field: Create a field for each subject in the subject array
-  (e.g., age, group, gender, etc.). 
-  - Load/Save Subject Array:
-  -- Load Subject Array: Load a previous subjects.mat file or an excel, txt
-  or mat file. (Note: excel files should have field names as headers and
-  one header must be 'subj' with subject names. txt files should be the
-  same with tabs between columns. mat files should contain field names as
-  variables with rows corresponding to each subject.) Once loaded, subject
-  arrays may be edited.
-  -- Save Subject Array: Save the subject array to the chosen subjects.mat
-  file. Additionally, you may save the subject array as an excel, txt, or
-  mat file in the format as indicated above.
- 
-  Example2 (with inputs):
-  [sa,subrun] = subjectarray('load_sa',struct(fileName,{'/Users/test.mat'},'flds',...
-  {{'subj','subjFolders1'}},'subrun',{[2,3]}));
-  sa =
-  1x4 struct array with fields:
- 
-    subj
-    subjFolders
-    
-  subrun = 
-    
-    2   3
- 
-  requires: auto_gui cell2strtable choose_SubjectArray choose_fields 
-  funpass printres savesubjfile sawa sawa_createvars sawa_dlmread 
-  sawa_getfield sawa_setfield sawa_strjoin sawa_subrun sawa_xlsread 
-  subjectarray update_array
-  
-  Created by Justin Theiss
+subjectarray.m
 
-update_array
+subjectarray not found.
+
+Use the Help browser search field to <a href="matlab:docsearch subjectarray">search the documentation</a>, or
+type "<a href="matlab:help help">help help</a>" for help command options, such as help for methods.
+
+update_array.m
   sa = update_array(task)
  
   Used to update array (sa) with the latest data. Primarily used when
@@ -1219,7 +1260,7 @@ update_array
   
   Created by Justin Theiss
 
-update_path
+update_path.m
   update_path(fil,mfil)
   This function will update a filepath (fil) for the .m file entered (i.e.
   mfilename('fullpath'))
@@ -1247,4 +1288,6 @@ update_path
   will be used.
   
   Created by Justin Theiss
+
+
 

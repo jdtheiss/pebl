@@ -43,6 +43,7 @@ function fp = add_function(fp)
 funpass(fp,{'funcs','itemidx','str','sawafile','sa','subrun'});
 % init vars
 if ~exist('funcs','var'), funcs = {}; end;
+if ~exist('itemidx','var')||isempty(itemidx), itemidx = cell(size(funcs)); end;
 if ~exist('sa','var'), sa = {}; end; 
 if ~exist('subrun','var'), subrun = []; end;
 if ~exist('sawafile','var'), sawafile = []; end;
@@ -51,13 +52,14 @@ if ~exist('sawafile','var'), sawafile = []; end;
 spmver = choose_spm;
 
 % run setupjob
-disp('Loading matlabbatch job...'); 
-% load matlabbatch with sawa_setupjob
-if ~isempty(funcs), 
-[funcs,itemidx,str]=sawa_setupjob(funcs,itemidx,str);
-else % create new job
-[funcs,itemidx,str]=sawa_setupjob;
-end
+disp('Loading Batch Editor...'); 
+disp(char('Load/Choose Modules to use:',...
+        'Select items and press right arrow to set sawa variables.',...
+        'Press left arrow to remove sawa variables.',...
+        'Close Batch Editor when finished.'));
+    
+% load matlabbatch with sawa_setupjob 
+[funcs,itemidx,str]=sawa_setupjob(funcs,itemidx);
 
 try % get job/module ids 
 [~,cjob,mod_ids] = evalc('cfg_util(''initjob'',funcs)'); 

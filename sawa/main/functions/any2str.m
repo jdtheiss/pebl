@@ -28,11 +28,16 @@ if isempty(maxrow), maxrow = inf; end;
 for v = 1:numel(varargin)
 % set out
 out{v} = [];
+
 % if more than maxrow, create string representation
 if size(varargin{v},1)>maxrow||(~ischar(varargin{v})&&size(varargin{v},1)>maxrow), 
 varargin{v}=['[' num2str(size(varargin{v})) ' ' class(varargin{v}) ']'];
 varargin{v} = regexprep(varargin{v},'\s\s','x'); 
 end
+
+% if varargin{v} is empty and cell, set to '{}' and skip
+if iscell(varargin{v})&&isempty(varargin{v}), out{v} = '{}'; continue; end;
+
 % switch class of varargin
 switch class(varargin{v})
 case 'char' % char
@@ -43,7 +48,7 @@ case 'cell' % run any2str for cell
     r = size(out{v},1); % get rows
     clear tmp; tmp = arrayfun(@(x){sprintf('%s ',out{v}{x,:})},1:r);
     if r ==1, tmp{1} = ['{' tmp{1}]; tmp{end} = [deblank(tmp{end}) '}']; end; % set {}
-    out{v} = char(tmp{:}); 
+    out{v} = char(tmp{:});
 case 'double' % mat2str
     out{v} = mat2str(varargin{v});
 case 'function_handle' % put @ in front
@@ -53,5 +58,6 @@ otherwise % [size class]
     out{v} = regexprep(out{v},'\s\s','x');
 end
 end
+
 % if only one output, set out 
 if numel(out)==1, out = out{1}; end;

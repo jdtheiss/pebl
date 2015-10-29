@@ -1,106 +1,159 @@
-function [matlabbatch,itemidx,str] = sawa_setupjob(matlabbatch, itemidx, str)
-% [matlabbatch, itemidx, str] = sawa_setupjob(varargin)
-% sets up the job using the cfg_ui function
-% records matlabbatch, field, tags, and string of the batch editor
-%
+function [matlabbatch, itemidx, str] = sawa_setupjob(matlabbatch, itemidx)
+% [matlabbatch, itemidx, str] = sawa_setupjob(matlabbatch, itemidx)
+% Opens matlabbatch job using batch editor (cfg_ui) and records items to be 
+% used as sawa variables as well as the input user data.
+% 
 % Inputs:
-% matlabbatch - (optional) matlabbatch to load
-% itemidx - (optional) cell array of numeric indices for each item to be set 
-% (based on place in display)
-% str - (optional) cell array of strings corresponding to the matlabbatch
+% matlabbatch - (optional) job to be loaded. default is empty job
+% itemidx - (optional) item indices to be set as sawa variables. default is
+% empty
+% 
+% Outputs: 
+% matlabbatch - final job returned with user data
+% itemidx - item indices to be set as sawa variables
+% str - string of cfg_ui display for chosen modules
+% 
+% Example:
+% [matlabbatch, itemidx, str] = sawa_setupjob;
+% [choose "Call MATLAB function" from BasicIO tab]
+% [choose "New: String" from Inputs]
+% [press right arrow to set item as sawa variable]
+% [enter @disp into "Function to be called"]
+% [close the Batch Editor]
 %
-% Outputs:
-% matlabbatch - matlabbatch array 
-% itemidx - cell array of numeric indices for each item to be set
-% str - cell array of strings corresponding to the matlabbatch 
+% matlabbatch{1} = 
+%   cfg_basicio: [1x1 struct]
+% itemidx =
+%   [3]
+% str{1} = 
+%   'Help on: Call MATLAB function                            ...'
+%   'Inputs                                                   ...'
+%   '----sawa variable----'
+%   'Outputs                                                  ...'
+%   'Function to be called                                    ...'
 %
-% requires: subidx
+% Note: each item index relates to its index in the display (i.e., itemidx
+% 3 relates to str{1}{3}).
 %
 % Created by Justin Theiss
-
 
 % init vars
 if ~exist('spm','file'), error('Must set SPM to matlab path.'); end;
 if ~exist('matlabbatch','var'), matlabbatch = {}; end;
-if ~exist('itemidx','var'), itemidx = {}; end;
-if ~exist('str','var'), str = {}; end;
+if ~exist('itemidx','var')||isempty(itemidx), itemidx = {[]}; end;
+if ~exist('str','var')||isempty(str), str = {[]}; end;
 
 % prevent matlab from giving warnings when a text entered matches a function
 warning('off','MATLAB:dispatcher:InexactCaseMatch');
- 
+     
 % initcfg
 spm_jobman('initcfg'); cfg_util('initcfg');
-% open cfg_ui and guidata
+
+% open cfg_ui and get guidata
 h = cfg_ui; handles = guidata(h);
+
+% set closerequestfcn to set to invisible (rather than try to save)
+set(h,'CloseRequestFcn',@(x,y)set(x,'visible','off'));
+
+% set keypress fcn for module
+set(findobj(h,'tag','module'),'KeyPressFcn',@(x,y)guidata(gcf,setfield(guidata(gcf),'kp',y.Key)));
+
+% set tooltipstring
+set(findobj(h,'tag','module'),'ToolTipString','Press right arrow to set sawa variable, left to remove.');
+
+% remove kp if already exists
+if isfield(handles,'kp'), guidata(h,rmfield(handles,'kp')); end;
+
 % msg to display in string
-chmsg = '----sawa variable----';
+imsg = '----sawa variable----';
+
 % load batch 
 if ~isempty(matlabbatch) % if matlabbatch isn't empty, open job
 evalc('cfg_util(''initjob'',matlabbatch)'); cfg_ui('local_showjob',h);
-% get matlabbatch, chsn, itemidx, etc
-[handles,~,str] = getset_string(handles,str,chmsg,[],0);
-else % no matlabbatch, choose modules
-uiwait(msgbox('Choose/load modules to run. Then click OK.'));
-udmodlist = get(handles.modlist,'userdata');
-% set initials to empty
-names=cell(size(udmodlist.id)); obtype=cell(size(udmodlist.id)); 
-itemidx=cell(size(udmodlist.id)); str=cell(size(udmodlist.id));
-end
+end;
 
-% choose variables to use subject array with
-if exist('matlabbatch','var'), defans = 'No'; else defans = 'Yes'; end;
-if strcmp(questdlg('Choose variables to be input by sawa?','Variables','Yes','No',defans),'Yes')
-choose=1; hm=msgbox('Choose variable, then click OK.');
-while choose
-[handles,~,str] = getset_string(handles,str,chmsg,hm,choose);
-% choose a new variable?
-newvar = questdlg('Choose new variable?','New Variable','Yes','No','Remove Previous','Yes');
-switch newvar
-case 'Yes', choose = 1; hm=msgbox('Choose variable, then click OK.');
-case 'No', choose = 0; break;
-case 'Remove Previous', choose = 2; hm = msgbox('Choose variable to remove, then click OK.'); 
-end
-end
-end
+% init om and ostr
+om = 0; ostr = {};
 
-% Enter variables
-% wait while user fills out variables
-hm = msgbox('Enter other variables, then click OK.');
-% get choices
-[handles,itemidx,str] = getset_string(handles,str,chmsg,hm,0);
-% get matlabbatch for current job as is
-[~,matlabbatch] = cfg_util('harvest',subidx(get(handles.modlist,'userdata'),'.cjob'));
-% delete cfg_ui handle
-if ishandle(h), delete(h); end;
+% while cfg_ui figure is visible
+while strcmp(get(h,'visible'),'on')
+% pause to allow changes
+pause(.1);
 
-% getset_string function
-function [handles,chsn,str] = getset_string(handles,str,chmsg,hm,choose)    
-% if missing choose var, set choose to 1
-if ~exist('choose','var'), choose = 1; end;
+% get new str, m and item index
+nstr = get(handles.module,'string'); m = get(handles.modlist,'value'); 
+nmods = cell2mat(handles.modlist.UserData.id); i = get(handles.module,'value');
 
-% if hm is a handle or until m is created
-while any(ishandle(hm))||~exist('m','var'), pause(.25); % wait while open
-ostr=get(handles.module,'String'); m=get(handles.modlist,'value'); ov=get(handles.module,'value');
-if m > numel(str), str{m} = []; end;
-if size(get(handles.modlist,'string'),1) < numel(str)
-str(m) = []; chsn(m) = [];
-else
-for m1=1:numel(str), chsn{m1}=find(strcmp(str{m1},chmsg))'; end; 
-dif = length(ostr)-length(str{m}); chsn{m}(chsn{m}>ov)=chsn{m}(chsn{m}>ov)+dif;
-str{m} = ostr; str{m}(chsn{m}) = {chmsg}; set(handles.module,'String',str{m});
-end
-end
-
-% get new choices
-if choose==1&&~any(chsn{m}==ov), % add choice
-chsn{m}=sort(horzcat(chsn{m},ov));
-elseif choose==2 % remove choice    
-chsn{m}(chsn{m}==ov) = []; 
-end
-
-% load module to get ostr, then set new str
+% refresh module/get ostr if module change (or first)
+if om~=m
 cfg_ui('local_showmod',handles.modlist); ostr = get(handles.module,'string');
-str{m} = ostr; str{m}(chsn{m}) = {chmsg};   
-% set string
-if numel(str)<=m &&~isempty(str{m}), set(handles.module,'String',str{m}); end;
-return;
+om = get(handles.modlist,'value'); omods = cell2mat(handles.modlist.UserData.id);
+end
+
+% if new module, set str to empty
+str(1:numel(nmods)>numel(str)) = {[]};
+itemidx(1:numel(nmods)>numel(itemidx)) = {[]}; 
+
+% if removed module, remove str and itemidx
+if numel(nmods) < numel(omods),
+    str(~ismember(omods,nmods)) = [];
+    itemidx(~ismember(omods,nmods)) = [];
+    omods = nmods;
+end
+
+% get difference between nstr and ostr
+dif = numel(nstr)-numel(ostr);
+
+% for each itemidx, find new position
+if dif ~= 0 
+for x = 1:numel(itemidx{m})
+    try
+    n = itemidx{m}(x); % actual index
+    % find matches in nstr of previous position and dif
+    fnd = find(strcmp(nstr([n,n+dif]), ostr{n}));
+    % if none found, remove; elseif in 2nd spot, move
+    if isempty(fnd) % not found 
+        itemidx{m}(x) = 0; % remove
+    elseif all(fnd==2), % found in new spot 
+        itemidx{m}(x) = n + dif; % move
+    end
+    end
+end
+
+% remove 0s from itemidx
+itemidx{m}(itemidx{m}==0) = [];
+
+% set ostr to nstr to update change
+ostr = nstr;
+end
+
+% refresh guidata for keypress
+handles = guidata(h); 
+
+% if keypress
+if isfield(handles,'kp')
+    if strcmp(handles.kp,'rightarrow') % add itemidx
+        itemidx{m} = unique(horzcat(itemidx{m},i));
+    elseif strcmp(handles.kp,'leftarrow') % remove itemidx
+        itemidx{m}(itemidx{m}==i) = [];
+    end
+    % reset kp in guidata
+    guidata(h,rmfield(handles,'kp'));
+    % refresh module
+    cfg_ui('local_showmod',handles.modlist); 
+    nstr = get(handles.module,'string');
+end
+
+% set itemidx
+str{m} = nstr;
+str{m}(itemidx{m}) = {imsg};
+
+% set str to handles
+set(handles.module,'string',str{m});
+end
+
+% get matlabbatch for current job as is
+[~,matlabbatch] = cfg_util('harvest',subidx(get(handles.modlist,'userdata'),'.cjob')); 
+
+% delete cfg_ui
+if any(ishandle(h)), delete(h); end;
