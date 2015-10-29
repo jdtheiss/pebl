@@ -81,7 +81,8 @@ disp(prints); return;
 end
 
 % set to string
-set(hres, 'String', prints);
+prints = cellstr(prints);
+set(hres, 'String', sprintf('%s\n',prints{:}));
 
 case 3 % savepath, hres, 'save'
 savepath = varargin{1}; % file location to save to
