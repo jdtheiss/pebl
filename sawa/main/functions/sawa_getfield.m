@@ -94,19 +94,17 @@ fnd = ~cellfun('isempty',regexp(reps,itag));
 
 % for each value, run sawa_getfield
 for x = find(~fnd), 
-    % if multiple references to same name, 
-    if numel(strfind(reps{x},tags{x})) > refs, continue; end;
+    % if multiple references to same field name, skip
+    if all(isstrprop(tags{x},'alphanum'))&&numel(regexp(reps{x},['\.' tags{x} '\.'])) > refs, 
+        continue; 
+    end;
     % run sawa_getfield with vals
     [vals{x},tags{x},reps{x}] = sawa_getfield(vals{x},reps{x},itag,refs);
 end;
 
 % output
-for x = find(cellfun('isclass',vals,'cell'))
-if iscell(tags{x})&&iscell(reps{x}) % if all cell, horzcat
-vals = sawa_cat(2,vals{1:x-1},vals{x}{:},vals{x+1:end}); 
-tags = sawa_cat(2,tags{1:x-1},tags{x}{:},tags{x+1:end});
-reps = sawa_cat(2,reps{1:x-1},reps{x}{:},reps{x+1:end});
-end
+if any(cellfun('isclass',vals,'cell'))&&any(cellfun('isclass',tags,'cell'))
+    vals = sawa_cat(2,vals{:}); tags = sawa_cat(2,tags{:}); reps = sawa_cat(2,reps{:});
 end
 
 function tags = set_tags(mn,sep)

@@ -117,7 +117,7 @@ saveorrun = 'Run';
 end
 
 % overwrite previous data? (for spm jobs only)
-if any(sawa_find(@isfield,'spm',funcs,'',''))
+if any(~cellfun('isempty',sawa_getfield(funcs,'','\.spm')))
 overwrite = questdlg('Overwrite previous SPM files? (if applicable)','Overwrite','Yes','No','No');
 end
 
