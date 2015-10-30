@@ -132,8 +132,19 @@ for o = chc
     if isempty(opts{o}), opts{o} = ''; end;
     end 
 
-    % create vars 
-    clear val; val = sawa_createvars(opts{o},'',subrun,sa);
+    % set message
+    if numel(iter) > 1||isempty(funrun), msg = '(cancel when finished)'; else msg = ''; end;
+    
+    % create val
+    val = {}; done = 0;
+    while ~done
+    val{end+1,1} = sawa_createvars(opts{o},msg,subrun,sa);
+    if isempty(val{end})||isempty(msg), done = 1; end;
+    if isempty(val{end}), val(end) = []; end;
+    end
+    
+    % if only one val, set to val{1}
+    if numel(val)==1, val = val{1}; end;
 
     % set funrun if empty 
     if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;

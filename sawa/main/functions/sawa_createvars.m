@@ -1,4 +1,4 @@
-function vars = sawa_createvars(varnam,msg,subrun,sa,varargin)
+function vals = sawa_createvars(varnam,msg,subrun,sa,varargin)
 % vars = sawa_createvars(varnam,msg,subrun,sa)
 % Creates variables for specific use in auto_batch, auto_cmd, auto_wrap.
 % 
@@ -34,7 +34,7 @@ if ~exist('subrun','var'), subrun = []; end;
 if ~exist('sa','var'), sa = {}; end;
 
 % set vars to [] 
-vars = [];
+vals = {};
 
 % set choices
 choices = {'String','Number','Evaluate','Structure','Choose File','Choose Directory','Function','Subject Array'};
@@ -42,15 +42,16 @@ if isempty(sa), choices = choices(1:end-1); end;
 if ~isempty(varargin), choices = horzcat(choices,varargin{:}); end;
 
 % choose method for invars
-chc = listdlg('PromptString',{['Choose method to set ' varnam ' ' msg],'',''},'ListString',choices,'selectionmode','single');
+chc = listdlg('PromptString',{['Choose method to set ' varnam ' ' msg],'',''},'ListString',choices); %,'selectionmode','single');
 if isempty(chc), return; end; 
 
+for c = chc
 % set based on choice
-switch lower(choices{chc})
+switch lower(choices{c})
 case {'string','number','evaluate'} % input
     vars = cell2mat(inputdlg(['Set ' varnam],varnam,2));
     vars = strtrim(arrayfun(@(x){vars(x,:)},1:size(vars,1)));
-    if chc > 1 % number or evaluate
+    if c > 1 % number or evaluate
         vars = cellfun(@(x){eval(['[' x ']'])},vars);
     end
 case 'structure' % struct
@@ -89,17 +90,19 @@ case 'subject array' % subject array
     end
 case lower(varargin) % functions 
     % find choice in varargin
-    n = find(strcmp(varargin,choices{chc}),1,'first');
+    n = find(strcmp(varargin,choices{x}),1,'first');
     % get outargs
-    outargs = getargs(choices{chc});
+    outargs = getargs(choices{x});
     if isempty(outargs), outargs = {'varargout'}; end;
     % choose outargs
-    v = listdlg('PromptString',['Choose output from ' choices{chc}],'ListString',outargs);
+    v = listdlg('PromptString',['Choose output from ' choices{x}],'ListString',outargs);
     if isempty(v), return; end;
     % strcat
     vars = strcat('evalin(''caller'',','''output{i}{', num2str(n),',',arrayfun(@(x){num2str(x)},v),'}'');');
 end
-
-% output
 if iscell(vars)&&size(vars,2) > size(vars,1), vars = vars'; end; % if horizontal
 if iscell(vars)&&numel(vars) == 1, vars = vars{1}; end; % if one cell
+% vertcat
+vals = cat(1,vals,vars);
+end
+
