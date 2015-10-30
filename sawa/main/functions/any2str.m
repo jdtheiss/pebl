@@ -44,11 +44,11 @@ case 'char' % char
     out{v} = strcat('''', varargin{v}, '''');
     out{v} = char(out{v});
 case 'cell' % run any2str for cell
-    out{v} = cellfun(@(x){any2str(maxrow,x)},varargin{v});
-    r = size(out{v},1); % get rows
+    out{v} = cellfun(@(x){any2str(maxrow,x)},varargin{v}); 
+    r = size(varargin{v},1); % get rows
     clear tmp; tmp = arrayfun(@(x){sprintf('%s ',out{v}{x,:})},1:r);
     if r ==1, tmp{1} = ['{' tmp{1}]; tmp{end} = [deblank(tmp{end}) '}']; end; % set {}
-    out{v} = char(tmp{:});
+    out{v} = sprintf('%s\n',tmp{:}); 
 case 'double' % mat2str
     out{v} = mat2str(varargin{v});
 case 'function_handle' % put @ in front

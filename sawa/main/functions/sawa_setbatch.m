@@ -27,6 +27,9 @@ if ~exist('m','var'), m = 1; end;
 if ~exist('ind','var'), ind = 0; end;
 sts = zeros(size(val));
 
+% if no rep but multiple vals, set to val to {val}
+if rep==0&&numel(val)>0, val = {val}; end;
+
 % record previous itemidx in case change
 tmpidx = itemidx; chngidx = 0;
 % initial job from matlabbatch
