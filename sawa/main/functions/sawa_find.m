@@ -80,7 +80,6 @@ end
 % output
 fnd = cellfun(@(x)any(x),fnd); 
 vals = vals(fnd); tags = tags(fnd); reps = reps(fnd); 
-if iscell(vals)&&any(cellfun('isclass',vals,'cell')), vals = [vals{:}]; tags = [tags{:}]; reps = [reps{:}]; end;
 
 function fnd = local_find(vals,fun,search,n)
     try % eval fun, search
@@ -90,7 +89,7 @@ function fnd = local_find(vals,fun,search,n)
     end 
     
     % if cell, find ~empty
-    if iscell(fnd), any(~cellfun('isempty',fnd)); end;
+    if iscell(fnd), fnd = any(~cellfun('isempty',fnd)); end;
     
     % if empty, return false
     if isempty(fnd), fnd = false; end;

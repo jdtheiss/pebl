@@ -89,7 +89,7 @@ if ispc, hswitch = {'/h','/H','/?'}; else hswitch = {'-help','-h','--help','-H',
 % get help message
 helpmsg = ''; 
 for o = hswitch
-tmpmsg = evalc(['sawa_system(''' funcs{idx} ''',''' o{1} ''');']); 
+clear tmpmsg; tmpmsg = evalc(['sawa_system(''' funcs{idx} ''',''' o{1} ''');']); 
 if ~isempty(tmpmsg)&&numel(tmpmsg)>numel(helpmsg), helpmsg = tmpmsg; end;    
 end
 

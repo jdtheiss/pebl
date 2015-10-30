@@ -101,9 +101,13 @@ for x = find(~fnd),
 end;
 
 % output
-if any(cellfun('isclass',vals,'cell')), 
-vals = sawa_cat(2,vals{:}); tags = sawa_cat(2,tags{:}); reps = sawa_cat(2,reps{:}); 
-end;
+for x = find(cellfun('isclass',vals,'cell'))
+if iscell(tags{x})&&iscell(reps{x}) % if all cell, horzcat
+vals = sawa_cat(2,vals{1:x-1},vals{x}{:},vals{x+1:end}); 
+tags = sawa_cat(2,tags{1:x-1},tags{x}{:},tags{x+1:end});
+reps = sawa_cat(2,reps{1:x-1},reps{x}{:},reps{x+1:end});
+end
+end
 
 function tags = set_tags(mn,sep)
 % init tags
