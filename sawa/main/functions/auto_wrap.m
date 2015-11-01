@@ -123,26 +123,28 @@ if strcmp(outargs,'varargout'), outchc = 1; end;
 end
 
 % set invars based on input, file, sa
-ind = 0;
+ind = 1;
 for v = inchc
-done = 0;  % set done to 0
+done1 = 0;  % set done to 0
 
-% if varargin, set msg to '(cancel when done)'
-if strcmp(inargs{v},'varargin'),
-    msg='(cancel when done)';
-else % set invars v to empty
-    msg = ''; ind = v;
-end;
+while ~done1 % loop for varargin
+    
+% set ind if not varargin
+if ~strncmp(inargs{v},'varargin',8), ind = v; else inargs{v} = ['varargin ' num2str(ind)]; end;
 
-while ~done % loop for varargin
-% get vals from sawa_createvars
-clear val; val = sawa_createvars(inargs{v},msg,subrun,sa,funcs{1:idx-1}); 
+% set message
+if numel(iter) > 1||isempty(funrun), msg = '(cancel when finished)'; else msg = ''; end;
 
-% if invars isempty, break
-if isempty(val), done = 1; break; end;
+% create val
+val = {}; done2 = 0;
+while ~done2
+val{end+1,1} = sawa_createvars(inargs{v},msg,subrun,sa,funcs{1:idx-1});
+if isempty(val{end})||isempty(msg), done2 = 1; end;
+if isempty(val{end}), val(end) = []; end;
+end
 
-% if not varargin, done = 1
-if ~strcmp(inargs{v},'varargin'), done = 1; else ind = ind+1; end;
+% if only one val, set to val{1}
+if numel(val)==1, val = val{1}; end; 
 
 % set funrun if empty 
 if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
@@ -153,6 +155,13 @@ if numel(iter)==1||~iscell(val)||numel(iter)~=numel(val), val = {val}; end;
 % set to options
 if ind > numel(options(idx,:)), options{idx,ind} = repmat({{}},[numel(iter),1]); end;
 options{idx,ind}(iter,1) = sawa_setfield(options{idx,ind},iter,[],[],val{:});
+
+% if varargin, ask to continue
+if strcmp(inargs{v},'varargin')||strcmp(questdlg('New varargin?','New Varargin?','Yes','No','No'),'Yes'),
+    ind = ind +1;
+else % no varargin
+    done1 = 1;
+end
 end
 end
 

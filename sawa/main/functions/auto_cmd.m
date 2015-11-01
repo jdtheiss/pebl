@@ -116,7 +116,7 @@ chc = listdlg('PromptString','Choose option(s) to edit:','ListString',opts);
 
 % Edit
 if any(strcmp(opts(chc),'edit'))
-options{idx,1} = cell2mat(inputdlg('Edit options:','Edit',max([numel(iter),2]),{char(options{idx,1})}));
+options{idx,1} = cell2mat(inputdlg('Edit options:','Edit',[max([numel(iter),2]),50],{char(options{idx,1})}));
 options{idx,1} = deblank(arrayfun(@(x){options{idx,1}(x,:)},1:size(options{idx,1},1)));
 % if no funrun, set to rows
 if isempty(funrun), funrun = 1:size(options{idx,1},1); iter = funrun; end;
