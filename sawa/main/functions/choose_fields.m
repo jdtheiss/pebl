@@ -76,4 +76,4 @@ end
 end
 
 % output as horzcat
-if any(cellfun('isclass',flds,'cell')), flds = vertcat(flds{:}); end;
+if any(cellfun('isclass',flds,'cell')), flds = [flds{:}]'; end;
