@@ -80,7 +80,7 @@ else % anything else, return
     % set vals
     vals{1} = A; 
     % set tags
-    tags = regexp(irep,'(\.\w+$)?([\{\(]\d+[\}\)]$)?','match'); 
+    tags = regexp(irep,'(\.\w+$)?([\{\(]\d+,?\d*[\}\)]$)?','match'); 
     % set reps
     reps{1} = irep; 
     end
