@@ -21,6 +21,8 @@ function fp = sawa_editor(cmd,varargin)
 % funcs (must be equal in size to funcs).
 % - program - string name of the program to run (e.g., 'auto_batch')
 % See Batch_Editor.mat, Command_Line.mat, Wrap_Functions.mat for examples.
+% Note2: if an output exists in fp, output will be assigned in the base
+% workspace.
 %
 % requires: make_gui funpass printres sawa_subrun
 %
@@ -265,7 +267,9 @@ if ~exist('program','var')||isempty(program), load(sawafile,'program'); end;
 % print results
 hres = printres(savename); fp = funpass(fp,'hres'); 
 % auto_run program
-output = feval(program,'auto_run',fp);
+fp = feval(program,'auto_run',fp);
+% if output, set to workspace
+if isfield(fp,'output'), assignin('base','output',fp.output); end;
 % print notes
 printres('Notes:',hres);
 end
