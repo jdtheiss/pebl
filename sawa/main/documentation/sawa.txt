@@ -1165,6 +1165,47 @@ sawa_system.m
  
   Created by Justin Theiss
 
+sawa_xjview.m
+  sawa_xjview(varargin)
+  this function will allow for saving images and cluster details from
+  multiple files using xjview
+ 
+  variables to input can be any of the following:
+  files - cellstr of full filepaths of images to use
+  outfld - cell/str/cellstr of folders to save resulting images and cluster details 
+  into. outfld can be empty cell(s) for same as file folders, str/cellstr subfolder, 
+  or str/cellstr fullpath (default is same as file folders)
+  pval - pvalue to use (default is 0.001, must be less than or equal to 1)
+  kval - cluster threshold (default is 5, must be greater than 1)
+  defxyz - x,y,z coordinates to snap to (default is global max)
+  mask - string of default mask to use (default is 'single T1')
+  slc - structure with any of following fields for slice view images:
+  - sep - separation (in mm) of slices
+  - col - number of columns to display in image
+  - row - number of rows to display in image
+  itype - image type for saving images (default is .png)
+  options:
+  'othermask' - option to choose other mask
+  'notxt' - option to not save txt files 
+  'noxls' - option to not save xlsx files
+  'noimg' - option to not save xjview main images
+  'noslc' - option to not save slice view images
+ 
+  Example:
+  sawa_xjvie(fullfile(cd,'spmT_0001.nii'),0.01,124,[12,-8,14],'notxt','noxls')
+  This example would save xjview main image and slice view images for
+  'spmT_0001.nii', use a pval of 0.01, kval of 124 voxels, jump to
+  coordinates [12, -8, 14], and save the resulting images into the
+  directory cd.
+ 
+  NOTE: Order of input variables generally does not matter, except that
+  pval, kval, maskchc, and sep must be input in order (e.g., if pval does
+  not exist and sep is entered as .5, pval would errantly be set to .5).
+ 
+  requires: sawa_cat, sawa_screencapture, subidx, xjview
+
+  Created by Justin Theiss 
+
 sawa_xlsread.m
   raw = sawa_xlsread(xfil)
   This function is mainly used since xlsread does not work consistently
@@ -1296,5 +1337,4 @@ update_path.m
   will be used.
   
   Created by Justin Theiss
-
 
