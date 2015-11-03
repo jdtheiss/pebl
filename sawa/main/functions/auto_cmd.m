@@ -158,6 +158,11 @@ for o = chc
     % ensure options and valf are vertical
     options{idx,1} = sawa_cat(1,options{idx,1}{:}); valf = sawa_cat(1,valf{:});
     
+    % if iter greater than options, init
+    if numel(iter)>size(options{idx,1},1), 
+        options{idx,1}(iter,1) = options{idx,1}(1);
+    end
+    
     % set options
     options{idx,1}(iter,1) = cellfun(@(x,y){sawa_strjoin({x,opts{o},y},' ')},options{idx,1}(iter),valf(iter));
     
