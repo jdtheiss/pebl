@@ -128,11 +128,11 @@ end
 % set funrun based on runiter
 if exist('runiter','var')&&strcmp(runiter,'per subject')
 % if per subject set to subrun
-funrun = subrun; iter = 1; % set to subrun
+funrun = subrun; % set to subrun
 toolstr = [task ': ' num2str(numel(subrun)) ' subjects']; 
 else % set to iterations
 funrun = 1:str2double(cell2mat(inputdlg('Enter number of iterations to run')));
-subrun = []; iter = funrun;
+subrun = [];
 toolstr = [num2str(numel(funrun)) ' iterations'];
 end 
 
@@ -140,7 +140,7 @@ end
 set(findobj('tag','choose subjects'),'tooltipstring',toolstr);
 
 % set batch editor struct
-fp = funpass(fp,{'subrun','sa','task','fileName','funrun','iter'});
+fp = funpass(fp,{'subrun','sa','task','fileName','funrun'});
 return;
 
 % save the preset values

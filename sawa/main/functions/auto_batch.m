@@ -127,7 +127,7 @@ return;
 
 function fp = set_options(fp)
 % get vars from fp
-funpass(fp,{'funcs','idx','itemidx','rep','options','sa','subrun','funrun','iter'});
+funpass(fp,{'funcs','idx','itemidx','rep','options','sa','subrun','funrun'});
 
 % init vars
 if ~exist('funcs','var'), return; elseif ~iscell(funcs), funcs = {funcs}; end;
@@ -138,7 +138,7 @@ if ~exist('rep','var')||idx>numel(rep), rep{idx} = zeros(size(itemidx{idx})); en
 if ~exist('options','var')||idx>numel(options), options(idx,1:numel(itemidx{idx})) = {{}}; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var'), if isempty(subrun), funrun = []; else funrun = subrun; end; end;
-if ~exist('iter','var'), if isempty(subrun), iter = funrun; else iter = 1; end; end;
+iter = 1:numel(funrun);
 
 try % get job/module ids 
 [~,cjob,mod_ids] = evalc('cfg_util(''initjob'',funcs)'); 
@@ -187,19 +187,12 @@ for v = listdlg('PromptString','Choose items to set:','ListString',itemnames{idx
     
     % set rep
     if ~isempty(pchc), rep{idx}(v) = p(pchc); else rep{idx}(v) = 0; end;
-    
-    % empty options 
-    options{idx,v} = repmat({{}},[numel(iter),1]);
-    
-    % set message
-    if numel(iter) > 1||isempty(funrun), msg = '(cancel when finished)'; else msg = ''; end;
-    
+       
     % create val
     val = {}; done = 0;
     while ~done
-    val{end+1,1} = sawa_createvars([itemnames{idx}{v} ' ' num2str(defidx)],msg,subrun,sa);
-    if isempty(val{end})||isempty(msg), done = 1; end;
-    if isempty(val{end}), val(end) = []; end;
+    val{end+1,1} = sawa_createvars([itemnames{idx}{v} ' ' num2str(defidx)],'(cancel when finished)',subrun,sa);
+    if isempty(val{end}), val(end) = []; done = 1; end;
     end
     
     % if only one val, set to val{1}
@@ -207,9 +200,12 @@ for v = listdlg('PromptString','Choose items to set:','ListString',itemnames{idx
     
     % set funrun if empty 
     if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
+    
+    % empty options 
+    options{idx,v} = repmat({{}},[numel(iter),1]);
 
     % prep val
-    if numel(iter)==1||~iscell(val)||numel(iter)~=numel(val), val = {val}; end;
+    if ~iscell(val)||numel(funrun)~=numel(val), val = {val}; end;
 
     % set to options
     options{idx,v}(iter,1) = sawa_setfield(options{idx,v},iter,[],[],val{:});
@@ -229,10 +225,9 @@ if ~exist('funcs','var')||isempty(funcs), return; elseif ~iscell(funcs), funcs =
 if ~exist('itemidx','var'), return; elseif ~iscell(itemidx), itemidx{idx} = itemidx; end;
 if ~exist('rep','var')||isempty(rep), rep{1} = zeros(size(itemidx{1})); end;
 if numel(rep)<numel(funcs), for x = numel(rep)+1:numel(funcs), rep{x} = zeros(size(itemidx{x})); end; end;
-if ~exist('options','var'), options(1:numel(funcs),1:max(cellfun('size',itemidx,2))) = {repmat({{}},[numel(iter),1])}; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var')||isempty(funrun), if isempty(subrun), funrun = 1; else funrun = subrun; end; end;
-if isempty(subrun), iter = funrun; else iter = 1; end;
+if ~exist('options','var'), options(1:numel(funcs),1:max(cellfun('size',itemidx,2))) = {repmat({{}},[numel(funrun),1])}; end;
 if isempty(sa), subjs = arrayfun(@(x){num2str(x)},funrun); [sa(funrun).subj] = deal(subjs{:}); end;
 if ~exist('saveorrun','var'), saveorrun = 'Run'; end;
 if ~exist('overwrite','var'), overwrite = 'No'; end;
@@ -260,8 +255,8 @@ cfg_findspec({{'hidden',false}}),cfg_tropts({{'hidden',true}},1,inf,1,inf,false)
 itemnames{m} = contents{m}{1};
 end
 
-% set options, names, itemidx, rep, iter, sa, and hres
-fp = funpass(fp,{'options','itemnames','itemidx','rep','iter','sa','hres'});
+% set options, names, itemidx, rep, sa, and hres
+fp = funpass(fp,{'options','itemnames','itemidx','rep','sa','hres'});
 
 % print current variables
 for m = 1:numel(matlabbatch)
@@ -273,7 +268,7 @@ printres('Variables to input:',hres);
 for m = find(~cellfun('isempty',preidx)),
 printres(itemnames{m}{1},hres);
 cellfun(@(x,y){printres([x ': ' sawa_strjoin(any2str([],y),'\n')],hres)},itemnames{m}(~prntidx{m}),options(m,1:numel(itemidx{m})));
-end;
+end; 
 printres(repmat('-',1,75),hres); 
 
 % set warning off
@@ -286,11 +281,14 @@ wb = settimeleft;
 for i = funrun
     try % print subject
     printres(sa(i).subj,hres);
+    
+    % get subject index
+    s = find(funrun==i,1);
 
     % for each module
     for m = find(~cellfun('isempty',preidx))
         % set matlabbatch
-        matlabbatch = local_setbatch(fp,matlabbatch,m,i);
+        matlabbatch = local_setbatch(fp,matlabbatch,m,s);
     end
     
     % set dependencies
@@ -334,20 +332,22 @@ for i = funrun
 end
 return;
 
-function matlabbatch = local_setbatch(fp,matlabbatch,m,i)
+function matlabbatch = local_setbatch(fp,matlabbatch,m,s)
 % get vars from fp
-funpass(fp,{'options','itemidx','sa','iter','rep'});
+funpass(fp,{'options','itemidx','funrun','sa','rep'});
 
 % set prebatch in case removing components/subjects
 prebatch = matlabbatch;
 
+% set i for sawa_eval
+i = funrun(s);
+
 % for each itemidx
 for mx = 1:numel(itemidx{m})
-% set subject cell
-if numel(iter) > 1, s = i; else s = 1; end;
 
 % evalvars
 valf{mx} = sawa_evalvars(options{m,mx}{s});
+if iscell(valf{mx}), valf{mx} = sawa_getfield(valf{mx},'',''); end;
 
 % if any empty with group, remove subject
 if iscell(valf{mx})&&all(cellfun('isclass',valf{mx},'char'))&&any(cellfun('isempty',valf{mx}))
@@ -382,6 +382,6 @@ end
 
 % re-run local_setbatch
 fp = funpass(fp,{'options'});
-if any(~sts), matlabbatch = local_setbatch(fp,prebatch,m,i); return; end;
+if any(~sts), matlabbatch = local_setbatch(fp,prebatch,m,s); return; end;
 end
 return;

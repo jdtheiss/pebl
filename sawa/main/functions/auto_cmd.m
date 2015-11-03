@@ -70,7 +70,7 @@ return;
 % set_options 
 function fp = set_options(fp) 
 % only get sa and subrun from fp
-funpass(fp,{'funcs','options','sa','subrun','funrun','iter'});
+funpass(fp,{'funcs','options','sa','subrun','funrun'});
 
 % init vars
 if ~exist('funcs','var')||isempty(funcs), 
@@ -81,8 +81,8 @@ if ~exist('idx','var'), idx = get(findobj('tag','cmd_listbox'),'value'); end;
 if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var'), if isempty(subrun), funrun = []; else funrun = subrun; end; end;
-if ~exist('iter','var'), if isempty(subrun), iter = funrun; else iter = 1; end; end;
-if ~exist('options','var')||idx>size(options,1), options{idx,1} = repmat({''},[numel(iter),1]); end;
+if ~exist('options','var')||idx>size(options,1), options{idx,1} = repmat({''},[numel(funrun),1]); end;
+iter = 1:numel(funrun);
 
 % set help switch based on pc/mac
 if ispc, hswitch = {'/h','/H','/?'}; else hswitch = {'-help','-h','--help','-H','-?'}; end;
@@ -116,8 +116,8 @@ chc = listdlg('PromptString','Choose option(s) to edit:','ListString',opts);
 
 % Edit
 if any(strcmp(opts(chc),'edit'))
-options{idx,1} = cell2mat(inputdlg('Edit options:','Edit',[max([numel(iter),2]),50],{char(options{idx,1})}));
-options{idx,1} = deblank(arrayfun(@(x){options{idx,1}(x,:)},1:size(options{idx,1},1)));
+options{idx,1} = cell2mat(inputdlg('Edit options:','Edit',[max([numel(funrun),2]),50],{char(options{idx,1})}));
+options{idx,1} = strtrim(arrayfun(@(x){options{idx,1}(x,:)},1:size(options{idx,1},1)));
 % if no funrun, set to rows
 if isempty(funrun), funrun = 1:size(options{idx,1},1); iter = funrun; end;
 chc = []; % empty chc 
@@ -131,42 +131,35 @@ for o = chc
     opts{o} = cell2mat(inputdlg('Enter the option to use (e.g., -flag or leave blank if none):')); 
     if isempty(opts{o}), opts{o} = ''; end;
     end 
-
-    % set message
-    if numel(iter) > 1||isempty(funrun), msg = '(cancel when finished)'; else msg = ''; end;
     
     % create val
     val = {}; done = 0;
     while ~done
-    val{end+1,1} = sawa_createvars(opts{o},msg,subrun,sa);
-    if isempty(val{end})||isempty(msg), done = 1; end;
-    if isempty(val{end}), val(end) = []; end;
+    val{end+1,1} = sawa_createvars(opts{o},'(cancel when finished)',subrun,sa);
+    if isempty(val{end}), val(end) = []; done = 1; end;
     end
     
     % if only one val, set to val{1}
     if numel(val)==1, val = val{1}; end;
+    
+    % set "" around paths
+    val = regexprep(val,['.*' filesep '.*'],'"$0"');
 
     % set funrun if empty 
     if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
     
-    % if iter > number of options{idx,1}, repmat(options{idx,1})
-    if numel(iter) > size(options{idx,1},1), 
-        if isempty(options{idx,1}), options{idx,1}{1} = ''; end;
-        options{idx,1}(iter,1) = {options{idx,1}{1}}; 
-    end;
-    
     % if iterations don't match, set to all
-    if numel(iter)==1||~iscell(val)||numel(iter)~=numel(val), val = {val}; end; 
+    if ~iscell(val)||numel(funrun)~=numel(val), val = {val}; end; 
 
     % set valf to val
-    valf = cell(max(iter),1);
+    valf = cell(numel(iter),1);
     valf(iter,1) = sawa_setfield(valf,iter,[],[],val{:}); 
 
     % ensure options and valf are vertical
     options{idx,1} = sawa_cat(1,options{idx,1}{:}); valf = sawa_cat(1,valf{:});
     
     % set options
-    options{idx,1} = cellfun(@(x,y){sawa_strjoin({x,opts{o},y},' ')},options{idx,1}(iter),valf(iter));
+    options{idx,1}(iter,1) = cellfun(@(x,y){sawa_strjoin({x,opts{o},y},' ')},options{idx,1}(iter),valf(iter));
     
     catch err % if error
         disp(err.message);
@@ -174,7 +167,7 @@ for o = chc
 end
 
 % if empty, set to {''}
-if isempty(options{idx,1}), options{idx,1} = repmat({''},[iter,1]); end;
+if isempty(options{idx,1}), options{idx,1} = repmat({''},[numel(funrun),1]); end;
 
 % display options
 cellfun(@(x)disp([funcs{idx} x]),options{idx,1});
@@ -193,11 +186,10 @@ if ~exist('funcs','var'), return; end;
 if ~iscell(funcs), funcs = {funcs}; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var')||isempty(funrun), if isempty(subrun), funrun = 1; else funrun = subrun; end; end;
-if isempty(subrun), iter = funrun; else iter = 1; end;
 if isempty(sa), subjs = arrayfun(@(x){num2str(x)},funrun); [sa(funrun).subj] = deal(subjs{:}); end;
-if ~exist('options','var'), options(1:numel(funcs),1) = {repmat({''},[numel(iter),1])}; end;
+if ~exist('options','var'), options(1:numel(funcs),1) = {repmat({''},[numel(funrun),1])}; end;
 if ~iscell(options), options = {{options}}; end;
-if numel(funcs)>numel(options), options(numel(options)+1:numel(funcs),1) = {repmat({''},[numel(iter),1])}; end;
+if numel(funcs)>numel(options), options(numel(options)+1:numel(funcs),1) = {repmat({''},[numel(funrun),1])}; end;
 if ~exist('hres','var'), hres = []; end;
 output(1:numel(funrun),1) = {{}};
 
@@ -212,8 +204,8 @@ try
 % print subject
 printres(sa(i).subj,hres);
 
-% set s to i (iterations) or 1 (per subject)
-if numel(iter) > 1, s = i; else s = 1; end;
+% get subject index
+s = find(funrun==i,1);
 
 % evaluate options
 clear valf; valf = sawa_evalvars(options{f,1}{s});
@@ -229,7 +221,7 @@ clear tmp;
 if ~isempty(hres), printres(tmp,hres); end;
 
 % set output
-[output{i}(f,:)] = {tmp}; 
+[output{s}(f,:)] = {tmp}; 
 
 % set time left
 settimeleft(i,funrun,wb,['Running ' funcs{f} ' ' sa(i).subj]); 

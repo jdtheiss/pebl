@@ -84,7 +84,7 @@ if ~exist('idx','var'), idx = get(findobj('tag','wrap_listbox'),'value'); end;
 if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var'), if isempty(subrun), funrun = []; else funrun = subrun; end; end;
-if ~exist('iter','var'), if isempty(subrun), iter = funrun; else iter = 1; end; end;
+iter = 1:numel(funrun);
 
 % display help msg
 feval(@help,funcs{idx});
@@ -96,7 +96,7 @@ if isempty(inargs)&&abs(nargin(funcs{idx}))>0, inargs = {'varargin'}; end;
 
 % set options
 if ~exist('options','var')||idx>size(options,1), 
-    options(idx,1:numel(inargs)) = {repmat({{}},[numel(iter),1])}; 
+    options(idx,1:numel(inargs)) = {repmat({{}},[numel(funrun),1])}; 
 end;
 
 % choose input vars
@@ -132,15 +132,11 @@ while ~done1 % loop for varargin
 % set ind if not varargin
 if ~strncmp(inargs{v},'varargin',8), ind = v; else inargs{v} = ['varargin ' num2str(ind)]; end;
 
-% set message
-if numel(iter) > 1||isempty(funrun), msg = '(cancel when finished)'; else msg = ''; end;
-
 % create val
 val = {}; done2 = 0;
 while ~done2
-val{end+1,1} = sawa_createvars(inargs{v},msg,subrun,sa,funcs{1:idx-1});
-if isempty(val{end})||isempty(msg), done2 = 1; end;
-if isempty(val{end}), val(end) = []; end;
+val{end+1,1} = sawa_createvars(inargs{v},'(cancel when finished)',subrun,sa,funcs{1:idx-1});
+if isempty(val{end}), val(end) = []; done2 = 1; end;
 end
 
 % if only one val, set to val{1}
@@ -150,10 +146,10 @@ if numel(val)==1, val = val{1}; end;
 if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
    
 % if iterations don't match, set to all
-if numel(iter)==1||~iscell(val)||numel(iter)~=numel(val), val = {val}; end;
+if ~iscell(val)||numel(funrun)~=numel(val), val = {val}; end;
 
 % set to options
-if ind > numel(options(idx,:)), options{idx,ind} = repmat({{}},[numel(iter),1]); end;
+if ind > numel(options(idx,:)), options{idx,ind} = repmat({{}},[numel(funrun),1]); end;
 options{idx,ind}(iter,1) = sawa_setfield(options{idx,ind},iter,[],[],val{:});
 
 % if varargin, ask to continue
@@ -183,11 +179,10 @@ if ~exist('funcs','var'), return; end;
 if ~iscell(funcs), funcs = {funcs}; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var')||isempty(funrun), if isempty(subrun), funrun = 1; else funrun = subrun; end; end;
-if isempty(subrun), iter = funrun; else iter = 1; end;
 if isempty(sa), subjs = arrayfun(@(x){num2str(x)},funrun); [sa(funrun).subj] = deal(subjs{:}); end;
 if ~exist('options','var'), options(1:numel(funcs),1) = {{}}; end;
 if ~iscell(options), options = {{options}}; end;
-if numel(funcs)>numel(options), options(numel(options)+1:numel(funcs),1) = {repmat({{}},[numel(iter),1])}; end;
+if numel(funcs)>numel(options), options(numel(options)+1:numel(funcs),1) = {repmat({{}},[numel(funrun),1])}; end;
 if ~exist('hres','var'), hres = []; end;
 output(1:numel(funrun),1) = {{}};
 
@@ -202,8 +197,8 @@ try
 % print subject
 printres(sa(i).subj,hres);
 
-% set s to i (iterations) or 1 (per subject)    
-if numel(iter) > 1, s = i; else s = 1; end;
+% get subject index
+s = find(funrun==i,1);
 
 % get outargs, inargs
 clear inargs valf tmpout; 
@@ -215,6 +210,7 @@ if isempty(inargs)&&abs(nargin(funcs{f}))>0, inargs = {'varargin'}; end;
 for x = 1:numel(options(f,:)) 
     if isempty(options{f,x}{s}), continue; end;
     valf{x} = sawa_evalvars(options{f,x}{s});
+    if iscell(valf{x}), valf{x} = sawa_getfield(valf{x},'',''); end;
 end
 
 % print command
@@ -240,10 +236,10 @@ if ~exist('outchc','var'), outchc = 1:numel(outargs); end;
 end
 
 % output
-[output{i}(f,:)] = tmpout(outchc);
+[output{s}(f,:)] = tmpout(outchc);
 
 % print output
-printres(cell2strtable(sawa_cat(1,outargs(outchc),any2str([],output{i}{f,:})),' '),hres);
+printres(cell2strtable(sawa_cat(1,outargs(outchc),any2str([],output{s}{f,:})),' '),hres);
 
 % set time left
 settimeleft(i,funrun,wb,['Running ' funcs{f} ' ' sa(i).subj]);

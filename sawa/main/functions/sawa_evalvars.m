@@ -45,16 +45,9 @@ valf = val;
 
 % if char, split find paths/files and split by spaces
 if ischar(val) 
-if ispc, % pc patters for folders/files
-    pat = {'(\S+(\\\S[^\\]+)+\\)\s','(\S+(\\\S[^\\]+)+\.\S+)'}; 
-else % mac patterns for folders/files
-    pat = {'(\S+(/\S[^/]+)+/)\s','(\S+(/\S[^/]+)+\.\S+)'}; 
-end
-valf = [valf ' ']; % add space to end
-valf = regexprep(valf,pat,{'"$1" ',' "$1"'}); % put "" around paths/files
-clear tmpval; tmpval = regexp(valf,'".+"','match'); % get paths/files
-valf = regexprep(valf,'".+"',''); valf = regexp(valf,'\s','split'); % split by spaces
-valf = [valf,tmpval]; % add paths/files to end of valf
+pathvals = regexp(valf,'"[^"]+"','match'); % get paths/files
+valf = regexprep(valf,'"[^"]+"',''); valf = regexp(valf,'\s','split'); % split by spaces
+valf = [valf,pathvals]; % add paths/files to end of valf
 valf = regexprep(valf,'["]',''); % remove ""s
 valf = valf(~cellfun('isempty',valf)); % remove ''s
 % remove spaces on both ends
@@ -121,9 +114,9 @@ elseif any(strfind(val,'*'))||any(strfind(val,',')),
 frames = regexprep(e,'\.\w+,?',''); e = regexprep(e,',.*$','');
 
 if isempty(frames) % if no frames, get single files
-val = spm_select('FPList',p,regexptranslate('wildcard',[f,e]));
+val = spm_select('FPList',p,['^' regexptranslate('wildcard',[f,e])]);
 else % if frames, get frames
-val = spm_select('ExtFPList',p,regexptranslate('wildcard',[f,e]),eval(frames));    
+val = spm_select('ExtFPList',p,['^' regexptranslate('wildcard',[f,e])],eval(frames));    
 end
 
 % if found cellstr, otherwise return

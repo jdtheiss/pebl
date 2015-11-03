@@ -34,8 +34,6 @@ function [vals,tags,reps] = sawa_getfield(A, irep, itag, refs)
 % NOTE3: For handles: unless Parent is included in itag, the .Parent field of handles
 % is not used to avoid infinite loop of ".Parent.Children.Parent".
 %
-% requires: sawa_cat
-%
 % Created by Justin Theiss
 
 % init vars
@@ -102,10 +100,8 @@ for x = find(~fnd),
     [vals{x},tags{x},reps{x}] = sawa_getfield(vals{x},reps{x},itag,refs);
 end;
 
-% output
-if any(cellfun('isclass',vals,'cell'))&&any(cellfun('isclass',tags,'cell'))
-    vals = sawa_cat(2,vals{:}); tags = sawa_cat(2,tags{:}); reps = sawa_cat(2,reps{:});
-end
+% expand inner cells
+[vals,tags,reps] = local_expandcells(vals,tags,reps);
 
 function tags = set_tags(mn,sep)
 % init tags
@@ -119,4 +115,25 @@ tags = [tags{:}];
 else % rows or columns
 tags = arrayfun(@(x){[sep(1) num2str(x) sep(2)]},1:max(mn));    
 end
+return;
+
+function [vals,tags,reps] = local_expandcells(vals,tags,reps)
+% if no inner cells, return
+if ~any(cellfun('isclass',tags,'cell')), return; end;
+% init vars
+tmpvals = {}; tmptags = {}; tmpreps = {};
+% expand inner cells
+for x = 1:numel(vals)
+    if iscell(tags{x}) % expand
+    tmpvals = cat(2,tmpvals,vals{x}{:});
+    tmptags = cat(2,tmptags,tags{x}{:});
+    tmpreps = cat(2,tmpreps,reps{x}{:});
+    else % simple cat
+    tmpvals = cat(2,tmpvals,vals{x});
+    tmptags = cat(2,tmptags,tags{x});
+    tmpreps = cat(2,tmpreps,reps{x});
+    end
+end
+% output
+vals = tmpvals; tags = tmptags; reps = tmpreps;
 return;
