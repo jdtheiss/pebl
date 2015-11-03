@@ -60,7 +60,7 @@ clear vals reps;
 for x = 1:numel(vals), % sawa_evalchar
     vals{x} = evalin('caller',['sawa_evalchar(''' vals{x} ''');']); 
     valf = local_mkdir_select(valf,vals{x},reps{x}); % mkdir/select
-end
+end 
 
 % find cells with 'eval'
 clear vals reps;

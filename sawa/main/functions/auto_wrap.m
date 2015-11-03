@@ -153,7 +153,7 @@ if ind > numel(options(idx,:)), options{idx,ind} = repmat({{}},[numel(funrun),1]
 options{idx,ind}(iter,1) = sawa_setfield(options{idx,ind},iter,[],[],val{:});
 
 % if varargin, ask to continue
-if strcmp(inargs{v},'varargin')||strcmp(questdlg('New varargin?','New Varargin?','Yes','No','No'),'Yes'),
+if strncmp(inargs{v},'varargin',8)&&strcmp(questdlg('New varargin?','New Varargin?','Yes','No','No'),'Yes'),
     ind = ind +1;
 else % no varargin
     done1 = 1;

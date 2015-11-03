@@ -84,8 +84,8 @@ case 'subject array' % subject array
     subvars = cell2mat(inputdlg('Enter subfolder, files, etc.'));
     % strcat
     if strcmp(grp,'Individual')
-    vars = strcat('sa(i).',vars{1},subvars);
-    else % group 
+    vars = strcat('sa(i).',vars,subvars);
+    else % group (only one field can be returned)
     vars = strcat('sa(', arrayfun(@(x){num2str(x)},subrun),').',vars{1},subvars)'; 
     end
 case lower(varargin) % functions 

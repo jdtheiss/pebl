@@ -51,7 +51,6 @@ function [fnd,vals,tags,reps]=sawa_find(fun,search,varargin)
 %
 % Created by Justin Theiss
 
-
 % init vars
 fnd = false; vals = {}; tags = {}; reps = {};
 if ~exist('fun','var')||isempty(fun), fun = {}; end;
@@ -61,6 +60,7 @@ if ~iscell(search), search = {search}; end;
 if any(strncmp(fun,'~',1)), n = true; else n = false; end;
 fun(cellfun('isclass',fun,'char')) = strrep(fun(cellfun('isclass',fun,'char')),'~',''); 
 if isempty(varargin), varargin{1} = findobj; end;
+if ~iscell(varargin{1}), varargin{1} = {varargin{1}}; end;
 if numel(varargin) < 3, varargin{3} = '.$'; end;
 
 % getfield
