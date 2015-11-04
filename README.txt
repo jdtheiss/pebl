@@ -388,25 +388,6 @@ getargs.m
  
   Created by Justin Theiss
 
-jsfilemenufcn.m
- FILEMENUFCN Implements part of the figure file menu.
-   FILEMENUFCN(CMD) invokes file menu command CMD on figure GCBF.
-   FILEMENUFCN(H, CMD) invokes file menu command CMD on figure H.
-   FILEMENUFCN(H, CMD, SNAME, STYPE) allows saving with filename input and
-   file type input
-   CMD can be one of the following:
- 
-     FileClose
-     FileExportSetup
-     FileNew
-     FileOpen
-     FilePageSetup
-     FilePreferences
-     FilePrintPreview
-     FilePrintSetup
-     FileSave
-     FileSaveAs
-
 make_gui.m
   data = make_gui(structure)
   This function will create a gui based on a "structure" of gui properties
@@ -1276,11 +1257,56 @@ subidx.m
   Created by Justin Theiss
 
 subjectarray.m
-
-subjectarray not found.
-
-Use the Help browser search field to <a href="matlab:docsearch subjectarray">search the documentation</a>, or
-type "<a href="matlab:help help">help help</a>" for help command options, such as help for methods.
+  [sa, subrun] = subjectarray(cmd, varargin)
+  This is the first step to using the Subject Array and Study Organizer.
+ 
+  Inputs:
+  cmd - cellstr array of subfunction(s) to run
+  varargin - arguments to pass to subfunction 
+  if no inputs, subjectarray will run its gui (see example)
+  
+  Outputs (only returned from command prompt call):
+  sa - subject array
+  subrun - subject indices of sa 
+ 
+  Example1 (no inputs):
+  - Subject Array Name: Enter a name for the subject array (e.g., gonogo).
+  - Subjects.mat File: This is the file that will hold the subject array.
+  You may add a subject array to a previous subjects.mat file or create one.
+  - Enter Subjects: Choose subjects/add subjects to subject array.
+  - Subject Folders: Choose the main folders for each subject (and
+  optionally create them)
+  - Create New Field: Create a field for each subject in the subject array
+  (e.g., age, group, gender, etc.). 
+  - Load/Save Subject Array:
+  -- Load Subject Array: Load a previous subjects.mat file or an excel, txt
+  or mat file. (Note: excel files should have field names as headers and
+  one header must be 'subj' with subject names. txt files should be the
+  same with tabs between columns. mat files should contain field names as
+  variables with rows corresponding to each subject.) Once loaded, subject
+  arrays may be edited.
+  -- Save Subject Array: Save the subject array to the chosen subjects.mat
+  file. Additionally, you may save the subject array as an excel, txt, or
+  mat file in the format as indicated above.
+ 
+  Example2 (with inputs):
+  [sa,subrun] = subjectarray('load_sa',struct(fileName,{'/Users/test.mat'},'flds',...
+  {{'subj','subjFolders1'}},'subrun',{[2,3]}));
+  sa =
+  1x4 struct array with fields:
+ 
+    subj
+    subjFolders
+    
+  subrun = 
+    
+    2   3
+ 
+  requires: make_gui cell2strtable choose_SubjectArray choose_fields funpass
+  printres savesubjfile sawa sawa_createvars sawa_dlmread sawa_getfield 
+  sawa_setfield sawa_strjoin sawa_subrun sawa_xlsread update_array
+  
+  Created by Justin Theiss
 
 update_array.m
   sa = update_array(task)
