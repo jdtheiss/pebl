@@ -213,7 +213,7 @@ printres(sa(i).subj,hres);
 s = find(funrun==i,1);
 
 % evaluate options
-clear valf; valf = sawa_evalvars(options{f,1}{s});
+clear valf; valf = sawa_evalvars(options{f,1}{s},'cmd');
 
 % print command
 printres([funcs{f} valf],hres); 

@@ -307,6 +307,7 @@ for i = funrun
     closedlg({'-regexp','tag',spm('ver')},{'string',str});
     
     % run serial
+    spm_jobman('initcfg');
     cfg_util('runserial',matlabbatch); 
     
     elseif ~all(run) % if can't run, print reason

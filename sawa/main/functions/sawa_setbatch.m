@@ -69,6 +69,7 @@ end
 switch contents{5}{itemidx}
 case 'cfg_files' % for files, cellstr
     if ~iscell(val{x}), val{x} = cellstr(val{x}); end;
+    if iscellstr(val{x}), val{x} = vertcat(val{x}(:)); end;
 case 'cfg_entry' % for entry, not cell
     if iscell(val{x}), val{x} = [val{x}{:}]; end;
 end

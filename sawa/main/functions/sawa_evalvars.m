@@ -120,8 +120,8 @@ else % if frames, get frames
 val = spm_select('ExtFPList',p,['^' regexptranslate('wildcard',[f,e])],eval(frames));    
 end
 
-% if found cellstr, otherwise return
-if ~isempty(val), val = cellstr(val); else return; end;
+% if found cellstr, otherwise set to empty
+if ~isempty(val), val = cellstr(val); else val = {}; end;
 
 % if multiple vals and 'cmd', set val to initial val
 if numel(val)>1&&strcmp(opt,'cmd'), val = ival; end;

@@ -6,7 +6,7 @@ function [vals,tags,reps] = sawa_getfield(A, irep, itag, refs)
 % A - array, object, or cell array (does not work for numeric handles)
 % irep - input string representation of array A
 % itag - input regular expression of a tag or component of array A that you
-% want to return (default is '.$'). if itag = '', all values will be returned.
+% want to return (default is '.$'). if itag = '', all end values will be returned.
 % refs - (optional) number of times a field tag can be referenced before
 % stopping (see Note2). default is 1
 % 
@@ -33,6 +33,8 @@ function [vals,tags,reps] = sawa_getfield(A, irep, itag, refs)
 % rep (e.g., .CurrentAxes.UserData.Axes(2).UserData has two refs).
 % NOTE3: For handles: unless Parent is included in itag, the .Parent field of handles
 % is not used to avoid infinite loop of ".Parent.Children.Parent".
+%
+% requires: sawa_cat
 %
 % Created by Justin Theiss
 
@@ -125,13 +127,13 @@ tmpvals = {}; tmptags = {}; tmpreps = {};
 % expand inner cells
 for x = 1:numel(vals)
     if iscell(tags{x}) % expand
-    tmpvals = cat(2,tmpvals,vals{x}{:});
-    tmptags = cat(2,tmptags,tags{x}{:});
-    tmpreps = cat(2,tmpreps,reps{x}{:});
+    tmpvals = sawa_cat(2,tmpvals,vals{x}{:});
+    tmptags = sawa_cat(2,tmptags,tags{x}{:});
+    tmpreps = sawa_cat(2,tmpreps,reps{x}{:});
     else % simple cat
-    tmpvals = cat(2,tmpvals,vals{x});
-    tmptags = cat(2,tmptags,tags{x});
-    tmpreps = cat(2,tmpreps,reps{x});
+    tmpvals = sawa_cat(2,tmpvals,vals{x});
+    tmptags = sawa_cat(2,tmptags,tags{x});
+    tmpreps = sawa_cat(2,tmpreps,reps{x});
     end
 end
 % output
