@@ -209,7 +209,7 @@ if isempty(inargs)&&abs(nargin(funcs{f}))>0, inargs = {'varargin'}; end;
 % evaluate options
 for x = 1:numel(options(f,:)) 
     if isempty(options{f,x}{s}), continue; end;
-    valf{x} = sawa_evalvars(options{f,x}{s});
+    valf{x} = sawa_evalvars(options{f,x}(s));
     if iscell(valf{x}), valf{x} = sawa_getfield(valf{x},'',''); end;
 end
 

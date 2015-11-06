@@ -1,9 +1,10 @@
-function valf = sawa_evalvars(val)
-% valf = sawa_evalvars(val,subrun,sa)
+function valf = sawa_evalvars(val,opt)
+% valf = sawa_evalvars(val,opt)
 % Evaluate variables created from sawa_createvars
 % 
 % Inputs:
 % val - string, cell array, structure to evaluate/mkdir/spm_select
+% opt - (optional) if opt = 'cmd', option to set "" around filenames (for command line)
 % 
 % Outputs:
 % valf - evaluated val
@@ -32,19 +33,21 @@ function valf = sawa_evalvars(val)
 %    files: {49x1 cell} % returns from /Users/test2/Run1
 %      dti: {60x1 cell} % gets 4d frames from /Users/test2/DTI.nii
 %    input: 'test2' 
+% 
+% Note: if the option 'cmd' is included and a wildcard is used for files multiple 
+% files, the inital wildcard search will be retained with "" around it i.e.
+% "/Volumes/Folder/*.img". 
 %
-% Note: if val is a string with file separators, valf will be a string with
-% "" around the files (i.e. for command line purposes).
-%
-% requires: sawa_evalchar sawa_find sawa_strjoin
+% requires: sawa_evalchar sawa_find 
 %
 % Created by Justin Theiss
 
 % init vars
 valf = val; 
+if ~exist('opt','var')||isempty(opt), opt = ''; end;
 
-% if char, split find paths/files and split by spaces
-if ischar(val) 
+% if char and 'cmd', split find paths/files and split by spaces
+if ischar(val)&&strcmp(opt,'cmd')
 pathvals = regexp(valf,'"[^"]+"','match'); % get paths/files
 valf = regexprep(valf,'"[^"]+"',''); valf = regexp(valf,'\s','split'); % split by spaces
 valf = [valf,pathvals]; % add paths/files to end of valf
@@ -59,7 +62,7 @@ clear vals reps;
 [~,vals,~,reps] = sawa_find(@regexp,'sa\([\d\w]+\)\.',valf,'valf','');
 for x = 1:numel(vals), % sawa_evalchar
     vals{x} = evalin('caller',['sawa_evalchar(''' vals{x} ''');']); 
-    valf = local_mkdir_select(valf,vals{x},reps{x}); % mkdir/select
+    valf = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
 end 
 
 % find cells with 'eval'
@@ -67,32 +70,27 @@ clear vals reps;
 [~,vals,~,reps] = sawa_find(@strncmp,{'eval',4},valf,'valf',''); 
 for x = find(~cellfun('isempty',vals)), 
     vals{x} = eval(vals{x}); % eval
-    valf = local_mkdir_select(valf,vals{x},reps{x}); % mkdir/select
+    valf = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
 end
 
 % find cells with filesep
 clear vals reps;
 [~,vals,~,reps] = sawa_find(@strfind,filesep,valf,'valf','');
 for x = find(~cellfun('isempty',vals)), 
-    valf = local_mkdir_select(valf,vals{x},reps{x}); % mkdir/select
+    valf = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
 end
 
-% if ischar, output as string
-if ischar(val)
-if ispc, % pc patters for folders/files
-    pat = {'(\w:(\\\S[^\\]+)+\\)\s','(\w:(\\\S[^\\]+)+\.\S+)'}; 
-else % mac patterns for folders/files
-    pat = {'((/\S[^/]+)+/)\s','\s((/\S[^/]+)+\.\S+)'}; 
-end
-valf = sawa_strjoin(valf,' '); valf = [valf ' ']; % strjoin with ' '
-valf = regexprep(valf,pat,{'"$1" ',' "$1"'}); % put "" around paths with space
+% if ischar and 'cmd', output as string
+if ischar(val)||strcmp(opt,'cmd')
+valf = cellstr(valf); valf = sprintf('%s ',valf{:}); % sprintf with ' '
+valf = strtrim(valf);
 end
 
 % output
 if iscell(valf)&&numel(valf)==1, valf = valf{1}; end;
 if isempty(valf), valf = []; end;
 
-function valf = local_mkdir_select(valf,val,rep)
+function valf = local_mkdir_select(valf,val,rep,opt)
 % skip if not char
 if ischar(val),
 % get path,file,ext
@@ -100,6 +98,9 @@ clear p f e frames; [p,f,e] = fileparts(val);
 
 % if no path, skip
 if ~isempty(p),   
+    
+% create ival, in case multi files and wildcard
+ival = val;
     
 % if no ext and doesn't contain wildcard, mkdir
 if isempty(e) && ~any(strfind(val,'*')) && ~any(strfind(val,','))
@@ -122,8 +123,11 @@ end
 % if found cellstr, otherwise return
 if ~isempty(val), val = cellstr(val); else return; end;
 
-% if multi files for a char val, return (for command line)
-if numel(val) > 1 && evalin('caller','ischar(val)'), return; end;
+% if multiple vals and 'cmd', set val to initial val
+if numel(val)>1&&strcmp(opt,'cmd'), val = ival; end;
+
+% if opt is 'cmd', put "" around val
+if strcmp(opt,'cmd'), val = regexprep(val,['.*' filesep '.*'],'"$0"'); end;
 
 % set to one if only one char
 if iscell(val)&&numel(val)==1, val = val{1}; end;

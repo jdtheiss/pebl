@@ -25,20 +25,23 @@ function filename = sawa_screencapture(hfig,filename,ext)
 if ~exist('hfig','var')||isempty(hfig), hfig = gcf; end;
 if ~exist('filename','var')||isempty(filename), filename = get(hfig,'Name'); end;
 if isempty(filename), return; end;
-if ~exist('ext','var')||isempty(ext), [~,~,ext] = fileparts(filename); end;
+if ~exist('ext','var')||isempty(ext), [fpath,ffile,ext] = fileparts(filename); end;
 if isempty(ext), return; end;
+
+% remove ext from filename if needed
+if exist('fpath','var'), filename = fullfile(fpath,ffile); end;
 
 % if ext includes '.', remove
 if strncmp(ext,'.',1), ext = ext(2:end); end;
 
-% get filename without ext
-[fpath,ffile] = fileparts(filename); 
-if isempty(fpath), fpath = pwd; end;
-filename = fullfile(fpath,ffile);
+% remove periods from filename
+tmpname = strrep(filename,'.','_');
 
 try % hgexport
-hgexport(hfig,filename,hgexport('factorystyle'),'Format',ext);
-filename = [filename '.' ext];
+hgexport(hfig,tmpname,hgexport('factorystyle'),'Format',ext);
+filename = [filename '.' ext]; % append ext
+% change name if needed
+if ~strcmp([tmpname '.' ext],filename), movefile([tmpname '.' ext],filename); end;
 catch % if error, filename = []
     filename = [];
 end
