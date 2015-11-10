@@ -61,11 +61,15 @@ funpass(fp);
 % if no structure, return
 if ~exist('structure','var'), disp('Missing "structure".'); return; end;
 
-% setenv if needed
+% setenv/path if needed
 if exist('envvar','var'), 
 for x = 1:numel(envvar), 
+if ~isempty(envvar{x}) % setenv
 if ~any(strfind(getenv(envvar{x}),newpath{x})),
 setenv(envvar{x},[getenv(envvar{x}) ':' newpath{x}]);
+end;
+else % addpath
+addpath(newpath{x});    
 end;
 end;
 end; 
