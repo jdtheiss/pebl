@@ -37,7 +37,7 @@ if ~exist('sa','var'), sa = {}; end;
 vals = {};
 
 % set choices
-choices = {'String','Number','Evaluate','Structure','Choose File','Choose Directory','Function','Subject Array'};
+choices = {'String','Number','Evaluate','Cell','Structure','Choose File','Choose Directory','Function','Subject Array'};
 if isempty(sa), choices = choices(1:end-1); end;
 if ~isempty(varargin), choices = horzcat(choices,varargin{:}); end;
 
@@ -54,13 +54,16 @@ case {'string','number','evaluate'} % input
     if c > 1 % number or evaluate
         vars = cellfun(@(x){eval(['[' x ']'])},vars);
     end
+case 'cell' % cell
+    vars = sawa_createvars(varnam,msg,subrun,sa,varargin{:});
+    vals = cat(1,vals,{vars}); continue;
 case 'structure' % struct
     vars = struct; done = 0; 
     while ~done
         % set field
         fld = cell2mat(inputdlg('Enter field name to add to structure (cancel when done):'));
         if isempty(fld), done = 1; break; end; % if no fld, done
-        vars.(fld) = sawa_createvars(fld,'',subrun,sa); % run set_invars
+        vars.(fld) = sawa_createvars(fld,'',subrun,sa,varargin{:}); % run sawa_createvars
     end
 case 'choose file' % choose file
     vars = cellstr(spm_select(Inf,'any',['Select file for ' varnam]));
@@ -101,8 +104,8 @@ case lower(varargin) % functions
     vars = strcat('evalin(''caller'',','''output{i}{', num2str(n),',',arrayfun(@(x){num2str(x)},v),'}'');');
 end
 if iscell(vars)&&size(vars,2) > size(vars,1), vars = vars'; end; % if horizontal
-if iscell(vars)&&numel(vars) == 1, vars = vars{1}; end; % if one cell
 % vertcat
 vals = cat(1,vals,vars);
+if iscell(vals)&&numel(vals) == 1, vals = vals{1}; end; % if one cell
 end
 

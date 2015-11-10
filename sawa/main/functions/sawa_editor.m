@@ -90,24 +90,31 @@ funpass(fp);
 % init vars
 if ~exist('envvar','var')||~exist('newpath','var'), envvar = {}; newpath = {}; end;
 
+if strcmp(questdlg('Set Environments or Add Path?','Environment or Path','environments','path','environments'),'environments')
 % enter variable to set 
 envvar{end+1} = cell2mat(inputdlg('Enter the variable to setenv for (e.g., PATH):'));
 if isempty(envvar{end}), return; end;
 
 % clear previous path?
-if ~isempty(getenv(envvar{end}))&&~strcmp(questdlg(['Clear ' envvar{end} ': '...
-        getenv(envvar{end}) '?'],'Clear?','Yes','No','No'),'Yes')
+if ~strcmp(questdlg(['Clear ' envvar{end} ': ' getenv(envvar{end}) '?'],'Clear?','Yes','No','No'),'Yes')
 oldpath = [getenv(envvar{end}) ':'];
 else % otherwise add to path
 oldpath = [];
 end
+else % adding path
+    envvar{end+1} = [];
+end
 
 % get new path
-newpath{end+1} = uigetdir(pwd,['Choose path for ' envvar{end}]);
+newpath{end+1} = uigetdir(pwd,'Choose path to set');
 if ~any(newpath{end}), return; end;
 
 % set environment
+if ~isempty(envvar{end})
 setenv(envvar{end},[oldpath newpath{end}]); 
+else % addpath
+addpath(newpath{end});    
+end
 
 % set envvar to fp
 fp = funpass(fp,{'envvar','newpath'});
