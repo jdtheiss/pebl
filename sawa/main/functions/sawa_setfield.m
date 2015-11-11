@@ -44,9 +44,9 @@ if ~iscell(structure) && ~isfield(structure,field),
 evalin('caller',['[' inputname(1) '.' field ']=deal([]);']);    
 end % add period before 
 field = ['.' field]; 
-elseif any(idx > numel(structure)) % if not using field and idx greater than struct
+elseif any(idx > numel(structure))&&iscell(structure) % if not using field and idx greater than struct
 for x = find(idx > numel(structure)), % set structure empty for idx > numel
-    eval(['structure{' num2str(x) '}=[];']); 
+    eval(['structure{' num2str(x) '}=[];']);
 end
 end
 
