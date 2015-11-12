@@ -60,13 +60,16 @@ if u_rep(1)==0, u_rep(2:end) = fliplr(u_rep(2:end)); else u_rep = fliplr(u_rep);
 for r = u_rep
     
     % find reps == r
-    fnd = find(rep==r);
+    clear fnd; fnd = find(rep==r);
     
     % set cells if needed 
     for f = fnd, if ~iscell(val{f}), val{f} = {val{f}}; end; end;
 
     % get max ind of vals
     ind = 1:max(cellfun(@(x)numel(x),val(fnd)));
+    
+    % set sts
+    sts(fnd) = {zeros(size(ind))};
     
     % for each index of set
     for x = ind
@@ -111,9 +114,9 @@ for r = u_rep
 end
 
 % remove any repeats with sts==0
-for n = find(rep~=0), 
-    for nn = find(~sts{n}), 
-        cfg_util('setval',cjob,mod_ids{m},id{rep(n)},[inf,nn]); 
+for r = u_rep(u_rep~=0), 
+    for rr = find(prod(vertcat(sts{rep==r}),1)), disp(r)
+        cfg_util('setval',cjob,mod_ids{m},id{r},[inf,rr]); 
     end; 
 end;
     
