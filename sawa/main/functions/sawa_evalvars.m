@@ -47,7 +47,7 @@ valf = val;
 if ~exist('opt','var')||isempty(opt), opt = ''; end;
 
 % if char and 'cmd', split find paths/files and split by spaces
-if ischar(val)&&strcmp(opt,'cmd')
+if ischar(val)&&strcmp(opt,'cmd'), 
 pathvals = regexp(valf,'"[^"]+"','match'); % get paths/files
 valf = regexprep(valf,'"[^"]+"',''); valf = regexp(valf,'\s','split'); % split by spaces
 valf = [valf,pathvals]; % add paths/files to end of valf
@@ -55,7 +55,9 @@ valf = regexprep(valf,'["]',''); % remove ""s
 valf = valf(~cellfun('isempty',valf)); % remove ''s
 % remove spaces on both ends
 valf = strtrim(valf); 
-end
+elseif ~iscell(valf) % set to cell if not
+    valf = {valf};
+end; 
 
 % find cells with sa\([\d\w\]+\)\.
 clear vals reps;
@@ -63,7 +65,7 @@ clear vals reps;
 for x = 1:numel(vals), % sawa_evalchar
     vals{x} = evalin('caller',['sawa_evalchar(''' vals{x} ''');']); 
     valf = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
-end 
+end; 
 
 % find cells with 'eval'
 clear vals reps;
@@ -92,7 +94,7 @@ if isempty(valf), valf = []; end;
 
 function valf = local_mkdir_select(valf,val,rep,opt)
 % skip if not char
-if ischar(val),
+if ischar(val), 
 % get path,file,ext
 clear p f e frames; [p,f,e] = fileparts(val);
 
@@ -131,7 +133,7 @@ if strcmp(opt,'cmd'), val = regexprep(val,['.*' filesep '.*'],'"$0"'); end;
 
 % set to one if only one char
 if iscell(val)&&numel(val)==1, val = val{1}; end;
-end
+end; 
 end
 end
 

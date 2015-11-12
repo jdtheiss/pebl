@@ -34,7 +34,8 @@ out = str; if ~ischar(out)||size(out,1)>1, return; end;
 % find match for expr
 m = regexp(out,expr); 
 if isempty(m), return; else m = [m, numel(out)+1]; end; 
-mstr = arrayfun(@(x){out(m(x):m(x+1)-1)},1:numel(m)-1);
+mstr = arrayfun(@(x){out(m(x):m(x+1)-1)},1:numel(m)-1); % separate based on matches
+mstr = regexprep(mstr,'[/*+-]',''); % remove math chars to avoid eval problems
 
 % for each found match, eval
 for x = 1:numel(mstr),

@@ -8,7 +8,7 @@ Introduction:
 SAWA is a toolbox that automatically wraps any command line, matlab, or batch function using subject-specific or iterative variable inputs.
 The main component of SAWA is the subject array, a structural array that can contain subject-specific information to be utilized in wrapping functions. At its simplest, SAWA is an organizational tool that can maintain up-to-date information as well as record analyses and other notes. However, SAWA is built to feed information from the subject array to wrappers for any batch, function, or command. As such, SAWA provides users the ability to perform complex analyses using subject data in SPM, AFNI, FSL, etc., or any unix/C/matlab commands. 
 
-With an editor for batch utility, command line, and matlab functions, users can build simple pipelines for repeat analyses or create their own programs using their own functions. The batch editor directly uses SPM’s batch utility system, which allows users to directly choose variables that will be filled by the subject array or other functions/variables. The command line editor allows users to wrap command line functions while also selecting command line switches to use and set. Finally, the function wrapper utility provides users the ability to wrap matlab functions by setting input arguments and selecting output arguments to be returned.
+With an editor for batch utility, command line, and matlab functions, users can build simple pipelines for repeat analyses or create their own programs using their own functions. The batch editor directly uses matlab’s batch utility system, which allows users to directly choose variables that will be filled by the subject array or other functions/variables. The command line editor allows users to wrap command line functions while also selecting command line switches to use and set. Finally, the function wrapper utility provides users the ability to wrap matlab functions by setting input arguments and selecting output arguments to be returned.
 
 Finally, as a way to record analyses that users have run, SAWA also prints inputs/outputs/errors. Users can add notes into the analysis records and save records for different subject arrays (e.g. different studies). Records are stored by analysis name and date.
 
@@ -908,22 +908,46 @@ sawa_searchfile.m
   Created by Justin Theiss
 
 sawa_setbatch.m
-  [matlabbatch,chngidx,sts]=sawa_setbatch(matlabbatch,val,itemidx,rep,m)
-  Set matlabbatch structure items to vals.
+  [matlabbatch,sts] = sawa_setbatch(matlabbatch,val,idx,rep,m)
+  iteratively set matlabbatch items for a single module (including repeat
+  items)
  
   Inputs:
-  matlabbatch - batch job
-  val - values to set to itemidx in matlabbatch
-  itemidx - item index corresponding to the list in module.contents{1}
-  rep - index of the cfg_repeat item to repeat for itemidx (if applicable)
-  m - index of module to set
+  matlabbatch - the matlab batch structure (can be copied from batch
+  editor in "View">"Show .m Code" or saved)
+  val - cell array of values to set for each item 
+  idx - index of item (its position when viewing in batch editor) as number
+  rep - index of repeat parent (e.g., Data/Session for Scans item) as number
+  m - module index 
  
   Outputs:
-  matlabbatch - current batch structure for matlabbatch cfg system
-  chngidx - number indicating change from itemidx (i.e. from replicating
-  module components)
-  sts - numeric array of 1/0 for status of whether each component was set
+  matlabbatch - the resulting matlabbatch after setting items
+  sts - status of items set (0/1 failure/success)
  
+  Example:
+  matlabbatch{1}.cfg_basicio.call_matlab.inputs{1}.string = '<UNDEFINED>';
+  matlabbatch{1}.cfg_basicio.call_matlab.outputs{1}.strtype.s = true;
+  matlabbatch{1}.cfg_basicio.call_matlab.fun = '<UNDEFINED>';
+  val = {{'test what?','what?','this!'},@strrep};
+  idx = [3, 7];
+  rep = [2, 0];
+  m = 1;
+  [matlabbatch,sts] = sawa_setbatch(matlabbatch,val,idx,rep,m);
+  matlabbatch{1}.cfg_basicio.call_matlab.inputs{:} = 
+    string: 'test what?'
+    string: 'what?'
+    string: 'this!'
+ 
+  matlabbatch{1}.cfg_basicio.call_matlab.fun = 
+    @strrep
+  
+  sts = 
+    [1x3 logical]   [1]
+ 
+  Note: if sts for a repeated item returns 0, the corresponding repeated
+  set of items will be removed (e.g., if missing scans for 2nd run, that 
+  repeat will be removed). 
+  
   Created by Justin Theiss
 
 sawa_setcoords.m

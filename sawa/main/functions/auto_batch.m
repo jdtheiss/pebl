@@ -64,7 +64,7 @@ disp(char('Load/Choose Modules to use:',...
 try % get job/module ids 
 [~,cjob,mod_ids] = evalc('cfg_util(''initjob'',funcs)'); 
 catch err
-disp(err.message); set(findobj('tag','setup batch job'),'string','Empty'); return; 
+disp(err.message); set(findobj('tag','setup batch job'),'tooltipstring','Empty'); return; 
 end
 
 % get names
@@ -279,12 +279,17 @@ wb = settimeleft;
 
 % for each subrun
 for i = funrun
-    try % print subject
-    printres(sa(i).subj,hres);
-    
+    try
     % get subject index
     s = find(funrun==i,1);
-
+    
+    % print subject 
+    if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
+        printres(sa(i).subj,hres);
+    else % iteration
+        printres(i,hres); 
+    end;
+    
     % for each module
     for m = find(~cellfun('isempty',preidx))
         % set matlabbatch
@@ -335,10 +340,7 @@ return;
 
 function matlabbatch = local_setbatch(fp,matlabbatch,m,s)
 % get vars from fp
-funpass(fp,{'options','itemidx','funrun','sa','rep'});
-
-% set prebatch in case removing components/subjects
-prebatch = matlabbatch;
+funpass(fp,{'options','itemnames','itemidx','funrun','sa','rep'});
 
 % set i for sawa_eval
 i = funrun(s);
@@ -348,7 +350,7 @@ for mx = 1:numel(itemidx{m})
 
 % evalvars
 valf{mx} = sawa_evalvars(options{m,mx}{s});
-if iscell(valf{mx}), valf{mx} = sawa_getfield(valf{mx},'',''); end;
+if iscell(valf{mx})&&rep{m}(mx)==0, valf{mx} = sawa_getfield(valf{mx},'',''); end;
 
 % if any empty with group, remove subject
 if iscell(valf{mx})&&all(cellfun('isclass',valf{mx},'char'))&&any(cellfun('isempty',valf{mx}))
@@ -363,26 +365,11 @@ end
 end
 end
 
-% set for each itemidx
-for mx = 1:numel(itemidx{m}),
 % set items
-[matlabbatch,chngidx,sts] = sawa_setbatch(matlabbatch,valf{mx},itemidx{m}(mx),rep{m}(mx),m);
-
-% if itemidx changes due to repeat, change others in module
-if abs(chngidx)>0, itemidx{m}(mx:end)=itemidx{m}(mx:end)+chngidx; end;
-
-% if no repeat, skip
-if rep{m}(mx) == 0, continue; end;
+[matlabbatch,sts] = sawa_setbatch(matlabbatch,valf,itemidx{m},rep{m},m);
 
 % if failed to set vals in repeat
-for x = find(~sts), printres(['Could not set vals for ' itemnames{m}{mx} ' ' num2str(x)],hres); end;
-for x = find(rep{m}==rep{m}(mx)), % print and remove
-    printres(['Removing ' itemnames{m}{x} ' ' sawa_strjoin(find(~sts),', ')],hres); 
-    val{x}(~sts) = []; % remove repeat
-end
-
-% re-run local_setbatch
-fp = funpass(fp,{'options'});
-if any(~sts), matlabbatch = local_setbatch(fp,prebatch,m,s); return; end;
-end
+for mx = 1:numel(itemidx{m})
+arrayfun(@(x)printres(['Could not set vals for ' itemnames{m}{mx} ' ' num2str(x)],hres),find(~sts{mx})); 
+end;
 return;
