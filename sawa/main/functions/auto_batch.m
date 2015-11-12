@@ -290,6 +290,9 @@ for i = funrun
         printres(i,hres); 
     end;
     
+    % set matlabbatch
+    clear matlabbatch; matlabbatch = funcs;
+    
     % for each module
     for m = find(~cellfun('isempty',preidx))
         % set matlabbatch
