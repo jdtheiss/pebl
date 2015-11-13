@@ -89,6 +89,9 @@ iter = 1:numel(funrun);
 % display help msg
 feval(@help,funcs{idx});
 
+% if no function, return
+if isempty(which(funcs{idx})), return; end;
+
 % get out and in args
 [outargs,inargs] = getargs(funcs{idx}); 
 if isempty(outargs)&&abs(nargout(funcs{idx}))>0, outargs = {'varargout'}; end;
@@ -194,8 +197,12 @@ for i = funrun
 % for each func
 for f = 1:numel(funcs)
 try
-% print subject
-printres(sa(i).subj,hres);
+% print subject 
+if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
+    printres(sa(i).subj,hres);
+else % iteration
+    printres(num2str(i),hres); 
+end;
 
 % get subject index
 s = find(funrun==i,1);
@@ -210,11 +217,10 @@ if isempty(inargs)&&abs(nargin(funcs{f}))>0, inargs = {'varargin'}; end;
 for x = 1:numel(options(f,:)) 
     if isempty(options{f,x}{s}), continue; end;
     valf{x} = sawa_evalvars(options{f,x}{s});
-    if iscell(valf{x}), valf{x} = sawa_getfield(valf{x},'',''); end;
 end
 
 % print command
-printres([funcs{f} '(' sawa_strjoin(valf,', ') ')'],hres); 
+printres([funcs{f} '(' sawa_strjoin(any2str(1,valf{:}),', ') ')'],hres); 
 
 % evaluate function
 if nargout(funcs{f})==0 
@@ -239,7 +245,9 @@ end
 [output{s}(f,:)] = tmpout(outchc);
 
 % print output
+if nargout(funcs{f}) > 0
 printres(cell2strtable(sawa_cat(1,outargs(outchc),any2str([],output{s}{f,:})),' '),hres);
+end
 
 % set time left
 settimeleft(i,funrun,wb,['Running ' funcs{f} ' ' sa(i).subj]);

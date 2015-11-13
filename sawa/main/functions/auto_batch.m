@@ -287,7 +287,7 @@ for i = funrun
     if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
         printres(sa(i).subj,hres);
     else % iteration
-        printres(i,hres); 
+        printres(num2str(i),hres); 
     end;
     
     % set matlabbatch
@@ -356,7 +356,7 @@ valf{mx} = sawa_evalvars(options{m,mx}{s});
 if iscell(valf{mx})&&rep{m}(mx)==0, valf{mx} = sawa_getfield(valf{mx},'',''); end;
 
 % if any empty with group, remove subject
-if iscell(valf{mx})&&all(cellfun('isclass',valf{mx},'char'))&&any(cellfun('isempty',valf{mx}))
+if iscell(valf{mx})&&any(cellfun('isempty',valf{mx}))
 n = cellfun('isempty',valf{mx})'; n = regexprep(options{m,mx}{s}(n),'.*sa\(([\d\w]+\)\..*','$1');
 printres(['Missing ' itemnames{m}{mx} ' for subject(s) ' sawa_strjoin(sa(str2double(n)).subj,'\n')],hres);
 % remove from others

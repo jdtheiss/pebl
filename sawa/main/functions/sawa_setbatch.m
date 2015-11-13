@@ -62,11 +62,11 @@ for r = u_rep
     % find reps == r
     clear fnd; fnd = find(rep==r);
     
-    % set cells if needed 
-    for f = fnd, if ~iscell(val{f}), val{f} = {val{f}}; end; end;
-
     % get max ind of vals
-    ind = 1:max(cellfun(@(x)numel(x),val(fnd)));
+    ind = 1:max(cellfun(@(x)numel({x}),val(fnd)));
+    
+    % set cells if needed 
+    for f = fnd, if ~iscell(val{f})||numel(val{f})>numel(ind), val{f} = {val{f}}; end; end;
     
     % set sts
     sts(fnd) = {zeros(size(ind))};
@@ -91,6 +91,7 @@ for r = u_rep
         % for each value at ind in set
         for xx = fnd
         % if emtpy val, skip
+        
         if isempty(val{xx}{x}), continue; end;
  
         % load job and get item ids and contents

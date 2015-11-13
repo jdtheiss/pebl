@@ -13,8 +13,8 @@ function out = any2str(maxrow,varargin)
 % out = any2str(2,'test',{'test';10},[1,2,3],@disp,{struct('testing',{'this'}),12,'testing'})
 % out = 
 %
-%   'test'  'test'  [1 2 3]   @disp   {[1x1 struct] 12 'testing'}
-%           10
+%   test  test  [1 2 3]   @disp   {[1x1 struct] 12 testing}
+%         10
 %
 % Note: for vertical cell arrays, no '{}'s are added (see example above).
 %
@@ -41,8 +41,7 @@ if iscell(varargin{v})&&isempty(varargin{v}), out{v} = '{}'; continue; end;
 % switch class of varargin
 switch class(varargin{v})
 case 'char' % char
-    out{v} = strcat('''', varargin{v}, '''');
-    out{v} = char(out{v});
+    out{v} = char(varargin{v});
 case 'cell' % run any2str for cell
     out{v} = cellfun(@(x){any2str(maxrow,x)},varargin{v}); 
     r = size(varargin{v},1); % get rows

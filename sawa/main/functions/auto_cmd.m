@@ -160,7 +160,7 @@ for o = chc
     
     % if iter greater than options, init
     if numel(iter)>size(options{idx,1},1), 
-        options{idx,1}(iter,1) = options{idx,1}(1);
+        options{idx,1}(iter,1) = {''};
     end
     
     % set options
@@ -206,8 +206,12 @@ for i = funrun
 % func, run with options
 for f = 1:numel(funcs)
 try
-% print subject
-printres(sa(i).subj,hres);
+% print subject 
+if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
+    printres(sa(i).subj,hres);
+else % iteration
+    printres(num2str(i),hres); 
+end;
 
 % get subject index
 s = find(funrun==i,1);
@@ -216,7 +220,7 @@ s = find(funrun==i,1);
 clear valf; valf = sawa_evalvars(options{f,1}{s},'cmd');
 
 % print command
-printres([funcs{f} valf],hres); 
+printres([funcs{f} ' ' valf],hres); 
 
 % run command
 clear tmp;

@@ -78,12 +78,12 @@ end
 % find cells with filesep
 clear vals reps;
 [~,vals,~,reps] = sawa_find(@strfind,filesep,valf,'valf','');
-for x = find(~cellfun('isempty',vals)), 
+for x = find(~cellfun('isempty',vals)),
     valf = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
 end
 
 % if ischar and 'cmd', output as string
-if ischar(val)||strcmp(opt,'cmd')
+if ischar(val)&&strcmp(opt,'cmd')
 valf = cellstr(valf); valf = sprintf('%s ',valf{:}); % sprintf with ' '
 valf = strtrim(valf);
 end
@@ -111,8 +111,7 @@ if ~isdir(val), mkdir(val); end; % make directory
 % add filesep to end
 if ~strcmp(val(end), filesep), val = [val filesep]; end;
 
-% if any wildcard, spm_select
-elseif any(strfind(val,'*'))||any(strfind(val,',')), 
+elseif any(strfind(val,'*'))||any(strfind(val,',')) % spm_select
 % get frames
 frames = regexprep(e,'\.\w+,?',''); e = regexprep(e,',.*$','');
 
@@ -120,6 +119,7 @@ if isempty(frames) % if no frames, get single files
 val = spm_select('FPList',p,['^' regexptranslate('wildcard',[f,e])]);
 else % if frames, get frames
 val = spm_select('ExtFPList',p,['^' regexptranslate('wildcard',[f,e])],eval(frames));    
+end
 end
 
 % if found cellstr, otherwise set to empty
@@ -132,8 +132,7 @@ if numel(val)>1&&strcmp(opt,'cmd'), val = ival; end;
 if strcmp(opt,'cmd'), val = regexprep(val,['.*' filesep '.*'],'"$0"'); end;
 
 % set to one if only one char
-if iscell(val)&&numel(val)==1, val = val{1}; end;
-end; 
+if iscell(val)&&numel(val)==1, val = val{1}; end; 
 end
 end
 

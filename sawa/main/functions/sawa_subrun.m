@@ -30,6 +30,10 @@ function [subrun,sa,task,fileName] = sawa_subrun(sa,subrun,isubrun)
 % Output is subrun array with indices of subjects in array mid, the first of
 % which are age 13 followed by subjects in the ADHD group.
 %
+% Note: Choosing "Add" will only add new subjects (i.e. not already chosen) 
+% to the subjects. Choosing "Refine" will only return subjects that have
+% met criteria across all function/searches.
+%
 % requires: choose_SubjectArray choose_fields sawa_find
 %
 % Created by Justin Theiss
@@ -77,21 +81,27 @@ while ~done
 flds = choose_fields(sa,tmpsubrun,{'Choose field to refine subject list by (cancel when finished)',''});
 if isempty(flds), done=1; break; end;
 
+for f = 1:numel(flds)
 % enter func, enter search
-func = cell2mat(inputdlg(['Enter the function to use for ' flds{1} ' (e.g., isempty or strcmp):'],'Function')); % enter function
-search = cell2mat(inputdlg(['Enter search to use for ' flds{1} ' separate by comma if applicable (e.g., Control or 14):'],'Search')); % enter search
+func = cell2mat(inputdlg(['Enter the function to use for ' flds{f} ' (e.g., isempty or strcmp):'],'Function')); % enter function
+search = cell2mat(inputdlg(['Enter search to use for ' flds{f} ' separate by comma if applicable (e.g., Control or 14):'],'Search')); % enter search
 
 % strsplit by commas and convert any digits to double
-search = strsplit(search); 
+if ~isempty(search), search = strsplit(search); end;
 for x = 1:numel(search), if all(isstrprop(search{x},'digit')), search{x} = str2double(search{x}); end; end;
 
 % run sawa_find for each subject individually
 clear nsubrun; 
-nsubrun = find(arrayfun(@(x)any(sawa_find(func,search,sa(x),'',['\.',regexptranslate('escape',flds{1}),'$'])),1:numel(sa)));
+nsubrun = find(arrayfun(@(x)any(sawa_find(func,search,sa(x),'',['\.',regexptranslate('escape',flds{f}),'$'])),1:numel(sa)));
 
 % refine or add
 addto = questdlg('Refine or add new subjects to subject list?','Refine or Add','Refine','Add','Refine');
-if strcmp(addto,'Refine'), tmpsubrun = tmpsubrun(ismember(tmpsubrun,nsubrun)); else tmpsubrun = [tmpsubrun,nsubrun]; end;
+if strcmp(addto,'Refine'), % refine
+    tmpsubrun = tmpsubrun(ismember(tmpsubrun,nsubrun)); 
+else % add unique
+    tmpsubrun = [tmpsubrun,nsubrun(~ismember(nsubrun,tmpsubrun))]; 
+end
+end
 end 
 catch exception
 disp(exception.message);

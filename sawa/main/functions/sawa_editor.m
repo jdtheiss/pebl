@@ -111,7 +111,7 @@ end
 
 % get new path
 newpath{end+1} = uigetdir(pwd,'Choose path to set');
-if ~any(newpath{end}), return; end;
+if ~any(newpath{end}), newpath{end} = cell2mat(inputdlg(['Enter value for ' envvar{end}])); end;
 
 % set environment
 if ~isempty(envvar{end})
