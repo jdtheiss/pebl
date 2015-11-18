@@ -343,7 +343,7 @@ return;
 
 function matlabbatch = local_setbatch(fp,matlabbatch,m,s)
 % get vars from fp
-funpass(fp,{'options','itemnames','itemidx','funrun','sa','rep'});
+funpass(fp,{'options','itemnames','itemidx','funrun','sa','rep','hres'});
 
 % set i for sawa_eval
 i = funrun(s);

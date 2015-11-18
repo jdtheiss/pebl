@@ -32,9 +32,9 @@ txt = txt(txt>0); txt = txt(txt<127);
 txt = regexp(txt,'[^(\n)(\r)]*','match');
 % for each row, split by delim
 for x = 1:numel(txt)
-txt{x} = regexp(txt{x},['[^(' delim ')]*'],'match');
+txt{x} = regexp(txt{x},regexptranslate('escape',delim),'split');
 end
 % create raw cells
 raw = cell(numel(txt),max(cellfun('size',txt,2)));
 % for each row, set to raw and deblank
-for x = 1:numel(txt), raw(x,:) = deblank(txt{x}); end;
+for x = 1:numel(txt), raw(x,:) = strtrim(txt{x}); end;

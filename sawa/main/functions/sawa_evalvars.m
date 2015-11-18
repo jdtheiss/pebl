@@ -95,15 +95,18 @@ if isempty(valf), valf = []; end;
 function valf = local_mkdir_select(valf,val,rep,opt)
 % skip if not char
 if ischar(val), 
+% create ival, in case multi files and wildcard
+ival = val;
+
+% if any "", remove
+val = regexprep(val,'["]','');
+
 % get path,file,ext
 clear p f e frames; [p,f,e] = fileparts(val);
 
 % if no path, skip
 if ~isempty(p),   
-    
-% create ival, in case multi files and wildcard
-ival = val;
-    
+        
 % if no ext and doesn't contain wildcard, mkdir
 if isempty(e) && ~any(strfind(val,'*')) && ~any(strfind(val,','))
 if ~isdir(val), mkdir(val); end; % make directory
@@ -129,7 +132,9 @@ if ~isempty(val), val = cellstr(val); else val = {}; end;
 if numel(val)>1&&strcmp(opt,'cmd'), val = ival; end;
 
 % if opt is 'cmd', put "" around val
-if strcmp(opt,'cmd'), val = regexprep(val,['.*' filesep '.*'],'"$0"'); end;
+if strcmp(opt,'cmd'),
+val = regexprep(val,['.*' filesep '.*'],'"$0"'); val = regexprep(val,'""','"'); 
+end;
 
 % set to one if only one char
 if iscell(val)&&numel(val)==1, val = val{1}; end; 

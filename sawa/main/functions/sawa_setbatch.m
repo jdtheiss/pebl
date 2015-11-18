@@ -62,11 +62,14 @@ for r = u_rep
     % find reps == r
     clear fnd; fnd = find(rep==r);
     
+    % set cells if needed 
+    for f = fnd, if ~iscell(val{f}), val{f} = {val{f}}; end; end;
+    
     % get max ind of vals
-    ind = 1:max(cellfun(@(x)numel({x}),val(fnd)));
+    ind = 1:max(cellfun(@(x)numel(x),val(fnd)));
     
     % set cells if needed 
-    for f = fnd, if ~iscell(val{f})||numel(val{f})>numel(ind), val{f} = {val{f}}; end; end;
+    for f = fnd, if numel(val{f})>numel(ind), val{f} = {val{f}}; end; end;
     
     % set sts
     sts(fnd) = {zeros(size(ind))};
@@ -116,7 +119,7 @@ end
 
 % remove any repeats with sts==0
 for r = u_rep(u_rep~=0), 
-    for rr = find(prod(vertcat(sts{rep==r}),1)), disp(r)
+    for rr = find(~prod(vertcat(sts{rep==r}),1)), 
         cfg_util('setval',cjob,mod_ids{m},id{r},[inf,rr]); 
     end; 
 end;
