@@ -93,12 +93,8 @@ clear tmpmsg; tmpmsg = evalc(['sawa_system(''' funcs{idx} ''',''' o{1} ''');']);
 if ~isempty(tmpmsg)&&numel(tmpmsg)>numel(helpmsg), helpmsg = tmpmsg; end;    
 end
 
-% if options, display
-if ~all(cellfun('isempty',options{idx,1})),
-    cellfun(@(x)disp([funcs{idx} x]),options{idx,1});
-else % otherwise display helpmsg
-    disp(helpmsg);
-end
+% display helpmsg
+if any(cellfun('isempty',options{idx,1})), disp(helpmsg); end;
 
 % get switches
 if ispc % pc switches
@@ -157,10 +153,11 @@ for o = chc
 
     % ensure options and valf are vertical
     options{idx,1} = sawa_cat(1,options{idx,1}{:}); valf = sawa_cat(1,valf{:});
+    if isempty(valf), valf = cell(numel(iter),1); end;
     
     % if iter greater than options, init
     if numel(iter)>size(options{idx,1},1), 
-        options{idx,1}(iter,1) = {''};
+        options{idx,1}(iter,1) = options{idx,1}(1);
     end
     
     % set options
@@ -175,7 +172,7 @@ end
 if isempty(options{idx,1}), options{idx,1} = repmat({''},[numel(funrun),1]); end;
 
 % display options
-cellfun(@(x)disp([funcs{idx} x]),options{idx,1});
+cellfun(@(x)disp([funcs{idx} ' ' x]),options{idx,1});
 
 % set vars to fp
 fp = funpass(fp,{'funrun','options'});
@@ -194,7 +191,7 @@ if ~exist('funrun','var')||isempty(funrun), if isempty(subrun), funrun = 1; else
 if isempty(sa), subjs = arrayfun(@(x){num2str(x)},funrun); [sa(funrun).subj] = deal(subjs{:}); end;
 if ~exist('options','var'), options(1:numel(funcs),1) = {repmat({''},[numel(funrun),1])}; end;
 if ~iscell(options), options = {{options}}; end;
-if numel(funcs)>numel(options), options(numel(options)+1:numel(funcs),1) = {repmat({''},[numel(funrun),1])}; end;
+for f = 1:numel(funcs), if numel(funrun) > numel(options{f,1}), options{f,1}(1:numel(funrun),1) = options{f,1}(1); end; end;
 if ~exist('hres','var'), hres = []; end;
 output(1:numel(funrun),1) = {{}};
 
