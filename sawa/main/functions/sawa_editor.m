@@ -1,6 +1,6 @@
 function fp = sawa_editor(cmd,varargin)
 % sawa_editor(sawafile, sv, savedvars)
-% Loads/runs sawafile functions (e.g., auto_batch, auto_cmd, auto_wrap) with
+% Loads/runs sawafile functions (e.g., auto_batch, auto_cmd, auto_function) with
 % make_gui.
 %
 % Inputs: 
@@ -66,7 +66,7 @@ if exist('envvar','var'),
 for x = 1:numel(envvar), 
 if ~isempty(envvar{x}) % setenv
 if ~any(strfind(getenv(envvar{x}),newpath{x})),
-setenv(envvar{x},[getenv(envvar{x}) ':' newpath{x}]);
+setenv(envvar{x},newpath{x});
 end;
 else % addpath
 addpath(newpath{x});    

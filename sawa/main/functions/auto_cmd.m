@@ -200,9 +200,6 @@ wb = settimeleft;
 
 % for each subj 
 for i = funrun
-% func, run with options
-for f = 1:numel(funcs)
-try
 % print subject 
 if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
     printres(sa(i).subj,hres);
@@ -210,6 +207,9 @@ else % iteration
     printres(num2str(i),hres); 
 end;
 
+% func, run with options
+for f = 1:numel(funcs)
+try
 % get subject index
 s = find(funrun==i,1);
 

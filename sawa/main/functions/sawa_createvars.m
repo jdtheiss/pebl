@@ -1,6 +1,6 @@
 function vals = sawa_createvars(varnam,msg,subrun,sa,varargin)
 % vars = sawa_createvars(varnam,msg,subrun,sa)
-% Creates variables for specific use in auto_batch, auto_cmd, auto_wrap.
+% Creates variables for specific use in auto_batch, auto_cmd, auto_function.
 % 
 % Inputs:
 % varnam - variable name 
@@ -70,7 +70,7 @@ case 'choose file' % choose file
 case 'choose directory' % choose dir
     vars = cellstr(spm_select(Inf,'dir',['Select directory for ' varnam]));
 case 'function' % function
-    fp = auto_wrap; vars = [fp.output{:}]; clear fp; 
+    fp = auto_function; vars = [fp.output{:}]; clear fp; 
 case 'subject array' % subject array
     % choose group
     if ~isempty(subrun)

@@ -11,7 +11,7 @@ function valf = sawa_evalvars(val,opt)
 %
 % Example:
 % sa = struct('subj',{'test1','test2'},'subjFolders',{'/Users/test1','/Users/test2'})
-% batch.folder = 'sa(i).subjFolders{1}/Analysis';
+% batch.folder = 'sa(i).subjFolders{1}/Analysis/';
 % batch.files = 'sa(i).subjFolders{1}/Run1/*.nii';
 % batch.dti = 'sa(i).subjFolders{1}/DTI/DTI.nii,inf';
 % batch.input = 'evalin(''caller'',output{1,1}{s})';
@@ -23,20 +23,23 @@ function valf = sawa_evalvars(val,opt)
 % end
 % 
 % valf = 
-%   folder: '/Users/test1/Analysis % makes dir
+%   folder: '/Users/test1/Analysis/' % makes dir
 %    files: {49x1 cell} % returns from /Users/test1/Run1
 %      dti: {60x1 cell} % gets 4d frames from /Users/test1/DTI/DTI.nii
 %    input: 'test1'
 %
 % valf = 
-%   folder: '/Users/test2/Analysis % makes dir
+%   folder: '/Users/test2/Analysis/' % makes dir
 %    files: {49x1 cell} % returns from /Users/test2/Run1
 %      dti: {60x1 cell} % gets 4d frames from /Users/test2/DTI.nii
 %    input: 'test2' 
 % 
-% Note: if the option 'cmd' is included and a wildcard is used for files multiple 
-% files, the inital wildcard search will be retained with "" around it i.e.
-% "/Volumes/Folder/*.img". 
+% Note: In order to create a new directory, the path should have a file
+% separator at the end (e.g., '/User/Test/' or 'C:\Test\').
+% 
+% Note2: If the 'cmd' option is used, file paths should have "" around them. Furthermore,
+% if the 'cmd' options is used and a wildcard is used for files multiple files, 
+% the inital wildcard search will be retained with "" around it i.e. "/Volumes/Folder/*.img". 
 %
 % requires: sawa_evalchar sawa_find 
 %
@@ -49,12 +52,11 @@ if ~exist('opt','var')||isempty(opt), opt = ''; end;
 % if char and 'cmd', split find paths/files and split by spaces
 if ischar(val)&&strcmp(opt,'cmd'), 
 pathvals = regexp(valf,'"[^"]+"','match'); % get paths/files
-valf = regexprep(valf,'"[^"]+"',''); valf = regexp(valf,'\s','split'); % split by spaces
-valf = [valf,pathvals]; % add paths/files to end of valf
+valf = regexprep(valf,'"[^"]+"','""'); valf = regexp(valf,'\s','split'); % split by spaces
+valf(cellfun(@(x)strcmp(x,'""'),valf)) = pathvals; % add paths/files to valf
 valf = regexprep(valf,'["]',''); % remove ""s
 valf = valf(~cellfun('isempty',valf)); % remove ''s
-% remove spaces on both ends
-valf = strtrim(valf); 
+valf = strtrim(valf); % remove extra spaces
 elseif ~iscell(valf) % set to cell if not
     valf = {valf};
 end; 
@@ -108,11 +110,8 @@ clear p f e frames; [p,f,e] = fileparts(val);
 if ~isempty(p),   
         
 % if no ext and doesn't contain wildcard, mkdir
-if isempty(e) && ~any(strfind(val,'*')) && ~any(strfind(val,','))
-if ~isdir(val), mkdir(val); end; % make directory
-
-% add filesep to end
-if ~strcmp(val(end), filesep), val = [val filesep]; end;
+if isempty(e) && ~any(strfind(val,'*')) && ~any(strfind(val,',')),
+if ~isdir(val) && strcmp(val(end), filesep), mkdir(val); end; % make directory
 
 elseif any(strfind(val,'*'))||any(strfind(val,',')) % spm_select
 % get frames

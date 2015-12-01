@@ -1,5 +1,5 @@
-function varargout = auto_wrap(cmd,varargin)
-% varargout = auto_wrap(cmd,varargin)
+function varargout = auto_function(cmd,varargin)
+% varargout = auto_function(cmd,varargin)
 % This function will automatically create a wrapper to be used with chosen
 % function and subjects.
 % 
@@ -18,7 +18,7 @@ function varargout = auto_wrap(cmd,varargin)
 % funcs = 'strrep'
 % options(1,1:3) = {{'test'},{'e'},{'oa'}};
 % fp = struct('funcs',{funcs},'options',{options})
-% auto_wrap('auto_run',fp)
+% auto_function('auto_run',fp)
 % Command Prompt:
 % 1
 % strrep(test, e, oa)
@@ -194,9 +194,6 @@ wb = settimeleft;
 
 % for each subject, run func
 for i = funrun
-% for each func
-for f = 1:numel(funcs)
-try
 % print subject 
 if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
     printres(sa(i).subj,hres);
@@ -204,6 +201,9 @@ else % iteration
     printres(num2str(i),hres); 
 end;
 
+% for each func
+for f = 1:numel(funcs)
+try
 % get subject index
 s = find(funrun==i,1);
 
