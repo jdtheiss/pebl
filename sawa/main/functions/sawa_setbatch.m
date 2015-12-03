@@ -66,7 +66,7 @@ for r = u_rep
     for f = fnd, if ~iscell(val{f}), val{f} = {val{f}}; end; end;
     
     % get max ind of vals
-    ind = 1:max(cellfun(@(x)numel(x),val(fnd)));
+    ind = 1:min(cellfun(@(x)numel(x),val(fnd))); 
     
     % set cells if needed 
     for f = fnd, if numel(val{f})>numel(ind), val{f} = {val{f}}; end; end;
@@ -77,7 +77,7 @@ for r = u_rep
     % for each index of set
     for x = ind
         % if replicating set val to ind
-        if r > 0, 
+        if r > 0 && x > 1, 
         cfg_util('setval',cjob,mod_ids{m},id{r},[0,x-1]); 
         % get updated id, contents2
         [~,~,contents2]=cfg_util('listmod',cjob,mod_ids{m},[],cfg_findspec({{'hidden',false}}),...
@@ -94,7 +94,6 @@ for r = u_rep
         % for each value at ind in set
         for xx = fnd
         % if emtpy val, skip
-        
         if isempty(val{xx}{x}), continue; end;
  
         % load job and get item ids and contents
