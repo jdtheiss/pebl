@@ -47,8 +47,8 @@ any2str.m
   out = any2str(2,'test',{'test';10},[1,2,3],@disp,{struct('testing',{'this'}),12,'testing'})
   out = 
  
-    'test'  'test'  [1 2 3]   @disp   {[1x1 struct] 12 'testing'}
-            10
+    test  test  [1 2 3]   @disp   {[1x1 struct] 12 testing}
+          10
  
   Note: for vertical cell arrays, no '{}'s are added (see example above).
  
@@ -122,8 +122,8 @@ auto_cmd.m
  
   Created by Justin Theiss
 
-auto_wrap.m
-  varargout = auto_wrap(cmd,varargin)
+auto_function.m
+  varargout = auto_function(cmd,varargin)
   This function will automatically create a wrapper to be used with chosen
   function and subjects.
   
@@ -142,7 +142,7 @@ auto_wrap.m
   funcs = 'strrep'
   options(1,1:3) = {{'test'},{'e'},{'oa'}};
   fp = struct('funcs',{funcs},'options',{options})
-  auto_wrap('auto_run',fp)
+  auto_function('auto_run',fp)
   Command Prompt:
   1
   strrep(test, e, oa)
@@ -246,6 +246,50 @@ choose_spm.m
   example:
   spmver = choose_spm('spm12');
  
+  Created by Justin Theiss
+
+climb_branches.m
+  [val,tag,rep] = climb_branches(root,rootrep,lvl,idx)
+  This function will search through a structure as follows 
+  root.mainbranch.lvl1(idx1).lvl2(idx2)
+  Inputs: 
+  root - main structure (e.g., matlabbatch{1})
+  rootrep - (optional) string representation of root in order to return
+  full reps
+  lvl - (optional) number indicating the level to return (starting with 1 
+  as the main branch)
+  idx - (optional) number or numeric array of numbers indicating each index 
+  of each lvl 
+  Outputs:
+  val - values 
+  tag - tags
+  rep - string representations of structure
+ 
+  Initially, climb_branches will find the first branching (i.e. the first
+  point where there are multiple fieldnames). This is the result if no lvl
+  or idx are included.
+  Next, for the number of lvls, climb_branches will go to each idx as
+  indicated above. If the last idx is empty, climb_branches will return
+  all values from lvl (see example). Otherwise, the final idx will be
+  returned.
+  
+  Example:
+  [val,tag,rep] = climb_branches(matlabbatch{1},'matlabbatch{1}',2,3)
+ 
+  val = 
+        scans: '<UNDEFINED>'
+         cond: [0x0 struct]
+        multi: {''}
+      regress: [0x0 struct]
+    multi_reg: {''}
+          hpf: 128
+  
+  tags =
+  sess
+  
+  reps = 
+  matlabbatch{1}.spm.stats.fmri_spec.sess
+  
   Created by Justin Theiss
 
 closedlg.m
@@ -569,7 +613,7 @@ sawa_cat.m
 
 sawa_createvars.m
   vars = sawa_createvars(varnam,msg,subrun,sa)
-  Creates variables for specific use in auto_batch, auto_cmd, auto_wrap.
+  Creates variables for specific use in auto_batch, auto_cmd, auto_function.
   
   Inputs:
   varnam - variable name 
@@ -622,7 +666,7 @@ sawa_dlmread.m
 
 sawa_editor.m
   sawa_editor(sawafile, sv, savedvars)
-  Loads/runs sawafile functions (e.g., auto_batch, auto_cmd, auto_wrap) with
+  Loads/runs sawafile functions (e.g., auto_batch, auto_cmd, auto_function) with
   make_gui.
  
   Inputs: 
@@ -643,6 +687,8 @@ sawa_editor.m
   funcs (must be equal in size to funcs).
   - program - string name of the program to run (e.g., 'auto_batch')
   See Batch_Editor.mat, Command_Line.mat, Wrap_Functions.mat for examples.
+  Note2: if an output exists in fp, output will be assigned in the base
+  workspace.
  
   requires: make_gui funpass printres sawa_subrun
  
@@ -677,18 +723,19 @@ sawa_evalchar.m
   Created by Justin Theiss
 
 sawa_evalvars.m
-  valf = sawa_evalvars(val,subrun,sa)
+  valf = sawa_evalvars(val,opt)
   Evaluate variables created from sawa_createvars
   
   Inputs:
   val - string, cell array, structure to evaluate/mkdir/spm_select
+  opt - (optional) if opt = 'cmd', option to set "" around filenames (for command line)
   
   Outputs:
   valf - evaluated val
  
   Example:
   sa = struct('subj',{'test1','test2'},'subjFolders',{'/Users/test1','/Users/test2'})
-  batch.folder = 'sa(i).subjFolders{1}/Analysis';
+  batch.folder = 'sa(i).subjFolders{1}/Analysis/';
   batch.files = 'sa(i).subjFolders{1}/Run1/*.nii';
   batch.dti = 'sa(i).subjFolders{1}/DTI/DTI.nii,inf';
   batch.input = 'evalin(''caller'',output{1,1}{s})';
@@ -700,21 +747,25 @@ sawa_evalvars.m
   end
   
   valf = 
-    folder: '/Users/test1/Analysis % makes dir
+    folder: '/Users/test1/Analysis/' % makes dir
      files: {49x1 cell} % returns from /Users/test1/Run1
        dti: {60x1 cell} % gets 4d frames from /Users/test1/DTI/DTI.nii
      input: 'test1'
  
   valf = 
-    folder: '/Users/test2/Analysis % makes dir
+    folder: '/Users/test2/Analysis/' % makes dir
      files: {49x1 cell} % returns from /Users/test2/Run1
        dti: {60x1 cell} % gets 4d frames from /Users/test2/DTI.nii
      input: 'test2' 
+  
+  Note: In order to create a new directory, the path should have a file
+  separator at the end (e.g., '/User/Test/' or 'C:\Test\').
+  
+  Note2: If the 'cmd' option is used, file paths should have "" around them. Furthermore,
+  if the 'cmd' options is used and a wildcard is used for files multiple files, 
+  the inital wildcard search will be retained with "" around it i.e. "/Volumes/Folder/*.img". 
  
-  Note: if val is a string with file separators, valf will be a string with
-  "" around the files (i.e. for command line purposes).
- 
-  requires: sawa_evalchar sawa_find sawa_strjoin
+  requires: sawa_evalchar sawa_find 
  
   Created by Justin Theiss
 
@@ -806,7 +857,7 @@ sawa_getfield.m
   A - array, object, or cell array (does not work for numeric handles)
   irep - input string representation of array A
   itag - input regular expression of a tag or component of array A that you
-  want to return (default is '.$'). if itag = '', all values will be returned.
+  want to return (default is '.$'). if itag = '', all end values will be returned.
   refs - (optional) number of times a field tag can be referenced before
   stopping (see Note2). default is 1
   
@@ -1149,6 +1200,10 @@ sawa_subrun.m
   Output is subrun array with indices of subjects in array mid, the first of
   which are age 13 followed by subjects in the ADHD group.
  
+  Note: Choosing "Add" will only add new subjects (i.e. not already chosen) 
+  to the subjects. Choosing "Refine" will only return subjects that have
+  met criteria across all function/searches.
+ 
   requires: choose_SubjectArray choose_fields sawa_find
  
   Created by Justin Theiss
@@ -1183,14 +1238,14 @@ sawa_xjview.m
   pval - pvalue to use (default is 0.001, must be less than or equal to 1)
   kval - cluster threshold (default is 5, must be greater than 1)
   defxyz - x,y,z coordinates to snap to (default is global max)
-  mask - string of default mask to use (default is 'single T1')
+  mask - string of default mask to use (default is 'single T1') or fullfile
+  to other mask
   slc - structure with any of following fields for slice view images:
   - sep - separation (in mm) of slices
   - col - number of columns to display in image
   - row - number of rows to display in image
   itype - image type for saving images (default is .png)
   options:
-  'othermask' - option to choose other mask
   'notxt' - option to not save txt files 
   'noxls' - option to not save xlsx files
   'noimg' - option to not save xjview main images
@@ -1204,12 +1259,13 @@ sawa_xjview.m
   directory cd.
  
   NOTE: Order of input variables generally does not matter, except that
-  pval, kval, maskchc, and sep must be input in order (e.g., if pval does
+  pval, kval, and sep must be input in order (e.g., if pval does
   not exist and sep is entered as .5, pval would errantly be set to .5).
+  Likewise, if using an other mask, the mask must be input after files.
  
-  requires: sawa_cat, sawa_screencapture, subidx, xjview
-
-  Created by Justin Theiss 
+  requires: sawa_cat, sawa_screencapture, sawa_strjoin, subidx, xjview
+ 
+  Created by Justin Theiss
 
 sawa_xlsread.m
   raw = sawa_xlsread(xfil)
@@ -1241,17 +1297,15 @@ settimeleft.m
   hobj - handle for settimeleft obj
  
   Example:
-  h = settimeleft;
+  h = settimeleft; doforloop = 1:4;
   for x = doforloop
-  \\stuff\\
+  pause(3);
   settimeleft(x, doforloop, h, 'optional text');
   end
   
   Note: the tag for the hobj is set to SAWA_WAITBAR. Also, the waitbar
   automatically closes once the final iteration has completed (i.e. i =
   subrun(end)).
-  
-  requires: subidx
  
   Created by Justin Theiss
 
