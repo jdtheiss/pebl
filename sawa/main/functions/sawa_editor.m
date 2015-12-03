@@ -41,8 +41,9 @@ for x = 1:numel(cmd), fp = feval(cmd{x},varargin{:}); end;
 
 % load sawafile and run make_gui
 function fp = load_sawafile(sawafile,sv,savedvars)
+
 % load sawafile
-load(sawafile);
+load(sawafile);  
 
 % init vars
 if ~exist('sv','var')||isempty(sv), sv = 0; end;
@@ -80,7 +81,7 @@ structure.listbox.string = names;
 
 % run make_gui
 if ~sv 
-fp = make_gui(structure,struct('data',fp));
+fp = make_gui(structure,struct('data',fp));  
 else % using savedvars
 fp.lsr = 'run'; fp = loadsaverun(fp);    
 end
@@ -262,10 +263,11 @@ if strcmpi(lsr,'load') % load
 savedvars = uigetfile('*savedvars*.mat','Load savedvars file to use:');
 if ~any(savedvars), return; end; % return if none chosen
 load(savedvars,'fp'); % load savedvars
-% close current
-close(gcf);
-% load_sawafile
-fp = sawa_editor('load_sawafile',fp.sawafile,sv,savedvars); return;
+% set structure names to fp.names
+funpass(fp,'names'); if ~exist('names','var'), names = funcs; end;
+set(findobj(gcf,'style','listbox'),'string',names); % set names
+guidata(gcf,fp); return; % set new data to guidata
+
 else % save
 savedvars = cell2mat(inputdlg('Enter savedvars filename to save:','savedvars',1,{[savename '_savedvars.mat']}));
 if isempty(savedvars), return; end; save(savedvars,'fp'); % save savedvars

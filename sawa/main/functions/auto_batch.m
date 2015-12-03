@@ -131,8 +131,8 @@ funpass(fp,{'funcs','idx','itemidx','rep','options','sa','subrun','funrun'});
 
 % init vars
 if ~exist('funcs','var'), return; elseif ~iscell(funcs), funcs = {funcs}; end;
-if ~exist('idx','var'), idx = get(findobj('tag','batch_listbox'),'value'); end;
-if isempty(idx)||idx==0, idx = 1; end;
+if ~exist('idx','var'), idx = get(findobj('tag','batch_listbox'),'value'); end; 
+if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('itemidx','var'), return; elseif ~iscell(itemidx), itemidx{idx} = itemidx; end;
 if ~exist('rep','var')||idx>numel(rep), rep{idx} = zeros(size(itemidx{idx})); end;
 if ~exist('options','var')||idx>numel(options), options(idx,1:numel(itemidx{idx})) = {{}}; end;
@@ -373,6 +373,6 @@ end
 
 % if failed to set vals in repeat
 for mx = 1:numel(itemidx{m})
-arrayfun(@(x)printres(['Could not set vals for ' itemnames{m}{mx} ' ' num2str(x)],hres),find(~sts{mx})); 
+arrayfun(@(x){printres(['Could not set vals for ' itemnames{m}{mx} ' ' num2str(x)],hres)},find(~sts{mx})); 
 end;
 return;
