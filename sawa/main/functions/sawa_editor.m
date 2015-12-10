@@ -265,7 +265,7 @@ savedvars = uigetfile('*savedvars*.mat','Load savedvars file to use:');
 if ~any(savedvars), return; end; % return if none chosen
 load(savedvars,'fp'); % load savedvars
 % set structure names to fp.names
-funpass(fp,'names'); if ~exist('names','var'), names = funcs; end;
+funpass(fp,{'names','funcs'}); if ~exist('names','var'), names = funcs; end;
 set(findobj(gcf,'style','listbox'),'string',names); % set names
 guidata(gcf,fp); return; % set new data to guidata
 
