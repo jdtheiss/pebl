@@ -229,13 +229,14 @@ if ~isempty(hres), printres(tmp,hres); end;
 % set output
 [output{s}(f,:)] = {tmp}; 
 
-% set time left
-settimeleft(i,funrun,wb,['Running ' funcs{f} ' ' sa(i).subj]); 
-
 catch err % if error
     printres(['Error: ' funcs{f} ' ' sa(i).subj ' ' err.message],hres);
 end
 end
+
+% set time left
+settimeleft(i,funrun,wb,['Running ' sa(i).subj]); 
+
 end
 
 % set vars to fp

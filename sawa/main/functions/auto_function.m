@@ -249,13 +249,14 @@ if nargout(funcs{f}) > 0
 printres(cell2strtable(sawa_cat(1,outargs(outchc),any2str([],output{s}{f,:})),' '),hres);
 end
 
-% set time left
-settimeleft(i,funrun,wb,['Running ' funcs{f} ' ' sa(i).subj]);
-
 catch err % if error, display message
 printres(['Error: ' funcs{f} ' ' sa(i).subj ': ' err.message],hres);
 end
 end
+
+% set time left
+settimeleft(i,funrun,wb,['Running ' sa(i).subj]);
+
 end
 
 % set vars to fp
