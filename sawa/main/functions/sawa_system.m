@@ -16,7 +16,7 @@ function [sts,msg]=sawa_system(fun,opts)
 % Created by Justin Theiss
 
 % init opts
-if ~exist('opts','var'), opts = ''; end;
+if ~exist('opts','var')||isempty(opts), opts = ''; end;
 opts = strtrim(opts);
 % get ext
 [~,~,ext] = fileparts(fun); 
