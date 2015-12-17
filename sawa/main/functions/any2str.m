@@ -51,7 +51,9 @@ case 'cell' % run any2str for cell
 case 'double' % mat2str
     out{v} = mat2str(varargin{v});
 case 'function_handle' % put @ in front
-    out{v} = ['@' func2str(varargin{v})];
+    clear tmp; tmp = func2str(varargin{v});
+    if ~strncmp(tmp,'@',1), tmp = ['@' tmp]; end;
+    out{v} = tmp;
 otherwise % [size class]
     out{v} = ['[' num2str(size(varargin{v})) ' ' class(varargin{v}) ']'];
     out{v} = regexprep(out{v},'\s\s','x');

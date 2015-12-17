@@ -59,18 +59,26 @@ case 'cell' % cell
     vals = cat(1,vals,{vars}); continue;
 case 'structure' % struct
     vars = struct; done = 0; 
+    substr = {'Add'};
     while ~done
+        % choose fields to edit, add, delete
+        subchc = listdlg('PromptString',{['Add/Edit subfields for ' varnam ' (cancel when finished):'],'',''},...
+            'ListString',substr,'selectionmode','single');
+        if isempty(subchc), done = 1; break; end;
+        if subchc == numel(substr), tmpfld = ''; else tmpfld = substr{subchc}; end;
         % set field
-        fld = cell2mat(inputdlg('Enter field name to add to structure (cancel when done):'));
-        if isempty(fld), done = 1; break; end; % if no fld, done
-        vars.(fld) = sawa_createvars(fld,'',subrun,sa,varargin{:}); % run sawa_createvars
+        fld = cell2mat(inputdlg('Enter field name to add to structure (cancel to delete):','Field Name',1,{tmpfld}));
+        if isempty(fld)&&~isempty(tmpfld), vars = rmfield(vars,substr{subchc}); substr(subchc) = []; continue; end; % if no fld, remove
+        % run sawa_createvars
+        if ~isempty(fld), substr = unique(horzcat(fld,substr),'stable'); vars.(fld) = sawa_createvars(fld,'',subrun,sa,varargin{:}); end;
     end
 case 'choose file' % choose file
     vars = cellstr(spm_select(Inf,'any',['Select file for ' varnam]));
 case 'choose directory' % choose dir
     vars = cellstr(spm_select(Inf,'dir',['Select directory for ' varnam]));
 case 'function' % function
-    fp = auto_function; vars = [fp.output{:}]; clear fp; 
+    fp = funpass(struct,'sa'); 
+    fp = auto_function([],fp); vars = [fp.output{:}]; clear fp; 
 case 'subject array' % subject array
     % choose group
     if ~isempty(subrun)
