@@ -126,14 +126,15 @@ if strcmp(outargs,'varargout'), outchc = 1; end;
 end
 
 % set invars based on input, file, sa
-ind = 1;
 for v = inchc
 done1 = 0;  % set done to 0
+ind = v; % set index 
+varnum = 1;
 
 while ~done1 % loop for varargin
     
 % set ind if not varargin
-if ~strncmp(inargs{v},'varargin',8), ind = v; else inargs{v} = ['varargin ' num2str(ind)]; end;
+if strncmp(inargs{v},'varargin',8), inargs{v} = ['varargin ' num2str(varnum)]; end;
 
 % create val
 val = {}; done2 = 0;
@@ -157,7 +158,7 @@ options{idx,ind}(iter,1) = sawa_setfield(options{idx,ind},iter,[],[],val{:});
 
 % if varargin, ask to continue
 if strncmp(inargs{v},'varargin',8)&&strcmp(questdlg('New varargin?','New Varargin?','Yes','No','No'),'Yes'),
-    ind = ind +1;
+    ind = ind +1; varnum = varnum +1;
 else % no varargin
     done1 = 1;
 end
@@ -224,8 +225,12 @@ printres([funcs{f} '(' sawa_strjoin(any2str(1,valf{:}),', ') ')'],hres);
 
 % evaluate function
 if nargout(funcs{f})==0 
-% no argout, get command prompt output
+% no argout, try to get output (e.g., load)
+try 
+[~,tmpout{1}] = evalc([funcs{f} '(valf{:})']);
+catch % otherwise get command prompt output
 tmpout{1} = evalc([funcs{f} '(valf{:})']);
+end
 
 % print output
 if ~isempty(hres), disp(tmpout{1}); end;
