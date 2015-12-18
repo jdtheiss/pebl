@@ -41,7 +41,8 @@ if iscell(varargin{v})&&isempty(varargin{v}), out{v} = '{}'; continue; end;
 % switch class of varargin
 switch class(varargin{v})
 case 'char' % char
-    out{v} = char(varargin{v});
+    clear tmp; tmp = cellstr(varargin{v}); 
+    out{v} = char(cellfun(@(x){['''' x '''']},tmp)); % set '' around each
 case 'cell' % run any2str for cell
     out{v} = cellfun(@(x){any2str(maxrow,x)},varargin{v}); 
     r = size(varargin{v},1); % get rows
