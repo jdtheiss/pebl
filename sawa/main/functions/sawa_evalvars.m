@@ -57,13 +57,13 @@ valf(cellfun(@(x)strcmp(x,'""'),valf)) = pathvals; % add paths/files to valf
 valf = regexprep(valf,'["]',''); % remove ""s
 valf = valf(~cellfun('isempty',valf)); % remove ''s
 valf = strtrim(valf); % remove extra spaces
-elseif ~iscell(valf) % set to cell if not
+elseif ~iscell(valf)&&~isstruct(valf) % set to cell if not
     valf = {valf};
 end; 
 
 % find cells with sa\([\d\w\]+\)\.
 clear vals reps;
-[~,vals,~,reps] = sawa_find(@regexp,'sa\([\d\w]+\)\.',valf,'valf','');
+[~,vals,~,reps] = sawa_find(@regexp,'sa\([\d\w]+\)\.',valf,'valf',''); 
 for x = 1:numel(vals), % sawa_evalchar
     vals{x} = evalin('caller',['sawa_evalchar(''' vals{x} ''');']); 
     valf = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
@@ -79,7 +79,7 @@ end
 
 % find cells with filesep
 clear vals reps;
-[~,vals,~,reps] = sawa_find(@strfind,filesep,valf,'valf','');
+[~,vals,~,reps] = sawa_find(@strfind,filesep,valf,'valf',''); 
 for x = find(~cellfun('isempty',vals)),
     valf = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
 end
