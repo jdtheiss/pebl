@@ -64,7 +64,7 @@ disp(char('Load/Choose Modules to use:',...
 try % get job/module ids 
 [~,cjob,mod_ids] = evalc('cfg_util(''initjob'',funcs)'); 
 catch err
-disp(err.message); set(findobj('tag','setup batch job'),'tooltipstring','Empty'); return; 
+disp(err.message); set(findobj(gcf,'tag','setup batch job'),'tooltipstring','Empty'); return; 
 end
 
 % get names
@@ -104,10 +104,10 @@ end
 end
 
 % set job status
-set(findobj('tag','setup batch job'),'tooltipstring',[jobname ': ' job_sts]);
+set(findobj(gcf,'tag','setup batch job'),'tooltipstring',[jobname ': ' job_sts]);
 % set batch_listbox
-set(findobj('tag','batch_listbox'),'value',1);
-set(findobj('tag','batch_listbox'),'string',names);
+set(findobj(gcf,'-regexp','tag','_listbox'),'value',1);
+set(findobj(gcf,'-regexp','tag','_listbox'),'string',names);
 
 % save or run?
 if ~isempty(jobsavfld), 
@@ -131,7 +131,7 @@ funpass(fp,{'funcs','idx','itemidx','rep','options','sa','subrun','funrun'});
 
 % init vars
 if ~exist('funcs','var'), return; elseif ~iscell(funcs), funcs = {funcs}; end;
-if ~exist('idx','var'), idx = get(findobj('tag','batch_listbox'),'value'); end; 
+if ~exist('idx','var'), idx = get(findobj(gcf,'-regexp','tag','_listbox'),'value'); end; 
 if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('itemidx','var'), return; elseif ~iscell(itemidx), itemidx{idx} = itemidx; end;
 if ~exist('rep','var')||idx>numel(rep), rep{idx} = zeros(size(itemidx{idx})); end;
@@ -143,7 +143,7 @@ iter = 1:numel(funrun);
 try % get job/module ids 
 [~,cjob,mod_ids] = evalc('cfg_util(''initjob'',funcs)'); 
 catch err
-disp(err.message); set(findobj('tag','Setup Batch Job'),'string','Empty'); return; 
+disp(err.message); set(findobj(gcf,'tag','setup batch job'),'string','Empty'); return; 
 end
 
 % get id, contents, and names
@@ -187,11 +187,15 @@ for v = listdlg('PromptString','Choose items to set:','ListString',itemnames{idx
     
     % set rep
     if ~isempty(pchc), rep{idx}(v) = p(pchc); else rep{idx}(v) = 0; end;
-       
+    
+    % set default options
+    clear defopts; defopts = options{idx,v}; 
+    if iscell(defopts)&&numel(defopts)==1, defopts = defopts{1}; end;
+    
     % create val
     val = {}; done = 0;
     while ~done
-    val{end+1,1} = sawa_createvars([itemnames{idx}{v} ' ' num2str(defidx)],'(cancel when finished)',subrun,sa);
+    val{end+1,1} = sawa_createvars([itemnames{idx}{v} ' ' num2str(defidx)],'(cancel when finished)',subrun,sa,defopts);
     if isempty(val{end}), val(end) = []; done = 1; end;
     end
     
@@ -201,13 +205,11 @@ for v = listdlg('PromptString','Choose items to set:','ListString',itemnames{idx
     % set funrun if empty 
     if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
     
-    % empty options 
-    options{idx,v} = repmat({{}},[numel(iter),1]);
-
     % prep val
     if ~iscell(val)||numel(funrun)~=numel(val), val = {val}; end;
 
     % set to options
+    if v > numel(options(idx,:)), options{idx,v} = repmat({{}},[numel(iter),1]); end;
     options{idx,v}(iter,1) = sawa_setfield(options{idx,v},iter,[],[],val{:});
 end
 end

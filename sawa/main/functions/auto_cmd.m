@@ -60,8 +60,8 @@ funcs{end+1} = cell2mat(inputdlg('Enter command line function:'));
 if isempty(funcs{end}), return; end;
 
 % set funcs
-set(findobj('tag','cmd_listbox'),'value',1);
-set(findobj('tag','cmd_listbox'),'string',funcs);
+set(findobj(gcf,'-regexp','tag','_listbox'),'value',1);
+set(findobj(gcf,'-regexp','tag','_listbox'),'string',funcs);
 
 % set funcs and options to fp
 fp = funpass(fp,{'funcs'});
@@ -74,10 +74,10 @@ funpass(fp,{'funcs','options','sa','subrun','funrun'});
 
 % init vars
 if ~exist('funcs','var')||isempty(funcs), 
-funcs = get(findobj('tag','cmd_listbox'),'string');
+funcs = get(findobj(gcf,'-regexp','tag','_listbox'),'string');
 end
 if isempty(funcs), return; end;
-if ~exist('idx','var'), idx = get(findobj('tag','cmd_listbox'),'value'); end;
+if ~exist('idx','var'), idx = get(findobj(gcf,'-regexp','tag','_listbox'),'value'); end;
 if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var'), if isempty(subrun), funrun = []; else funrun = subrun; end; end;
@@ -203,8 +203,6 @@ for i = funrun
 % print subject 
 if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
     printres(sa(i).subj,hres);
-else % iteration
-    printres(num2str(i),hres); 
 end;
 
 % func, run with options

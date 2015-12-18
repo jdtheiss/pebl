@@ -62,8 +62,8 @@ funcs{end+1} = cell2mat(inputdlg('Enter function to use:','Function'));
 if isempty(funcs{end}), return; end;
 
 % set funcs
-set(findobj('tag','wrap_listbox'),'value',1);
-set(findobj('tag','wrap_listbox'),'string',funcs);
+set(findobj(gcf,'-regexp','tag','_listbox'),'value',1);
+set(findobj(gcf,'-regexp','tag','_listbox'),'string',funcs);
 
 % set vars to fp
 fp = funpass(fp,{'funcs'});
@@ -76,11 +76,11 @@ funpass(fp);
 
 % init vars
 if ~exist('funcs','var')||isempty(funcs),
-funcs = get(findobj('tag','wrap_listbox'),'string');
+funcs = get(findobj(gcf,'-regexp','tag','_listbox'),'string');
 end
 if ~iscell(funcs), funcs = {funcs}; end;
 if isempty(funcs), return; end;
-if ~exist('idx','var'), idx = get(findobj('tag','wrap_listbox'),'value'); end;
+if ~exist('idx','var'), idx = get(findobj(gcf,'-regexp','tag','_listbox'),'value'); end;
 if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var'), if isempty(subrun), funrun = []; else funrun = subrun; end; end;
@@ -136,10 +136,17 @@ while ~done1 % loop for varargin
 % set ind if not varargin
 if strncmp(inargs{v},'varargin',8), inargs{v} = ['varargin ' num2str(varnum)]; end;
 
+% set tmpfuncs
+tmpfuncs = strcat('@',funcs(1:idx-1));
+
+% set default options
+clear defopts; try defopts = options{idx,ind}; catch, defopts = {}; end;
+if iscell(defopts)&&numel(defopts)==1, defopts = defopts{1}; end;
+    
 % create val
 val = {}; done2 = 0;
 while ~done2
-val{end+1,1} = sawa_createvars(inargs{v},'(cancel when finished)',subrun,sa,funcs{1:idx-1});
+val{end+1,1} = sawa_createvars(inargs{v},'(cancel when finished)',subrun,sa,defopts,tmpfuncs{:});
 if isempty(val{end}), val(end) = []; done2 = 1; end;
 end
 
@@ -166,8 +173,8 @@ end
 end
 
 % set funcs to listbox
-set(findobj('tag','wrap_listbox'),'value',1);
-set(findobj('tag','wrap_listbox'),'string',funcs);
+set(findobj(gcf,'-regexp','tag','_listbox'),'value',1);
+set(findobj(gcf,'-regexp','tag','_listbox'),'string',funcs);
 
 % output
 fp = funpass(fp,{'funrun','funcs','options','subgrp','outchc'});
@@ -198,8 +205,6 @@ for i = funrun
 % print subject 
 if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
     printres(sa(i).subj,hres);
-else % iteration
-    printres(num2str(i),hres); 
 end;
 
 % for each func
@@ -215,13 +220,15 @@ if isempty(outargs)&&abs(nargout(funcs{f}))>0, outargs = {'varargout'}; end;
 if isempty(inargs)&&abs(nargin(funcs{f}))>0, inargs = {'varargin'}; end;
 
 % evaluate options
-for x = 1:numel(options(f,:)) 
+for x = find(~cellfun('isempty',options(f,:))), 
     if isempty(options{f,x}{s}), continue; end;
     valf{x} = sawa_evalvars(options{f,x}{s});
 end
+if ~exist('valf','var'), valf = {}; end;
 
 % print command
-printres([funcs{f} '(' sawa_strjoin(any2str(1,valf{:}),', ') ')'],hres); 
+if isempty(valf), printres(funcs{f},hres);
+else printres([funcs{f} '(' sawa_strjoin(any2str(1,valf{:}),', ') ')'],hres); end;
 
 % evaluate function
 if nargout(funcs{f})==0 

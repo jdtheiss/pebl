@@ -33,6 +33,8 @@ if ~exist('varnam','var')||isempty(varnam), varnam = 'Variable'; end;
 if ~exist('msg','var'), msg = ''; end;
 if ~exist('subrun','var'), subrun = []; end;
 if ~exist('sa','var'), sa = {}; end;
+if ~exist('ival','var')||isempty(ival), ival = []; end;
+if ~exist('vars','var')||isempty(vars), vars = {''}; end;
 vals = {};
 
 % set choices
@@ -41,44 +43,48 @@ if isempty(sa), choices = choices(1:end-1); end;
 
 % get varargin class for defaults
 if numel(varargin) > 0, 
+% get functions to add to choices
+choices = horzcat(choices,varargin(strncmp(varargin,'@',1)));
+
 % set defaults based on class
 switch class(varargin{1})
     case 'cell' % if not cellstr, set iv to 2
-        if ~iscellstr(varargin{1})&&numel(varargin{1})==1, varargin = varargin{1}; iv = 4; 
-        elseif iscellstr(varargin{1}) vars = varargin{1}; iv = 1; end;
-    case 'char' % if @, set functions to choices
-        if strncmp(varargin{1},'@',1), choices = horzcat(choices,varargin{:});
-        else vars = cellstr(varargin{1}); iv = 1; end;
-        % if eval
-        if strncmp(vars{1},'eval(',5), iv = 3; end;
+        if numel(varargin{1})==1&&~isempty(varargin{1}{1}), % single cell
+            varargin{1} = varargin{1}{1}; ival = 4; 
+        elseif iscellstr(varargin{1})&&~isempty(varargin{1}), % cellstr 
+            vars = varargin{1}; ival = 1; 
+        end;
+    case 'char' % set char to cellstr
+        vars = cellstr(varargin{1}); ival = 1;
     case 'double' % if double, num2str
-        vars = {num2str(varargin{1})}; iv = 2;
+        vars = {num2str(varargin{1})}; ival = 2;
     case 'struct' % if struct
-        vars = varargin{1}; iv = 5;
+        vars = varargin{1}; ival = 5;
     case 'function_handle' % if function_handle, set to choices
         varargin = cellfun(@(x){['@' func2str(x)]},varargin);
         choices = horzcat(choices,varargin{:});
     otherwise % otherwise set default without iv
         vars = varargin{1};
-end     
 end
 
-% init default vars
-if ~exist('iv','var')||isempty(iv), iv = []; end;
-if ~exist('vars','var')||isempty(vars), vars = {}; end;
+% if cellstr, check for evals/files/dirs
+if iscellstr(vars)&&~isempty(vars), 
+if all(cellfun(@(x)strncmp(x,'eval(',5),vars)), ival = 3; end; % if evals
+if all(cellfun(@(x)exist(x,'file'),vars)), ival = 6; end; % if files
+if all(cellfun(@(x)isdir(x),vars)), ival = 7; end; % if dirs
+end
+end
 
 % choose method for invars
-chc = listdlg('PromptString',{['Choose method to set ' varnam ' ' msg],'',''},'ListString',choices,'InitialValue',iv); 
-if isempty(chc), vals = vars; return; end; 
-
-% set vars if empty to {''} for inputdlg
-if isempty(vars), vars = {''}; end;
+chc = listdlg('PromptString',{['Choose method to set ' varnam ' ' msg],'',''},'ListString',choices,'InitialValue',ival); 
+if isempty(chc), return; end; 
 
 for c = chc
 % set based on choice
 switch lower(choices{c})
 case {'string','number','evaluate'} % input
-    vars = cell2mat(inputdlg(['Set ' varnam],varnam,2,vars));
+    vars = cell2mat(inputdlg(['Set ' varnam],varnam,[max(numel(vars),2),50],{char(vars)}));
+    if isempty(vars), vars = {}; return; end;
     vars = strtrim(arrayfun(@(x){vars(x,:)},1:size(vars,1)));
     if c > 1 % number or evaluate
         vars = cellfun(@(x){eval(['[' x ']'])},vars);
@@ -100,7 +106,7 @@ case 'structure' % struct
         if isempty(fld)&&~isempty(tmpfld), vars = rmfield(vars,substr{subchc}); substr(subchc) = []; continue; end; % if no fld, remove
         % run sawa_createvars
         if ~isempty(fld), 
-            if isfield(vars,fld), varargin = {vars.(fld)}; elseif numel(varargin)==1, varargin = {}; end;
+            if isfield(vars,fld), varargin{1} = vars.(fld); else varargin{1} = {}; end;
             vars.(fld) = sawa_createvars(fld,'',subrun,sa,varargin{:}); 
             substr = vertcat(fieldnames(vars),'Add'); 
         end;
@@ -114,13 +120,13 @@ case 'function' % function
     fp = auto_function([],fp); vars = [fp.output{:}]; clear fp; 
 case 'subject array' % subject array
     % choose group
-    if ~isempty(subrun)
+    if ~isempty(subrun),
     grp = questdlg(['Choose group or individual for ' varnam '?'],varnam,'Group','Individual','Individual');
     else % set to group if empty
     grp = 'Group';
     end
     % get subrun
-    if strcmp(grp,'Group')
+    if strcmp(grp,'Group'), 
     subrun = sawa_subrun(sa,[],subrun);
     end
     % choose fields
