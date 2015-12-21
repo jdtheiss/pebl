@@ -65,9 +65,13 @@ for r = u_rep
     % set cells if needed 
     for f = fnd, if ~iscell(val{f}), val{f} = {val{f}}; end; end;
     
-    % get max ind of vals
+    % get min ind of vals if all cell
+    if all(cellfun('isclass',val{fnd},'cell'))
     ind = 1:min(cellfun(@(x)numel(x),val(fnd))); 
-    
+    else % otherwise set to 1
+    ind = 1;
+    end
+        
     % set cells if needed 
     for f = fnd, if numel(val{f})>numel(ind), val{f} = {val{f}}; end; end;
     

@@ -136,13 +136,10 @@ val = regexprep(val,['.*' filesep '.*'],'"$0"'); val = regexprep(val,'""','"');
 end;
 
 % set to one if only one char
-if iscell(val)&&numel(val)==1, val = val{1}; end; 
+if iscell(val)&&numel(val)==1, val = val{1}; end;
 end
 end
 
 % set vals to valf rep
 try eval([rep '=val;']); end;
-
-% set valf
-if iscell(valf)&&numel(valf)==1, valf = valf{1}; end;
 return;

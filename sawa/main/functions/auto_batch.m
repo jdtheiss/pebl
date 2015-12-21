@@ -41,6 +41,7 @@ varargout = varargin{1};
 function fp = add_function(fp)
 % create vars from fp
 funpass(fp,{'funcs','itemidx','str','sawafile','sa','subrun'});
+
 % init vars
 if ~exist('funcs','var'), funcs = {}; end;
 if ~exist('itemidx','var')||isempty(itemidx), itemidx = cell(size(funcs)); end;
@@ -121,8 +122,11 @@ if any(~cellfun('isempty',sawa_getfield(funcs,'','\.spm')))
 overwrite = questdlg('Overwrite previous SPM files? (if applicable)','Overwrite','Yes','No','No');
 end
 
+% empty options with empty itemidx
+fp.options(cellfun('isempty',itemidx)) = {[]};
+
 % set vars to fp
-fp = funpass(fp,{'spmver','funcs','itemidx','str','names','jobsavfld','jobname','saveorrun','overwrite'});
+fp = funpass(fp,{'spmver','funcs','options','itemidx','str','names','jobsavfld','jobname','saveorrun','overwrite'});
 return;
 
 function fp = set_options(fp)
@@ -288,8 +292,6 @@ for i = funrun
     % print subject 
     if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
         printres(sa(i).subj,hres);
-    else % iteration
-        printres(num2str(i),hres); 
     end;
     
     % set matlabbatch
