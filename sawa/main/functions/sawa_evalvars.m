@@ -134,9 +134,6 @@ if numel(val)>1&&strcmp(opt,'cmd'), val = ival; end;
 if strcmp(opt,'cmd'),
 val = regexprep(val,['.*' filesep '.*'],'"$0"'); val = regexprep(val,'""','"'); 
 end;
-
-% set to one if only one char
-if iscell(val)&&numel(val)==1, val = val{1}; end; 
 end
 end
 
