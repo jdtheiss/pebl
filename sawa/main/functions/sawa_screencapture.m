@@ -18,6 +18,9 @@ function filename = sawa_screencapture(hfig,filename,ext)
 % filename = 
 %
 % /Applications/sawa/output.png
+%
+% Note: if filename includes a path that does not exist, that path will be
+% made via mkdir
 % 
 % Created by Justin Theiss
 
@@ -29,7 +32,10 @@ if ~exist('ext','var')||isempty(ext), [fpath,ffile,ext] = fileparts(filename); e
 if isempty(ext), return; end;
 
 % remove ext from filename if needed
-if exist('fpath','var'), filename = fullfile(fpath,ffile); end;
+if exist('fpath','var'), 
+    filename = fullfile(fpath,ffile); 
+    if ~isdir(fpath)&&~isempty(fpath), mkdir(fpath); end;
+end;
 
 % if ext includes '.', remove
 if strncmp(ext,'.',1), ext = ext(2:end); end;
