@@ -135,9 +135,6 @@ for o = chc
     if isempty(val{end}), val(end) = []; done = 1; end;
     end
     
-    % if only one val, set to val{1}
-    if numel(val)==1, val = val{1}; end;
-    
     % set "" around paths
     val = regexprep(val,['.*' filesep '.*'],'"$0"');
 

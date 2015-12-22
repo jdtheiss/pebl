@@ -203,9 +203,6 @@ for v = listdlg('PromptString','Choose items to set:','ListString',itemnames{idx
     if isempty(val{end}), val(end) = []; done = 1; end;
     end
     
-    % if only one val, set to val{1}
-    if numel(val)==1, val = val{1}; end;
-    
     % set funrun if empty 
     if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
     
