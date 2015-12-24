@@ -64,7 +64,7 @@ disp(char('Load/Choose Modules to use:',...
 try % get job/module ids 
 [~,cjob,mod_ids] = evalc('cfg_util(''initjob'',funcs)'); 
 catch err
-disp(err.message); set(findobj(gcf,'tag','setup batch job'),'tooltipstring','Empty'); return; 
+disp(err.message); set(findobj('tag','setup batch job'),'tooltipstring','Empty'); return; 
 end
 
 % get names
@@ -104,7 +104,7 @@ end
 end
 
 % set job status
-set(findobj(gcf,'tag','setup batch job'),'tooltipstring',[jobname ': ' job_sts]);
+set(findobj('tag','setup batch job'),'tooltipstring',[jobname ': ' job_sts]);
 
 % save or run?
 if ~isempty(jobsavfld), 
@@ -128,7 +128,7 @@ funpass(fp,{'funcs','idx','itemidx','rep','options','sa','subrun','funrun'});
 
 % init vars
 if ~exist('funcs','var'), return; elseif ~iscell(funcs), funcs = {funcs}; end;
-if ~exist('idx','var'), idx = get(findobj(gcf,'-regexp','tag','_listbox'),'value'); end; 
+if ~exist('idx','var'), idx = get(findobj('-regexp','tag','_listbox'),'value'); end; 
 if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('itemidx','var'), return; elseif ~iscell(itemidx), itemidx{idx} = itemidx; end;
 if ~exist('rep','var')||idx>numel(rep), rep{idx} = zeros(size(itemidx{idx})); end;
@@ -146,7 +146,7 @@ funcs = funcs(ix{ii});
 try % get job/module ids 
 [~,cjob,mod_ids] = evalc('cfg_util(''initjob'',funcs)'); 
 catch err
-disp(err.message); set(findobj(gcf,'tag','setup batch job'),'string','Empty'); return; 
+disp(err.message); set(findobj('tag','setup batch job'),'string','Empty'); return; 
 end
 
 % get id, contents, and names

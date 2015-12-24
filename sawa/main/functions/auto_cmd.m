@@ -62,8 +62,8 @@ if isempty(funcs{end}), return; end;
 names{end+1} = funcs{end};
 
 % set funcs
-set(findobj(gcf,'-regexp','tag','_listbox'),'value',1);
-set(findobj(gcf,'-regexp','tag','_listbox'),'string',names);
+set(findobj('-regexp','tag','_listbox'),'value',1);
+set(findobj('-regexp','tag','_listbox'),'string',names);
 
 % set funcs and options to fp
 fp = funpass(fp,{'funcs','names'});
@@ -76,10 +76,10 @@ funpass(fp,{'funcs','options','sa','subrun','funrun'});
 
 % init vars
 if ~exist('funcs','var')||isempty(funcs), 
-funcs = get(findobj(gcf,'-regexp','tag','_listbox'),'string');
+funcs = get(findobj('-regexp','tag','_listbox'),'string');
 end
 if isempty(funcs), return; end;
-if ~exist('idx','var'), idx = get(findobj(gcf,'-regexp','tag','_listbox'),'value'); end;
+if ~exist('idx','var'), idx = get(findobj('-regexp','tag','_listbox'),'value'); end;
 if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var'), if isempty(subrun), funrun = []; else funrun = subrun; end; end;
@@ -94,9 +94,12 @@ for o = hswitch
 clear tmpmsg; tmpmsg = evalc(['sawa_system(''' funcs{idx} ''',''' o{1} ''');']); 
 if ~isempty(tmpmsg)&&numel(tmpmsg)>numel(helpmsg), helpmsg = tmpmsg; end;    
 end
+if any(regexpi(helpmsg,'invalid option')) % if msg includes "invalid option"
+    helpmsg = regexprep(helpmsg,'.*\wnvalid \wption',''); 
+end
 
 % display helpmsg
-if any(cellfun('isempty',options{idx,1})), disp(helpmsg); end;
+if any(cellfun('isempty',options{idx,1}))||isempty(funrun), disp(helpmsg); end;
 
 % get switches
 if ispc % pc switches

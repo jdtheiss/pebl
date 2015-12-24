@@ -74,12 +74,12 @@ funpass(fp);
 
 % init vars
 if ~exist('funcs','var')||isempty(funcs),
-funcs = get(findobj(gcf,'-regexp','tag','_listbox'),'string');
+funcs = get(findobj('-regexp','tag','_listbox'),'string');
 end
 if ~iscell(funcs), funcs = {funcs}; end;
 if isempty(funcs), return; end;
 if ~exist('names','var')||isempty(names), names = funcs; end;
-if ~exist('idx','var'), idx = get(findobj(gcf,'-regexp','tag','_listbox'),'value'); end;
+if ~exist('idx','var'), idx = get(findobj('-regexp','tag','_listbox'),'value'); end;
 if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var'), if isempty(subrun), funrun = []; else funrun = subrun; end; end;
