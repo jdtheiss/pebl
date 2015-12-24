@@ -7,7 +7,8 @@ function vals = sawa_createvars(varnam,msg,subrun,sa,varargin)
 % msg - optional string message to display in listdlg
 % subrun - numeric array of subjects to use (optional)
 % sa - subject array (optional)
-% varargin - can be default value or previous functions to use output
+% varargin - can be default value or previous functions to use output (must
+% be string and begin with '@')
 % Note: if subrun/sa are not entered, user will choose
 %
 % Outputs:
@@ -140,15 +141,17 @@ case 'subject array' % subject array
     end
 case lower(varargin) % functions 
     % find choice in varargin
-    n = find(strcmp(varargin,choices{x}),1,'first');
+    n = find(strcmp(varargin,choices{c}),1,'first');
     % get outargs
-    outargs = getargs(choices{x});
+    outargs = getargs(choices{c});
     if isempty(outargs), outargs = {'varargout'}; end;
     % choose outargs
-    v = listdlg('PromptString',['Choose output from ' choices{x}],'ListString',outargs);
+    v = listdlg('PromptString',{['Choose output from ' choices{c}],''},'ListString',outargs);
     if isempty(v), return; end;
+    % get relative idx
+    r = sum(cellfun(@(x)strncmp(x,'@',1),varargin))+1-n;
     % strcat
-    vars = strcat('evalin(''caller'',','''output{i}{', num2str(n),',',arrayfun(@(x){num2str(x)},v),'}'');');
+    vars = strcat('evalin(''caller'',','''output{i}{',['f-' num2str(r)],',',arrayfun(@(x){num2str(x)},v),'}'');');
 end
 if iscell(vars)&&size(vars,2) > size(vars,1), vars = vars'; end; % if horizontal
 % vertcat

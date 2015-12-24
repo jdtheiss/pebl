@@ -1,5 +1,4 @@
 function [gcstr,idx] = match_string(str)
-% match string
 % [gcstr,idx] = match_string(str)
 % This function will find the greatest common string derivative of str 
 % that matches the greatest number of strings in cellstr

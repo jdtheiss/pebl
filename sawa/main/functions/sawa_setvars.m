@@ -1,4 +1,4 @@
-function savedvars = sawa_setvars(mfil)
+function savedvars = sawa_setvars(mfil,savedvars)
 % savedvars = setvars(mfil)
 % Set variables for running multiple functions in GUI for either
 % scripts or .mat functions
@@ -30,18 +30,24 @@ function savedvars = sawa_setvars(mfil)
     
 % set svars struct
 svars = struct;
+
 % if no mfil, choose
 if nargin == 0, 
 [tmpfil,tmppath]=uigetfile({'*.m';'*.mat'},'Choose function to set variables for:');
 mfil = fullfile(tmppath,tmpfil); clear tmpfil tmppath;
 end
+
 % get nam, ext
 [~,nam,ext] = fileparts(mfil);
+
 % enter savedvars filename
+if ~exist('savedvars','var')||isempty(savedvars),
 savedvars = fullfile(fileparts(fileparts(which('sawa'))),'jobs');
 nam = cell2mat(inputdlg('Enter the name for the saved variables file:',...
     'Name for Saved Variables File',1,{[nam '_savedvars']}));
 if isempty(nam), return; end; savedvars = fullfile(savedvars,[nam '.mat']);
+end
+
 % if .m file
 if strcmp(ext,'.m')
 % get file text
@@ -50,18 +56,21 @@ filetext = fileread(mfil);
 dontrun = '[^\n]*%NoSetVars[^\n]*';
 nosubrun = '[^\n]*%NoSetSubrun[^\n]*';
 dorun = '[^\n]*%SetVars[^\n]*';
+
 % determine if can be run for setvars
 if any(regexp(filetext,dontrun))
     savedvars = [];
     return
 end
+
 % set savedvars variable
 if ~any(regexp(filetext,nosubrun))
     [subrun,sa,task,fileName] = sawa_subrun(sa, subrun);
 elseif any(regexp(filetext,dorun))
     sa={}; task = ''; subrun = []; fileName = ''; 
 end
-% run function and save variables 
+
+% run function and save variables
 if any(regexp(filetext,dorun))
     % if mpath, addpath mpath
     [mpath,mfil] = fileparts(mfil); if ~isempty(mpath), addpath(mpath); end;
@@ -72,16 +81,20 @@ if any(regexp(filetext,dorun))
     feval(mfil,sv,savedvars,sa,subrun,task,fileName); % eval function
     return;
 end
+
 % evaluate text
 svars = eval_text(svars,filetext);
+
 % clear vars except those set to svars struct
 clearvars -except svars;
+
 % get vars from svars, clear svars
 funpass(svars); clear svars;
+
 % save variables
 try save(savedvars); catch, savedvars = []; disp(['Could not save variables for ' mfil]); end;
 else % .mat file
-fp = sawa_editor('load_sawafile',mfil); fp.sv = 1; % set sv to 1
+fp = sawa_editor('load_sawafile',mfil,0,savedvars); fp.sv = 1; % set sv to 1
 save(savedvars,'fp');
 end
 return;

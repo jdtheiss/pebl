@@ -56,17 +56,15 @@ funpass(fp);
 
 % init vars
 if ~exist('funcs','var'), funcs = {}; end;
+if ~exist('names','var'), names = {}; end;
 
 % enter function
 funcs{end+1} = cell2mat(inputdlg('Enter function to use:','Function'));
 if isempty(funcs{end}), return; end;
-
-% set funcs
-set(findobj(gcf,'-regexp','tag','_listbox'),'value',1);
-set(findobj(gcf,'-regexp','tag','_listbox'),'string',funcs);
+names{end+1} = funcs{end};
 
 % set vars to fp
-fp = funpass(fp,{'funcs'});
+fp = funpass(fp,{'funcs','names'});
 return;
 
 % set input/output args
@@ -80,6 +78,7 @@ funcs = get(findobj(gcf,'-regexp','tag','_listbox'),'string');
 end
 if ~iscell(funcs), funcs = {funcs}; end;
 if isempty(funcs), return; end;
+if ~exist('names','var')||isempty(names), names = funcs; end;
 if ~exist('idx','var'), idx = get(findobj(gcf,'-regexp','tag','_listbox'),'value'); end;
 if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
@@ -137,7 +136,8 @@ while ~done1 % loop for varargin
 if strncmp(inargs{v},'varargin',8), inargs{v} = ['varargin ' num2str(varnum)]; end;
 
 % set tmpfuncs
-tmpfuncs = strcat('@',funcs(1:idx-1));
+tmpfuncs = funcs(1:idx-1); tmpfuncs = tmpfuncs(cellfun(@(x)~isstruct(x),tmpfuncs));
+tmpfuncs = strcat('@',tmpfuncs);
 
 % set default options
 clear defopts; try defopts = options{idx,ind}; catch, defopts = {}; end;
@@ -169,10 +169,6 @@ end
 end
 end
 
-% set funcs to listbox
-set(findobj(gcf,'-regexp','tag','_listbox'),'value',1);
-set(findobj(gcf,'-regexp','tag','_listbox'),'string',funcs);
-
 % output
 fp = funpass(fp,{'funrun','funcs','options','subgrp','outchc'});
 return;
@@ -188,25 +184,23 @@ if ~iscell(funcs), funcs = {funcs}; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var')||isempty(funrun), if isempty(subrun), funrun = 1; else funrun = subrun; end; end;
 if isempty(sa), subjs = arrayfun(@(x){num2str(x)},funrun); [sa(funrun).subj] = deal(subjs{:}); end;
-if ~exist('options','var'), options(1:numel(funcs),1) = {{}}; end;
+if ~exist('auto_i','var'), auto_i = funrun; end;
+if ~exist('auto_f','var'), auto_f = 1:numel(funcs); end;
+if ~exist('options','var'), options(auto_f,1) = {{}}; end;
 if ~iscell(options), options = {{options}}; end;
 if numel(funcs)>numel(options), options(numel(options)+1:numel(funcs),1) = {repmat({{}},[numel(funrun),1])}; end;
 if ~exist('hres','var'), hres = []; end;
-output(1:numel(funrun),1) = {{}};
-
-% set time left
-wb = settimeleft;
 
 % for each subject, run func
-for i = funrun
+for i = auto_i
+% for each func
+for f = auto_f
+try
 % print subject 
 if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
     printres(sa(i).subj,hres);
 end;
 
-% for each func
-for f = 1:numel(funcs)
-try
 % get subject index
 s = find(funrun==i,1);
 
@@ -262,10 +256,6 @@ catch err % if error, display message
 printres(['Error: ' funcs{f} ' ' sa(i).subj ': ' err.message],hres);
 end
 end
-
-% set time left
-settimeleft(i,funrun,wb,['Running ' sa(i).subj]);
-
 end
 
 % set vars to fp

@@ -61,8 +61,12 @@ if ~exist('sv','var'), sv = 0; end;
 if ~exist('savedvars','var'), savedvars = cell(size(funcs)); end;
 if ~iscell(savedvars), savedvars = {savedvars}; end;
 
-% run_Callback
+% if using savedvars, run_Callback
+if sv
 run_Callback([],[],funcs,sv,savedvars);
+else % otherwise, setvars
+for f = 1:numel(funcs), sawa_setvars(funcs{f},savedvars{f}); end;
+end
 end
 
 % Callback Functions

@@ -54,17 +54,19 @@ funpass(fp);
 
 % init vars
 if ~exist('funcs','var'), funcs = {}; end;
+if ~exist('names','var'), names = {}; end;
 
 % set funcs
 funcs{end+1} = cell2mat(inputdlg('Enter command line function:'));
 if isempty(funcs{end}), return; end;
+names{end+1} = funcs{end};
 
 % set funcs
 set(findobj(gcf,'-regexp','tag','_listbox'),'value',1);
-set(findobj(gcf,'-regexp','tag','_listbox'),'string',funcs);
+set(findobj(gcf,'-regexp','tag','_listbox'),'string',names);
 
 % set funcs and options to fp
-fp = funpass(fp,{'funcs'});
+fp = funpass(fp,{'funcs','names'});
 return;
 
 % set_options 
@@ -142,7 +144,7 @@ for o = chc
     if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
     
     % if iterations don't match, set to all
-    if ~iscell(val)||numel(funrun)~=numel(val), val = {val}; end; 
+    if ~iscell(val)||numel(funrun)~=numel(val), val = {val}; end;
 
     % set valf to val
     valf = cell(numel(iter),1);
@@ -186,25 +188,26 @@ if ~iscell(funcs), funcs = {funcs}; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var')||isempty(funrun), if isempty(subrun), funrun = 1; else funrun = subrun; end; end;
 if isempty(sa), subjs = arrayfun(@(x){num2str(x)},funrun); [sa(funrun).subj] = deal(subjs{:}); end;
-if ~exist('options','var'), options(1:numel(funcs),1) = {repmat({''},[numel(funrun),1])}; end;
+if ~exist('auto_i','var'), auto_i = funrun; end;
+if ~exist('auto_f','var'), auto_f = 1:numel(funcs); end;
+if ~exist('options','var'), options(auto_f,1) = {repmat({''},[numel(funrun),1])}; end;
 if ~iscell(options), options = {{options}}; end;
-for f = 1:numel(funcs), if numel(funrun) > numel(options{f,1}), options{f,1}(1:numel(funrun),1) = options{f,1}(1); end; end;
+for f = auto_f, 
+    if f > size(options,1), options{f,1} = {[]}; end;
+    if numel(funrun) > numel(options{f,1}), options{f,1}(1:numel(funrun),1) = options{f,1}(1); end; 
+end;
 if ~exist('hres','var'), hres = []; end;
-output(1:numel(funrun),1) = {{}};
-
-% set time left
-wb = settimeleft;
 
 % for each subj 
-for i = funrun
+for i = auto_i
+% func, run with options
+for f = auto_f
+try
 % print subject 
 if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
     printres(sa(i).subj,hres);
 end;
 
-% func, run with options
-for f = 1:numel(funcs)
-try
 % get subject index
 s = find(funrun==i,1);
 
@@ -228,10 +231,6 @@ catch err % if error
     printres(['Error: ' funcs{f} ' ' sa(i).subj ' ' err.message],hres);
 end
 end
-
-% set time left
-settimeleft(i,funrun,wb,['Running ' sa(i).subj]); 
-
 end
 
 % set vars to fp
