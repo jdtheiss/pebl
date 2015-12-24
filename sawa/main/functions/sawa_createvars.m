@@ -45,7 +45,8 @@ if isempty(sa), choices = choices(1:end-1); end;
 % get varargin class for defaults
 if numel(varargin) > 0, 
 % get functions to add to choices
-choices = horzcat(choices,varargin(strncmp(varargin,'@',1)));
+funcs = varargin(strncmp(varargin,'@',1));
+choices = horzcat(choices,funcs{:});
 
 % set defaults based on class
 switch class(varargin{1})
@@ -62,8 +63,8 @@ switch class(varargin{1})
     case 'struct' % if struct
         vars = varargin{1}; ival = 5;
     case 'function_handle' % if function_handle, set to choices
-        varargin = cellfun(@(x){['@' func2str(x)]},varargin);
-        choices = horzcat(choices,varargin{:});
+        funcs = cellfun(@(x){['@' func2str(x)]},varargin);
+        choices = horzcat(choices,funcs{:});
     otherwise % otherwise set default without iv
         vars = varargin{1};
 end
@@ -139,19 +140,21 @@ case 'subject array' % subject array
     else % group (only one field can be returned)
     vars = strcat('sa(', arrayfun(@(x){num2str(x)},subrun),').',vars{1},subvars)'; 
     end
-case lower(varargin) % functions 
-    % find choice in varargin
-    n = find(strcmp(varargin,choices{c}),1,'first');
+case funcs % functions 
+    % find choice relative to functions
+    n = find(find(strncmp(choices,'@',1))==c);
+    % get only char varargins
+    tmpvars = varargin(cellfun('isclass',varargin,'char'));
+    % find relative idx
+    r = subsref(find(strncmp(tmpvars,'@',1)),struct('type',{'()'},'subs',{{n}}));
     % get outargs
     outargs = getargs(choices{c});
     if isempty(outargs), outargs = {'varargout'}; end;
     % choose outargs
     v = listdlg('PromptString',{['Choose output from ' choices{c}],''},'ListString',outargs);
     if isempty(v), return; end;
-    % get relative idx
-    r = sum(cellfun(@(x)strncmp(x,'@',1),varargin))+1-n;
     % strcat
-    vars = strcat('evalin(''caller'',','''output{i}{',['f-' num2str(r)],',',arrayfun(@(x){num2str(x)},v),'}'');');
+    vars = strcat('evalin(''caller'',','''output{i}{',num2str(r),',',arrayfun(@(x){num2str(x)},v),'}'');');
 end
 if iscell(vars)&&size(vars,2) > size(vars,1), vars = vars'; end; % if horizontal
 % vertcat

@@ -83,6 +83,7 @@ if ~exist('idx','var'), idx = get(findobj('-regexp','tag','_listbox'),'value'); 
 if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('funrun','var'), if isempty(subrun), funrun = []; else funrun = subrun; end; end;
+if ~exist('program','var')||isempty(program), program = repmat({'auto_function'},1,numel(funcs)); end;
 iter = 1:numel(funrun);
 
 % display help msg
@@ -136,8 +137,8 @@ while ~done1 % loop for varargin
 if strncmp(inargs{v},'varargin',8), inargs{v} = ['varargin ' num2str(varnum)]; end;
 
 % set tmpfuncs
-tmpfuncs = funcs(1:idx-1); tmpfuncs = tmpfuncs(cellfun(@(x)~isstruct(x),tmpfuncs));
-tmpfuncs = strcat('@',tmpfuncs);
+tmpnames = names(1:idx-1); funidx = strcmp(program(1:idx-1),'auto_function');
+tmpnames(funidx) = strcat('@',tmpnames(funidx));
 
 % set default options
 clear defopts; try defopts = options{idx,ind}; catch, defopts = {}; end;
@@ -146,7 +147,7 @@ if iscell(defopts)&&numel(defopts)==1, defopts = defopts{1}; end;
 % create val
 val = {}; done2 = 0;
 while ~done2
-val{end+1,1} = sawa_createvars(inargs{v},'(cancel when finished)',subrun,sa,defopts,tmpfuncs{:});
+val{end+1,1} = sawa_createvars(inargs{v},'(cancel when finished)',subrun,sa,defopts,tmpnames{:});
 if isempty(val{end}), val(end) = []; done2 = 1; end;
 end
 
