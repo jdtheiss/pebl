@@ -181,7 +181,7 @@ if ~exist('program','var'), program = {}; end;
 fp = feval(program{end},'add_function',fp);
 
 % set names
-set(findobj(gcf,'-regexp','tag','_listbox'),'string',fp.names);
+set(findobj('-regexp','tag','_listbox'),'string',fp.names);
 
 % set program to struct
 fp = funpass(fp,'program');
@@ -196,7 +196,7 @@ funpass(fp);
 if ~exist('funcs','var')||isempty(funcs), return; end;
 
 % get idx from listbox
-if ~exist('idx','var'), idx = get(findobj(gcf,'-regexp','tag','_listbox'),'value'); end;
+if ~exist('idx','var'), idx = get(findobj('-regexp','tag','_listbox'),'value'); end;
 if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
 
 % if no program, get program
@@ -213,7 +213,7 @@ if ~exist('program','var')||idx > numel(program)
 end
     
 % set names
-set(findobj(gcf,'-regexp','tag','_listbox'),'string',fp.names);
+set(findobj('-regexp','tag','_listbox'),'string',fp.names);
 
 % run program's set_options
 fp = feval(program{idx},'set_options',fp);
@@ -326,7 +326,7 @@ if ~any(savedvars), return; end; % return if none chosen
 load(savedvars,'fp'); % load savedvars
 % set structure names to fp.names
 funpass(fp,{'names','funcs'}); if ~exist('names','var'), names = funcs; end;
-set(findobj(gcf,'style','listbox'),'string',names); % set names
+set(findobj('-regexp','tag','_listbox'),'string',names); % set names
 guidata(gcf,fp); return; % set new data to guidata
 
 else % save
