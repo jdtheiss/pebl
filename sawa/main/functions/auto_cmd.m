@@ -147,7 +147,7 @@ for o = chc
     if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
     
     % if iterations don't match, set to all
-    if ~iscell(val)||numel(funrun)~=numel(val), val = {val}; end;
+    if ~iscell(val)||numel(funrun)~=numel(val)&&numel(val)>1, val = {val}; end;
 
     % set valf to val
     valf = cell(numel(iter),1);

@@ -142,7 +142,7 @@ tmpnames(funidx) = strcat('@',tmpnames(funidx));
 
 % set default options
 clear defopts; try defopts = options{idx,ind}; catch, defopts = {}; end;
-if iscell(defopts)&&numel(defopts)==1, defopts = defopts{1}; end;
+if iscell(defopts)&&numel(defopts)==numel(funrun), defopts = defopts{1}; end;
     
 % create val
 val = {}; done2 = 0;
@@ -155,7 +155,7 @@ end
 if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
    
 % if iterations don't match, set to all
-if ~iscell(val)||numel(funrun)~=numel(val), val = {val}; end;
+if ~iscell(val)||numel(funrun)~=numel(val)&&numel(val)>1, val = {val}; end;
 
 % set to options
 if ind > numel(options(idx,:)), options{idx,ind} = repmat({{}},[numel(funrun),1]); end;
@@ -213,7 +213,7 @@ if isempty(inargs)&&abs(nargin(funcs{f}))>0, inargs = {'varargin'}; end;
 
 % evaluate options
 for x = find(~cellfun('isempty',options(f,:))), 
-    if isempty(options{f,x}{s}), continue; end;
+    if s>numel(options{f,x})||isempty(options{f,x}{s}), continue; end;
     valf{x} = sawa_evalvars(options{f,x}{s});
 end
 if ~exist('valf','var'), valf = {}; end;

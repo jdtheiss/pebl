@@ -206,7 +206,7 @@ for v = listdlg('PromptString','Choose items to set:','ListString',itemnames{idx
     if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
     
     % prep val
-    if ~iscell(val)||numel(funrun)~=numel(val), val = {val}; end;
+    if ~iscell(val)||numel(funrun)~=numel(val)&&numel(val)>1, val = {val}; end;
 
     % set to options
     if v > numel(options(idx,:)), options{idx,v} = repmat({{}},[numel(iter),1]); end;
@@ -348,7 +348,7 @@ i = funrun(s);
 for mx = 1:numel(itemidx{m})
 
 % evalvars
-if isempty(options{m,mx}), continue; end;
+if s>numel(options{m,mx})||isempty(options{m,mx}), continue; end;
 valf{mx} = sawa_evalvars(options{m,mx}{s});
 if iscell(valf{mx})&&rep{m}(mx)==0, valf{mx} = sawa_getfield(valf{mx},'',''); end;
 

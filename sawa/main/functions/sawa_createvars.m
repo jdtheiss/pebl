@@ -85,6 +85,7 @@ for c = chc
 % set based on choice
 switch lower(choices{c})
 case {'string','number','evaluate'} % input
+    if ~ischar(vars), vars = []; end;
     vars = cell2mat(inputdlg(['Set ' varnam],varnam,[max(numel(vars),2),50],{char(vars)}));
     if isempty(vars), vars = {}; return; end;
     vars = strtrim(arrayfun(@(x){vars(x,:)},1:size(vars,1)));
