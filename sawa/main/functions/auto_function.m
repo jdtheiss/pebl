@@ -220,7 +220,7 @@ if ~exist('valf','var'), valf = {}; end;
 
 % print command
 if isempty(valf), printres(funcs{f},hres);
-else printres([funcs{f} '(' sawa_strjoin(any2str(1,valf{:}),', ') ')'],hres); end;
+else printres(cell2strtable(sawa_cat(1,funcs{f},inargs,any2str(valf{:})),' '),hres); end;
 
 % evaluate function
 if nargout(funcs{f})==0 
@@ -250,7 +250,7 @@ end
 
 % print output
 if nargout(funcs{f}) > 0
-printres(cell2strtable(sawa_cat(1,outargs(outchc),any2str([],output{s}{f,:})),' '),hres);
+printres(cell2strtable(sawa_cat(1,outargs(outchc),any2str(output{s}{f,:})),' '),hres);
 end
 
 catch err % if error, display message

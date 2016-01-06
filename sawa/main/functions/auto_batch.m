@@ -270,7 +270,7 @@ if ~isempty(spmver), printres(['SPM version: ' spmver],hres); end;
 for m = 1:numel(matlabbatch)
 prntidx{m} = ~ismember(1:numel(itemnames{m}),itemidx{m});
 % print itemnames and string rep of values for non-itemidx
-cellfun(@(x,y){printres([x ': ' sawa_strjoin(any2str([],y),'\n')],hres)},itemnames{m}(prntidx{m}),contents{m}{2}(prntidx{m}));
+cellfun(@(x,y){printres([x ': ' sawa_strjoin(any2str(y),'\n')],hres)},itemnames{m}(prntidx{m}),contents{m}{2}(prntidx{m}));
 end; % print separator
 printres(repmat('-',1,75),hres); 
 end;
@@ -353,7 +353,7 @@ valf{mx} = sawa_evalvars(options{m,mx}{s});
 if iscell(valf{mx})&&rep{m}(mx)==0, valf{mx} = sawa_getfield(valf{mx},'',''); end;
 
 % print vars
-printres([itemnames{m}{mx} ': ' sawa_strjoin(any2str([],valf{mx}),'\n')],hres);
+printres([itemnames{m}{mx} ': ' sawa_strjoin(any2str(valf{mx}),'\n')],hres);
 
 % if any empty with group, remove subject
 if iscell(valf{mx})&&any(cellfun('isempty',valf{mx}))

@@ -40,7 +40,7 @@ switch class(C)
     case {'double','logical'} % if double/logical, %g
         str = sprintf(['%g' delim],C);
     otherwise % otherwise any2str
-        try str = sawa_strjoin(any2str([],C),delim); return; end;
+        try str = sawa_strjoin(any2str(C),delim); return; end;
 end
 
 % remove final delim
