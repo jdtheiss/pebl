@@ -248,11 +248,11 @@ if ~exist('outchc','var'), outchc = 1:numel(outargs); end;
 [tmpout{1:max(outchc)}] = feval(funcs{f},valf{:});
 end
 
+if ~isempty(outchc)
 % output
 [output{s}(f,:)] = tmpout(outchc);
 
 % print output
-if nargout(funcs{f}) > 0
 printres(cell2strtable(sawa_cat(1,outargs(outchc),any2str(output{s}{f,:})),' '),hres);
 end
 
