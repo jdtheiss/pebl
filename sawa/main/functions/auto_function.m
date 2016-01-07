@@ -151,6 +151,9 @@ val{end+1,1} = sawa_createvars(inargs{v},'(cancel when finished)',subrun,sa,defo
 if isempty(val{end}), val(end) = []; done2 = 1; end;
 end
 
+% if only once cell, set to inner cell
+if numel(val)==1, val = val{1}; end;
+
 % set funrun if empty 
 if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
    
