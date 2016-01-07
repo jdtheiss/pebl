@@ -142,7 +142,7 @@ tmpnames(funidx) = strcat('@',tmpnames(funidx));
 
 % set default options
 clear defopts; try defopts = options{idx,ind}; catch, defopts = {}; end;
-if iscell(defopts)&&numel(defopts)==numel(funrun), defopts = defopts{1}; end;
+if ~isempty(defopts)&&iscell(defopts)&&numel(defopts)==numel(funrun), defopts = defopts{1}; end;
     
 % create val
 val = {}; done2 = 0;
