@@ -45,7 +45,7 @@ if isempty(sa), choices = choices(1:end-1); end;
 % get varargin class for defaults
 if numel(varargin) > 0, 
 % get functions to add to choices
-funcs = varargin(strncmp(varargin,'@',1));
+funcs = varargin(strncmp(varargin,'@',1)); 
 choices = horzcat(choices,funcs{:});
 
 % set defaults based on class
@@ -83,8 +83,8 @@ if isempty(chc), return; end;
 
 for c = chc
 % set based on choice
-switch lower(choices{c})
-case {'string','number','evaluate'} % input
+switch choices{c}
+case {'String','Number','Evaluate'} % input
     if ~ischar(vars), vars = []; end;
     vars = cell2mat(inputdlg(['Set ' varnam],varnam,[max(numel(vars),2),50],{char(vars)}));
     if isempty(vars), vars = {}; return; end;
@@ -92,10 +92,10 @@ case {'string','number','evaluate'} % input
     if c > 1 % number or evaluate
         vars = cellfun(@(x){eval(['[' x ']'])},vars);
     end
-case 'cell' % cell
+case 'Cell' % cell
     vars = sawa_createvars(varnam,msg,subrun,sa,varargin{:});
     vals = cat(1,vals,{vars}); continue;
-case 'structure' % struct
+case 'Structure' % struct
     if isstruct(vars), substr = vertcat(fieldnames(vars),'Add'); else vars = struct; substr = {'Add'}; end;
     done = 0; 
     while ~done
@@ -114,14 +114,14 @@ case 'structure' % struct
             substr = vertcat(fieldnames(vars),'Add'); 
         end;
     end
-case 'choose file' % choose file
+case 'Choose File' % choose file
     vars = cellstr(spm_select(Inf,'any',['Select file for ' varnam],vars));
-case 'choose directory' % choose dir
+case 'Choose Directory' % choose dir
     vars = cellstr(spm_select(Inf,'dir',['Select directory for ' varnam],vars));
-case 'function' % function
+case 'Function' % function
     fp = funpass(struct,'sa'); 
     fp = auto_function([],fp); vars = [fp.output{:}]; clear fp; 
-case 'subject array' % subject array
+case 'Subject Array' % subject array
     % choose group
     if ~isempty(subrun),
     grp = questdlg(['Choose group or individual for ' varnam '?'],varnam,'Group','Individual','Individual');
@@ -143,7 +143,7 @@ case 'subject array' % subject array
     end
 case funcs % functions 
     % find choice relative to functions
-    n = find(find(strncmp(choices,'@',1))==c);
+    n = find(find(strncmp(choices,'@',1))==c); 
     % get only char varargins
     tmpvars = varargin(cellfun('isclass',varargin,'char'));
     % find relative idx

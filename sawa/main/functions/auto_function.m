@@ -116,13 +116,13 @@ end
 % choose output vars
 if ~exist('outvars','var'),
 if ~isempty(outargs)
-outchc = listdlg('PromptString','Choose output variables:','ListString',outargs);
+outchc{idx} = listdlg('PromptString','Choose output variables:','ListString',outargs);
 else % no outargs
-outchc = [];
+outchc{idx} = [];
 end
 else % set outchc by outvars
-outchc = find(strcmp(outargs,outvars)); 
-if strcmp(outargs,'varargout'), outchc = 1; end;
+outchc{idx} = find(strcmp(outargs,outvars)); 
+if strcmp(outargs,'varargout'), outchc{idx} = 1; end;
 end
 
 % set invars based on input, file, sa
@@ -238,22 +238,22 @@ end
 if ~isempty(hres), disp(tmpout{1}); end;
     
 % set outchc to 1 and outargs to {''}
-outchc = 1; outargs = {''};
+outchc{f} = 1; outargs = {''};
 
 else % otherwise set tmpout 
 % set outchc if needed
-if ~exist('outchc','var'), outchc = 1:numel(outargs); end;
+if ~exist('outchc','var'), outchc{f} = 1:numel(outargs); end;
 
 % run feval
-[tmpout{1:max(outchc)}] = feval(funcs{f},valf{:});
+[tmpout{1:max(outchc{f})}] = feval(funcs{f},valf{:});
 end
 
-if ~isempty(outchc)
+if ~isempty(outchc{f})
 % output
-[output{s}(f,:)] = tmpout(outchc);
+[output{s}(f,outchc{f})] = tmpout(outchc{f});
 
 % print output
-printres(cell2strtable(sawa_cat(1,outargs(outchc),any2str(output{s}{f,:})),' '),hres);
+printres(cell2strtable(sawa_cat(1,outargs(outchc{f}),any2str(output{s}{f,:})),' '),hres);
 end
 
 catch err % if error, display message
