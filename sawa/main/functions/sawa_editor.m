@@ -321,9 +321,9 @@ cd(fileparts(fileparts(mfilename('fullpath'))));
 if ~isdir('jobs'), mkdir('jobs'); end;
 cd('jobs');
 if strcmpi(lsr,'load') % load
-savedvars = uigetfile('*savedvars*.mat','Load savedvars file to use:');
+[savedvars, spath] = uigetfile('*savedvars*.mat','Load savedvars file to use:');
 if ~any(savedvars), return; end; % return if none chosen
-load(savedvars,'fp'); % load savedvars
+savedvars = fullfile(spath, savedvars); load(savedvars,'fp'); % load savedvars
 % set structure names to fp.names
 funpass(fp,{'names','funcs'}); if ~exist('names','var'), names = funcs; end;
 set(findobj('-regexp','tag','_listbox'),'string',names); % set names
