@@ -231,7 +231,7 @@ clear tmp;
 if ~isempty(hres), printres(tmp,hres); end;
 
 % set output
-[output{s}(f,:)] = {tmp}; 
+[output{i}(f,:)] = {tmp}; 
 
 catch err % if error
     printres(['Error: ' funcs{f} ' ' sa(i).subj ' ' err.message],hres);
