@@ -254,7 +254,7 @@ if ~exist('names','var'), names = funcs; end;
 structure.listbox.string = names;
 
 % enter helpmsg
-helpmsg = char(textwrap(inputdlg(['Enter "help message" for ' savefile],'help message',[2,50]),75));
+helpmsg = char(textwrap(inputdlg(['Enter "help message" for ' savefile],'help message',[2,75]),75));
 
 % save
 save(sawafile,'structure','fp','program','helpmsg');

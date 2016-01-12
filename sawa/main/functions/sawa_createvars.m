@@ -71,7 +71,6 @@ end
 
 % if cellstr, check for evals/files/dirs
 if iscellstr(vars)&&~isempty(vars), 
-if all(cellfun(@(x)strncmp(x,'eval(',5),vars)), ival = 3; end; % if evals
 if all(cellfun(@(x)exist(x,'file'),vars)), ival = 6; end; % if files
 if all(cellfun(@(x)isdir(x),vars)), ival = 7; end; % if dirs
 end
@@ -85,7 +84,7 @@ for c = chc
 % set based on choice
 switch choices{c}
 case {'String','Number','Evaluate'} % input
-    if ~ischar(vars), vars = []; end;
+    if ~iscellstr(vars)&&~ischar(vars), vars = []; end;
     vars = cell2mat(inputdlg(['Set ' varnam],varnam,[max(numel(vars),2),50],{char(vars)}));
     if isempty(vars), vars = {}; return; end;
     vars = strtrim(arrayfun(@(x){vars(x,:)},1:size(vars,1)));
