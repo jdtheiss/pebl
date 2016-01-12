@@ -183,6 +183,12 @@ fp = feval(program{end},'add_function',fp);
 % set names
 set(findobj('-regexp','tag','_listbox'),'string',fp.names);
 
+% update program for auto_batch
+if strcmp(program{end},'auto_batch'), 
+    if ~exist('names','var'), names = {}; end;
+    program = horzcat(program{1:end-1},repmat({'auto_batch'},1,numel(fp.names)-numel(names)));
+end
+
 % set program to struct
 fp = funpass(fp,'program');
 return;

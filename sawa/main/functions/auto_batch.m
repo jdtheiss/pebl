@@ -356,12 +356,12 @@ valf{mx} = sawa_evalvars(options{m,mx}{s});
 if iscell(valf{mx})&&rep{m}(mx)==0, valf{mx} = sawa_getfield(valf{mx},'',''); end;
 
 % print vars
-printres([itemnames{m}{mx} ': ' sawa_strjoin(any2str(valf{mx}),'\n')],hres);
+printres([itemnames{m}{itemidx{m}(mx)} ': ' sawa_strjoin(any2str(valf{mx}),'\n')],hres);
 
 % if any empty with group, remove subject
 if iscell(valf{mx})&&any(cellfun('isempty',valf{mx}))
 n = cellfun('isempty',valf{mx})'; n = regexprep(options{m,mx}{s}(n),'.*sa\(([\d\w]+\)\..*','$1');
-printres(['Missing ' itemnames{m}{mx} ' for subject(s) ' sawa_strjoin(sa(str2double(n)).subj,'\n')],hres);
+printres(['Missing ' itemnames{m}{itemidx{m}(mx)} ' for subject(s) ' sawa_strjoin(sa(str2double(n)).subj,'\n')],hres);
 % remove from others
 for r = 1:size(options,2), 
     if isempty(options{m,mx}), continue; end;
@@ -376,6 +376,6 @@ end
 
 % if failed to set vals in repeat
 for mx = 1:numel(itemidx{m})
-arrayfun(@(x){printres(['Could not set vals for ' itemnames{m}{mx} ' ' num2str(x)],hres)},find(~sts{mx})); 
+arrayfun(@(x){printres(['Could not set vals for ' itemnames{m}{itemidx{m}(mx)} ' ' num2str(x)],hres)},find(~sts{mx})); 
 end;
 return;
