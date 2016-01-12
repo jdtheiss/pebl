@@ -28,7 +28,9 @@ if ~iscell(celltable), celltable = {celltable}; end;
 if ~exist('delim','var'), delim = '\t'; end; 
 
 % for each cell, try to convert to string
+if ~all(cellfun('isempty',celltable)),
 for x = find(~cellfun('isempty',celltable)), celltable(x) = any2str(celltable{x}); end;
+end
 
 % set NaN to ''
 celltable(cellfun('isempty',celltable)) = {''};
