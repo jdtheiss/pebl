@@ -192,8 +192,7 @@ for v = listdlg('PromptString','Choose items to set:','ListString',itemnames{idx
     if ~isempty(pchc), rep{idx}(v) = p(pchc); else rep{idx}(v) = 0; end;
     
     % set default options
-    clear defopts; defopts = options{idx,v}; 
-    if iscell(defopts)&&numel(defopts)==1, defopts = defopts{1}; end;
+    clear defopts; try defopts = options{idx,v}{1}; catch, defopts = {}; end; 
     
     % create val
     val = {}; done = 0;

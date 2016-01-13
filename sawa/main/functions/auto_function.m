@@ -141,8 +141,7 @@ tmpnames = names(1:idx-1); funidx = strcmp(program(1:idx-1),'auto_function');
 tmpnames(funidx) = strcat('@',tmpnames(funidx));
 
 % set default options
-clear defopts; try defopts = options{idx,ind}; catch, defopts = {}; end;
-if ~isempty(defopts)&&iscell(defopts)&&numel(defopts)==numel(funrun), defopts = defopts{1}; end;
+clear defopts; try defopts = options{idx,ind}{1}; catch, defopts = {}; end;
     
 % create val
 val = {}; done2 = 0;
