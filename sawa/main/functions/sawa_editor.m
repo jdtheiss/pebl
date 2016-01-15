@@ -118,15 +118,16 @@ end
 newpath{end+1} = uigetdir(pwd,'Choose path to set');
 if ~any(newpath{end}), newpath{end} = cell2mat(inputdlg(['Enter value for ' envvar{end}])); end;
 
-% set environment
-if ~isempty(envvar{end})
-setenv(envvar{end},[oldpath newpath{end}]); 
+% set environment/path only if newpath{end} is not empty
+if ~isempty(newpath{end})
+if ~isempty(envvar{end})&&~any(strfind(oldpath,newpath{end})) 
+setenv(envvar{end},[oldpath newpath{end}]); % setenv
 else % addpath
 addpath(newpath{end});    
 end
-
-% set envvar to fp
+% set envvar to fp if newpath{end} is not empty
 fp = funpass(fp,{'envvar','newpath'});
+end
 return;
 
 % choose subjects to use 

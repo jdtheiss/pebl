@@ -116,7 +116,7 @@ else % choose task
 
     % set filpath
     filpath = fileparts(fileName); 
-    filpath = fullfile(filpath, 'Analyses Run');
+    filpath = fullfile(filpath, 'Notes');
 end
 
 % set savepath
