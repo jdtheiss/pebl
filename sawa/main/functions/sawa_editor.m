@@ -64,14 +64,18 @@ if ~exist('structure','var'), disp('Missing "structure".'); return; end;
 
 % setenv/path if needed
 if exist('envvar','var'), 
+clear varset; % create var to track which are set
+varset = repmat({0},1,numel(envvar));
 for x = 1:numel(envvar), 
 if ~isempty(envvar{x}) % setenv
 if ~any(strfind(getenv(envvar{x}),newpath{x})),
 if any(strfind(newpath{x},filesep)), newpath{x} = [':' newpath{x}]; end;
-setenv(envvar{x},[getenv(envvar{x}) newpath{x}]);
+setenv(envvar{x},[getenv(envvar{x}) newpath{x}]); varset{x} = 1;
 end;
 else % addpath
-addpath(newpath{x});    
+if ~any(strfind(path,newpath{x}))
+addpath(newpath{x}); varset{x} = 1;
+end
 end;
 end;
 end; 
@@ -86,6 +90,17 @@ fp = make_gui(structure,struct('data',fp));
 elseif sv % using savedvars
 fp = loadsaverun(fp,'run');    
 end
+
+% remove path if set
+if exist('envvar','var'), 
+for x = find(cell2mat(varset))
+if ~isempty(envvar{x}) % setenv
+setenv(envvar{x},strrep(getenv(envvar{x}),newpath{x},''));
+else % addpath
+rmpath(newpath{x});    
+end;
+end;
+end; 
 
 % if savedvars and not sv, save savedvars
 if ~isempty(savedvars)&&~sv, fp = loadsaverun(fp,'save'); end;
