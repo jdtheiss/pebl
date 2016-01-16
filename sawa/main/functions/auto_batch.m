@@ -152,7 +152,7 @@ end
 % get id, contents, and names
 [id,~,contents]=cfg_util('listmod',cjob,mod_ids{idx},[],cfg_findspec({{'hidden',false}}),...
 cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'name','class','level'});
-itemnames{idx} = contents{1}(itemidx{idx});
+itemnames{idx} = contents{1}(itemidx{idx});  
 
 % if empty itemidx, skip
 if ~isempty(itemidx{idx}), 
@@ -217,7 +217,7 @@ end
 end
 
 % set updated funcs to original funcs
-funcs = horzcat(fp.funcs{1:find(ii)-1},funcs,fp.funcs{find(ii)+1:end});
+funcs = horzcat(fp.funcs{[ix{1:ii-1}]},funcs,fp.funcs{[ix{ii+1:end}]});
 
 % set vars to fp
 fp = funpass(fp,{'funrun','funcs','options','rep'});
