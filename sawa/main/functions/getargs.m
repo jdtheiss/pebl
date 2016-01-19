@@ -37,8 +37,8 @@ txt = fileread(file); txt = regexprep(txt,'\s',''); % remove spaces
 % if subfunction, set fun to subfun
 if ~isempty(subfun), fun = subfun; end;
 % set match string
-matchstr = ['function\[?(?<outArgs>[\w,]*)\]?=(' func2str(fun) ')\(?(?<inArgs>[\w,]*)\)?'];
+matchstr = ['function\[?(?<outArgs>[\w,]*)\]?=?(' func2str(fun) ')\(?(?<inArgs>[\w,]*)\)?'];
 % get args
 args = regexpi(txt,matchstr,'names'); if isempty(args), return; end; 
 % remove spaces and split outArgs and inArgs
-outArgs = regexp(args.outArgs,'[^,]+','match'); inArgs = regexp(args.inArgs,'[^,]+','match');
+outArgs = regexp(args(1).outArgs,'[^,]+','match'); inArgs = regexp(args(1).inArgs,'[^,]+','match');
