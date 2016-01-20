@@ -238,6 +238,7 @@ if ~exist('itemidx','var'), return; elseif ~iscell(itemidx), itemidx{idx} = item
 if ~exist('rep','var')||isempty(rep), rep{1} = zeros(size(itemidx{1})); end;
 if numel(rep)<numel(funcs), for x = numel(rep)+1:numel(funcs), rep{x} = zeros(size(itemidx{x})); end; end;
 if ~exist('options','var'), options(1:numel(funcs),1:max(cellfun('size',itemidx,2))) = {repmat({{}},[numel(funrun),1])}; end;
+if ~all(cellfun('isclass',options,'cell')), options = cellfun(@(x){{x}},options); end;
 if isempty(sa), subjs = arrayfun(@(x){num2str(x)},funrun); [sa(funrun).subj] = deal(subjs{:}); end;
 if ~exist('saveorrun','var'), saveorrun = 'Run'; end;
 if ~exist('overwrite','var'), overwrite = 'No'; end;

@@ -191,6 +191,7 @@ if ~exist('auto_i','var'), auto_i = funrun; end;
 if ~exist('auto_f','var'), auto_f = 1:numel(funcs); end;
 if ~exist('options','var'), options(auto_f,1) = {{}}; end;
 if ~iscell(options), options = {{options}}; end;
+if ~all(cellfun('isclass',options,'cell')), options = cellfun(@(x){{x}},options); end;
 if numel(funcs)>numel(options), options(numel(options)+1:numel(funcs),1) = {repmat({{}},[numel(funrun),1])}; end;
 if ~exist('hres','var'), hres = []; end;
 

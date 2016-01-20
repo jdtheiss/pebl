@@ -38,8 +38,6 @@ varargin{1} = fullfile(pt,fl);
 end
 % for each cmd, run
 for x = 1:numel(cmd), fp = feval(cmd{x},varargin{:}); end;
-% reset paths to initial
-set_init_environments(fp);
 
 % load sawafile and run make_gui
 function fp = load_sawafile(sawafile,sv,savedvars)
@@ -62,10 +60,10 @@ fp = funpass(fp,{'sawafile','sv','savedvars'});
 funpass(fp);
 
 % if no structure, return
-if ~exist('structure','var'), disp('Missing "structure".'); return; end;
+if ~exist('structure','var'), error('Missing "structure".'); end;
 
 % set path/environment
-set_new_environments(fp);
+fp = set_new_environments(fp);
 
 % set structure.listbox.string to funcs
 if ~exist('names','var'), names = funcs; end;
@@ -78,8 +76,8 @@ elseif sv % using savedvars
 fp = loadsaverun(fp,'run');    
 end
 
-% remove path/environment
-local_rmpath(fp);
+% reset path/environment
+fp = set_init_environments(fp);
 
 % if savedvars and not sv, save savedvars
 if ~isempty(savedvars)&&~sv, fp = loadsaverun(fp,'save'); end;
@@ -91,89 +89,96 @@ function fp = set_environments(fp)
 funpass(fp);
 
 % init vars
-if ~exist('setfun','var')||~exist('newpath','var')||~exist('initpath','var'), 
-    setfun = {}; newpath = {}; initpath = {}; 
+if ~exist('setfun','var')||~exist('newpath','var')||~exist('getfun','var'), 
+    setfun = {}; newpath = {}; getfun = {};
 end;
-newpath{end+1} = {};
+if ~exist('initpath','var'), initpath = {}; end;
 
 % choose envchcs
-choices = {'setenv','addpath','javaaddpath'};
+choices = {'setenv','path','javaclasspath'};
 clear chc; chc = listdlg('PromptString',{'Select method to set environment/add path:',''},'ListString',choices,'selectionmode','single');
 if isempty(chc), return; end;
 
 % set to choice
-setfun{end+1} = choices(chc);
+setfun{end+1,1} = choices{chc};
+getfun{end+1,1} = choices{chc};
+newpath{end+1,1} = [];
 
-% set newpath and initpath based on choice
-switch choices{chc}
-    case 'setenv'
-        setfun{end}{2} = cell2mat(inputdlg('Enter variable to set environment (e.g, PATH)'));
-        if isempty(setfun{end}{2}), return; end;
-        initpath{end+1} = getenv(setfun{end}{2}); 
-        newpath{end} = [initpath{end} ':'];
-    case 'addpath'
-        initpath{end+1} = path;
-    case 'javaaddpath'
-        initpath{end+1} = javaclasspath;
+% if setenv, enter env
+if strcmp(setfun{end,1},'setenv'),
+    setfun{end,2} = cell2mat(inputdlg('Enter environment to set (e.g., PATH)'));
+    if isempty(setfun{end,2}), return; end;
+    getfun(end,1:2) = {'getenv',setfun{end,2}}; 
+    if ispc, sep = ';'; else sep = ':'; end;
 end
 
-% get new path
-newpath{end} = [newpath{end} sawa_createvars('path')];
-if isempty(newpath{end}), return; end;
+% clear path or append?
+clrvar = questdlg('Clear or append?','Clear or Append','clear','append','append');
 
 % set new path
-try feval(setfun{end}{:},newpath{end}); catch, return; end; 
+newpath{end,1} = 'char'; % set to char initially
+newpath{end,2} = sawa_createvars(setfun{end,1});
+if isempty(newpath{end,2}), return; end;
 
-% set envvar to fp if newpath{end} is not empty
-fp = funpass(fp,{'setfun','newpath','initpath'});
+% if not clearing
+if ~strcmp(clrvar,'clear'), % if not clearing, set to getenv sep newpath 2
+switch setfun{end,1}
+    case 'setenv'
+    newpath{end,1} = 'eval'; % set newpath 1 to eval
+    newpath{end,2} = ['[getenv(''' setfun{end,2} ''') ''' sep newpath{end,2} ''']'];
+    case 'path'
+    setfun{end,1} = 'addpath';
+    case 'javaclasspath'
+    setfun{end,1} = 'javaaddpath';
+end
+end
+
+% get initial paths
+if numel(find(strcmp(setfun(:,1),setfun{end,1})))==1, % new, get init
+    initpath{end+1} = feval(getfun{end,~cellfun('isempty',getfun(end,:))});
+else % already done, use previous
+    initpath{end+1} = initpath{find(strcmp(setfun(:,1),setfun{end,1}),1)};
+end
+
+% set new paths
+try feval(setfun{end,~cellfun('isempty',setfun(end,:))},feval(newpath{end,:})); catch, return; end; 
+
+% set setfun and newpath to fp 
+fp = funpass(fp,{'setfun','newpath','getfun','initpath'});
 return;
 
 % set new environment
-function k = set_new_environments(fp)
+function fp = set_new_environments(fp)
 % get vars from fp
-funpass(fp,{'setfun','newpath'});
+funpass(fp,{'setfun','newpath','getfun'});
 
 % if no setfun or newpath, return
-if ~exist('setfun','var')||~exist('initpath','var'), return; end;
-if ~iscell(setfun), setfun = {{setfun}}; end;
-if ~iscell(newpath), newpath = {newpath}; end;
+if ~exist('setfun','var')||~exist('newpath','var')||~exist('getfun','var'), return; end;
 
-% reset to init environment
-k = set_init_environments(fp);
+% get initial paths
+initpath = cell(1,numel(getfun));
+for x = 1:size(getfun,1), initpath{x} = feval(getfun{x,~cellfun('isempty',getfun(x,:))}); end;
 
-% set new paths if init environment was set
-if k 
-for x = 1:numel(setfun)
-    try 
-        feval(setfun{x}{:},newpath{x});
-    catch err
-        disp(err.message); k = false;
-    end     
-end
-end
+% set new paths 
+for x = 1:size(setfun,1), feval(setfun{x,~cellfun('isempty',setfun(x,:))},feval(newpath{x,:})); end; 
+
+% add initpath to fp
+fp = funpass(fp,'initpath');
 return;
 
 % set init environment
-function k = set_init_environments(fp)
+function fp = set_init_environments(fp)
 % get vars from fp
 funpass(fp,{'setfun','initpath'});
 
-% init k
-k = true;
-
 % if no setfun or initpath, return
 if ~exist('setfun','var')||~exist('initpath','var'), return; end;
-if ~iscell(setfun), setfun = {{setfun}}; end;
-if ~iscell(initpath), initpath = {initpath}; end;
 
 % for each setfun, return to initial path
-for x = 1:numel(setfun)
-    try 
-        feval(setfun{x}{:},initpath{x}); 
-    catch err
-        disp(err.message); k = false;
-    end
-end
+for x = 1:size(setfun,1), feval(setfun{x,~cellfun('isempty',setfun(x,:))},initpath{x}); end;
+
+% remove initpath from fp
+fp = rmfield(fp,'initpath');
 return;
 
 % choose subjects to use 
@@ -406,6 +411,7 @@ for f = 1:numel(uprog),
 % auto_run program
 fp.auto_i = i; fp.auto_f = frun{f};
 fp = feval(uprog{f},'auto_run',fp);
+fp = rmfield(fp,{'auto_i','auto_f'});
 end
 % display time left
 settimeleft(i,funrun,wb);
