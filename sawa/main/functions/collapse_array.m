@@ -33,19 +33,12 @@ tmpidx = tmpidx';
 
 % remove repeated indices
 C(diff(tmpidx)==0) = []; 
+idx(diff(tmpidx)==0) = [];
 
-% if all same, stop
-if sum(diff(tmpidx))==0, idx = {cell2mat(idx)}; return; end;
+% set 0 before idx initially
+idx = [{0},idx];
 
-% set tmpidx end to 1 for below
-tmpidx = [tmpidx, 1];
-
-% find indices for each component that is repeated
-for x = find(diff(tmpidx)==0), 
-    if isempty(idx{x}), continue; end;
-    idx{x} = x:find(diff(tmpidx(x+1:end))~=0,1)+x; 
-    idx(x+1:find(diff(tmpidx(x+1:end))~=0,1)+x) = {[]};
-end;
-idx = idx(~cellfun('isempty',idx));
+% get indices 
+idx = arrayfun(@(x){idx{x-1}(end)+1:idx{x}},2:numel(idx));
 
     
