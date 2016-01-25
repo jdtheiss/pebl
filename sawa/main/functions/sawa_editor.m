@@ -93,6 +93,7 @@ if ~exist('setfun','var')||~exist('newpath','var')||~exist('getfun','var'),
     setfun = {}; newpath = {}; getfun = {};
 end;
 if ~exist('initpath','var'), initpath = {}; end;
+ck = 1; % cell to check
 
 % choose envchcs
 choices = {'setenv','path','javaclasspath'};
@@ -110,6 +111,7 @@ if strcmp(setfun{end,1},'setenv'),
     if isempty(setfun{end,2}), return; end;
     getfun(end,1:2) = {'getenv',setfun{end,2}}; 
     if ispc, sep = ';'; else sep = ':'; end;
+    ck = 2; % set cell to check to 2
 end
 
 % clear path or append?
@@ -134,7 +136,7 @@ end
 end
 
 % get initial paths
-if numel(find(strcmp(setfun(:,1),setfun{end,1})))==1, % new, get init
+if numel(find(strcmp(setfun(:,ck),setfun{end,ck})))==1, % new, get init
     initpath{end+1} = feval(getfun{end,~cellfun('isempty',getfun(end,:))});
 else % already done, use previous
     initpath{end+1} = initpath{find(strcmp(setfun(:,1),setfun{end,1}),1)};
