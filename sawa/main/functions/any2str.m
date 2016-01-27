@@ -13,15 +13,18 @@ function out = any2str(varargin)
 % out = 
 %
 %   'test'  'test'  1   2   3   @disp   [1x1 struct]    [12]   'testing'
-%           10
+%           [10]
 %
 % Created by Justin Theiss
 
 % get string rep from disp
-out = cellfun(@(x){evalc('disp(x)')},varargin);
+out = cellfun(@(x){evalc('disp(x)')},varargin); 
 
-% remove spaces
-out = strtrim(regexprep(out,'\n\s+','\n')); 
+% remove leading spaces
+out = regexprep(out,'^([^\n])','\n$1');
+[ns,ne] = regexp(out,'\n\s+\S','start','end');
+out = cellfun(@(x,y,z){regexprep(x,['\n\s{' num2str(min(z-y)-1) '}'],'\n')},out,ns,ne);
+out = regexprep(out,'^\n','');
 
 % get rid of links
 out = regexprep(out,{'<a href=[^>]+>','</a>'},'');

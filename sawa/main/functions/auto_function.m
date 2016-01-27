@@ -253,7 +253,7 @@ if ~isempty(outchc{f})
 [output{i}(f,outchc{f})] = tmpout(outchc{f});
 
 % print output
-printres(cell2strtable(sawa_cat(1,outargs(outchc{f}),any2str(output{i}{f,:})),' '),hres);
+printres(cell2strtable(sawa_cat(1,outargs(outchc{f}),any2str(output{i}{f,outchc{f}})),' '),hres);
 end
 
 catch err % if error, display message

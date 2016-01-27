@@ -119,7 +119,9 @@ case 'Choose Directory' % choose dir
     vars = cellstr(spm_select(Inf,'dir',['Select directory for ' varnam],vars));
 case 'Function' % function
     fp = funpass(struct,'sa'); 
-    fp = auto_function([],fp); vars = [fp.output{:}]; clear fp; 
+    fp = auto_function([],fp); 
+    vars = [fp.output{1}{fp.outchc{1}}]; 
+    clear fp; 
 case 'Subject Array' % subject array
     % choose group
     if ~isempty(subrun),
