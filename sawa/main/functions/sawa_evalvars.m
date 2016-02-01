@@ -54,7 +54,6 @@ if ischar(val)&&strcmp(opt,'cmd'),
 pathvals = regexp(valf,'"[^"]+"','match'); % get paths/files
 valf = regexprep(valf,'"[^"]+"','""'); valf = regexp(valf,'\s','split'); % split by spaces
 valf(cellfun(@(x)strcmp(x,'""'),valf)) = pathvals; % add paths/files to valf
-valf = regexprep(valf,'["]',''); % remove ""s
 valf = valf(~cellfun('isempty',valf)); % remove ''s
 valf = strtrim(valf); % remove extra spaces
 elseif ~iscell(valf)&&~isstruct(valf) % set to cell if not

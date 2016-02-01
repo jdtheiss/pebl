@@ -90,12 +90,14 @@ iter = 1:numel(funrun);
 if ispc, hswitch = {'/h','/H','/?'}; else hswitch = {'-help','-h','--help','-H','-?'}; end;
 % get help message
 helpmsg = ''; 
-for o = hswitch
+if ~strcmp(funcs{idx}(end),'=') % if not setting variable
+for o = hswitch % for each, try to get switches
 clear tmpmsg; tmpmsg = evalc(['sawa_system(''' funcs{idx} ''',''' o{1} ''');']); 
 if ~isempty(tmpmsg)&&numel(tmpmsg)>numel(helpmsg), helpmsg = tmpmsg; end;    
 end
 if any(regexpi(helpmsg,'invalid option')) % if msg includes "invalid option"
     helpmsg = regexprep(helpmsg,'.*\wnvalid \wption',''); 
+end
 end
 
 % display helpmsg
@@ -118,6 +120,7 @@ chc = listdlg('PromptString','Choose option(s) to edit:','ListString',opts);
 % Edit
 if any(strcmp(opts(chc),'edit'))
 options{idx,1} = cell2mat(inputdlg('Edit options:','Edit',[max([numel(funrun),2]),50],{char(options{idx,1})}));
+if isempty(options{idx,1}), return; end;
 options{idx,1} = strtrim(arrayfun(@(x){options{idx,1}(x,:)},1:size(options{idx,1},1)));
 % if no funrun, set to rows
 if isempty(funrun), funrun = 1:size(options{idx,1},1); iter = funrun; end;
@@ -162,6 +165,7 @@ for o = chc
     
     % if iter greater than options, init
     if numel(iter)>size(options{idx,1},1), 
+        if isempty(options{idx,1}), options{idx,1} = {''}; end;
         options{idx,1}(iter,1) = options{idx,1}(1);
     end
     
@@ -208,8 +212,9 @@ if ~exist('hres','var'), hres = []; end;
 % for each subj 
 for i = auto_i
 % func, run with options
-for f = auto_f
 try
+clear valf; 
+for f = auto_f
 % print subject 
 if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
     printres(sa(i).subj,hres);
@@ -219,24 +224,23 @@ end;
 s = find(funrun==i,1);
 
 % evaluate options
-clear valf; valf = sawa_evalvars(options{f,1}{s},'cmd');
+valf{f} = sawa_evalvars(options{f,1}{s},'cmd');
 
 % print command
-printres([funcs{f} ' ' valf],hres); 
+printres([funcs{f} ' ' valf{f}],hres); 
+end
 
 % run command
-clear tmp;
-[~,tmp]= sawa_system(funcs{f},valf); 
+clear tmp; [~,tmp]= sawa_system(funcs,valf); 
 
 % print output if hres (already prints to command line)
 if ~isempty(hres), printres(tmp,hres); end;
 
 % set output
-[output{i}(f,:)] = {tmp}; 
+[output{i}(1,:)] = {tmp}; 
 
 catch err % if error
-    printres(['Error: ' funcs{f} ' ' sa(i).subj ' ' err.message],hres);
-end
+    printres(['Error: ' sa(i).subj ' ' err.message],hres);
 end
 end
 
