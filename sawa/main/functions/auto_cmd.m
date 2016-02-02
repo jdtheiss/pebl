@@ -213,7 +213,7 @@ if ~exist('hres','var'), hres = []; end;
 for i = auto_i
 % func, run with options
 try
-clear valf; 
+clear valf; valf = cell(size(auto_f));
 for f = auto_f
 % print subject 
 if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
