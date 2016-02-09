@@ -384,6 +384,8 @@ if strcmpi(lsr,'load') % load
 [savedvars, spath] = uigetfile('*savedvars*.mat','Load savedvars file to use:');
 if ~any(savedvars), return; end; % return if none chosen
 savedvars = fullfile(spath, savedvars); load(savedvars,'fp'); % load savedvars
+% set path/environment
+fp = set_new_environments(fp);
 % set structure names to fp.names
 funpass(fp,{'names','funcs'}); if ~exist('names','var'), names = funcs; end;
 set(findobj('-regexp','tag','_listbox'),'string',names); % set names
