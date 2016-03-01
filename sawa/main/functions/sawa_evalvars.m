@@ -90,7 +90,11 @@ valf = strtrim(valf);
 end
 
 % output
-if iscell(valf)&&numel(valf)==1, valf = valf{1}; end;
+if iscell(valf)&&numel(valf)==1,
+    valf = valf{1}; 
+else
+    try valf = cellfun(@(x)x,valf); end;
+end;
 if isempty(valf), valf = []; end;
 
 function valf = local_mkdir_select(valf,val,rep,opt)

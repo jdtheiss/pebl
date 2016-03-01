@@ -350,8 +350,11 @@ i = funrun(s);
 % for each itemidx
 for mx = 1:numel(itemidx{m})
 
-% evalvars
-if s>numel(options{m,mx})||isempty(options{m,mx}), continue; end;
+% if not enough options, set to 1; if empty options, skip
+if s>numel(options{m,mx}), s = 1; end;
+if isempty(options{m,mx}), continue; end;
+
+% eval vars
 valf{mx} = sawa_evalvars(options{m,mx}{s});
 if iscell(valf{mx})&&rep{m}(mx)==0, valf{mx} = sawa_getfield(valf{mx},'',''); end;
 

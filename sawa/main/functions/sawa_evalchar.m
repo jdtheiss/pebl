@@ -54,3 +54,4 @@ for x = 1:numel(mstr), out = strrep(out,mstr{x},num2str(meval{x})); end;
 else % otherwise output match evals
 out = meval;
 end
+if iscell(out)&&numel(out)==1, out = out{1}; end;

@@ -140,7 +140,9 @@ case 'Subject Array' % subject array
     if strcmp(grp,'Individual')
     vars = strcat('sa(i).',vars,subvars);
     else % group (only one field can be returned)
-    vars = strcat('sa(', arrayfun(@(x){num2str(x)},subrun),').',vars{1},subvars)'; 
+    for v = 1:numel(vars)
+        vars{v} = strcat('sa(', arrayfun(@(x){num2str(x)},subrun),').',vars{v},subvars)'; 
+    end
     end
 case funcs % functions 
     % find choice relative to functions

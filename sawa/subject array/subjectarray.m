@@ -73,18 +73,18 @@ function fp = subjectarray_gui(fp)
 funpass(fp);
 
 % setup structure for make_gui
-structure.name = 'Subject Array';
-structure.edit1.string = 'Subject Array Name'; 
+structure.name = 'subject array';
+structure.edit1.string = 'subject array name'; 
 structure.edit1.tag = structure.edit1.string;
-[structure.push(1:5).string] = deal('Subjects.mat File','Enter Subjects',...
-    'Subject Folders','Create New Field','Load/Save');
+[structure.push(1:5).string] = deal('subjects.mat file','enter subjects',...
+    'subject folders','create new field','load/save');
 [structure.push.tag] = deal(structure.push.string);
 [structure.push.callback] = deal(@(x,y)guidata(gcf,fileName_Callback(guidata(gcf))),...
     @(x,y)guidata(gcf,createfield_Callback(guidata(gcf),'subj')),...
     @(x,y)guidata(gcf,subjFolders_Callback(guidata(gcf))),...
     @(x,y)guidata(gcf,createfield_Callback(guidata(gcf))),...
     @(x,y)guidata(gcf,loadsavesa_Callback(guidata(gcf))));
-structure.text1.string = 'Subject Array Fields'; structure.text1.width = 175;
+structure.text1.string = 'subject array fields'; structure.text1.width = 175;
 structure.text1.position = 'right';
 structure.listbox.position = 'right'; structure.listbox.tag = [mfilename 'listbox'];
 structure.listbox.height = 165; structure.listbox.width = 175;
@@ -110,7 +110,7 @@ else % otherwise set fileName
 end
 
 % set to tooltipstring
-set(findobj('tag','Subjects.mat File'),'tooltipstring',fileName);
+set(findobj('tag','subjects.mat file'),'tooltipstring',fileName);
 
 % set vars to fp
 fp = funpass(fp,who);
@@ -143,7 +143,7 @@ for i = subrun, sa(i).subjFolders{1} = fullfile(maindir,sa(i).subj); end;
 fields = get(findobj('tag',[mfilename 'listbox']),'string');
 
 % set to listbox
-set(findobj('tag',[mfilename 'listbox']),'string',vertcat(fields,'subjFolders{1}'));
+set(findobj('tag',[mfilename 'listbox']),'string',unique(vertcat(fields,'subjFolders{1}')));
 
 else % createfield_Callback
 fp = createfield_Callback(fp,'subjFolders{1}');
@@ -177,8 +177,8 @@ f = field;
 
 % get subjs, vals, and display
 subjs = sawa_getfield(sa,'','subj$')';
-vals = sawa_getfield(sa,'',[regexptranslate('escape',fields{f}) '$'])';
-try disp(cell2strtable([subjs,vals],': ')); end;
+tmpvals = sawa_getfield(sa,'',[regexptranslate('escape',fields{f}) '$'])';
+try disp(cell2strtable([subjs,tmpvals],': ')); end; clear tmpvals;
 
 % copy or delete?
 ecdq = questdlg(['Edit, copy, or delete ' fields{f} '?'],'Edit/Copy/Delete','Edit','Copy','Delete','Edit');
@@ -278,7 +278,7 @@ end
 
 % set to listbox
 set(findobj('tag',[mfilename 'listbox']),'value',1);
-set(findobj('tag',[mfilename 'listbox']),'string',fields); 
+set(findobj('tag',[mfilename 'listbox']),'string',unique(fields)); 
 
 % set vars to fp
 fp = funpass(fp,{'sa','subrun'});
@@ -300,7 +300,7 @@ if isempty(los), return; end;
 
 % run load_sa or save_sa
 if strcmpi(los,'load'), 
-    fp = load_sa([]); % load
+    fp = load_sa(fp); % load
 else % save
     fp = save_sa(struct('sa',sa,'subrun',subrun)); 
 end;
@@ -335,14 +335,12 @@ return;
 
 function fp = load_sa(fp)
 % get vars from fp
-funpass(fp,{'fileName','task','subrun','flds'});
+funpass(fp,{'task','subrun','flds'});
     
 % choose fileName
-if ~exist('fileName','var')
 [lfile,lpath] = uigetfile('*.xls*;*.txt;*.mat','Choose file to load subject array from:');
 if ~any(lfile), return; end; % if none chosen, return
 fileName = fullfile(lpath,lfile);  % set fileName
-end
 
 % if subjects.mat file, choose sa
 if any(strfind(fileName,'subjects.mat')), 
@@ -361,14 +359,17 @@ subjs = sawa_getfield(sa(subrun),'','subj$');
 if ~exist('flds','var'), flds = choose_fields(sa,subrun,'Choose fields to load:'); end;
 
 % set fileName
-set(findobj('tag','Subjects.mat File'),'tooltipstring',fileName);
+set(findobj('tag','subjects.mat file'),'tooltipstring',fileName);
 
 % set task
-set(findobj('tag','Subject Array Name'),'string',task);
+set(findobj('tag','subject array name'),'string',task);
 
 else % otherwise, load
-[~,task,ext] = fileparts(fileName); % switch based on ext
+% if task, get current array
+if exist('task','var'), sa = update_array(task); else sa = struct; end;
+presubjs = sawa_getfield(sa,'','subj$');
 
+[~,~,ext] = fileparts(fileName); % switch based on ext
 % switch file ext
 switch ext(1:4)
 case '.xls' % excel
@@ -402,15 +403,20 @@ if ~exist('flds','var'), flds = raw(1,:); end;
 subjs = vals{strcmpi(flds,'subj')};
 
 % set subjs to sa
-sa(1:numel(subjs)) = struct;
-sa = sawa_setfield(sa,1:numel(subjs),'subj',[],subjs{:}); % set subj
+newsubs = find(~ismember(subjs,presubjs));
+newi = numel(sa)+1:numel(sa)+numel(newsubs);
+sa(newi) = sawa_setfield(sa,newi,'subj',[],subjs{newsubs}); 
 
 % choose subrun
-if ~exist('subrun','var'), subrun = sawa_subrun(sa); end;
+subrun = sawa_subrun(sa);
 
 % remove subj from vals and flds
 vals = vals(~strcmpi(flds,'subj'));
 flds = flds(~strcmpi(flds,'subj'));
+
+% choose fields
+fldchc = listdlg('PromptString','Choose fields to load:','ListString',flds);
+if isempty(fldchc), return; end;
 
 % get sub fields
 sub = regexprep(flds,'\.?[^\{\(\.]+(.*)','$1');
@@ -421,20 +427,27 @@ flds = regexprep(flds,'(\.?[^\{\(\.]+).*','$1');
 % remove non-word chars
 flds = regexprep(flds,'\W','_');
 
+% get subject indices for subjs
+clear newi; newi = cellfun(@(x){find(strcmp(subjs,x))},{sa(subrun).subj});
+newi = [newi{:}];
+
 % set fields
-for x = 1:numel(vals) 
-sa = sawa_setfield(sa,1:numel(vals{x}),flds{x},sub{x},vals{x}{:});  
+for x = fldchc 
+sa = sawa_setfield(sa,subrun,flds{x},sub{x},vals{x}{newi});  
 end
 
 % strcat flds and sub
 flds = strcat(flds,sub);
 
+% get original fields
+oflds = get(findobj('tag',[mfilename 'listbox']),'string');
+
 % set subj to flds
-flds = {'subj',flds{:}};
+flds = {'subj',flds{fldchc},oflds{:}};
 end
 
 % set fields to listbox
-set(findobj('tag',[mfilename 'listbox']),'string',flds);
+set(findobj('tag',[mfilename 'listbox']),'string',unique(flds));
 
 % set vars to fp
 fp = funpass(fp,{'sa','subrun','task','fileName'});
@@ -445,18 +458,15 @@ function fp = save_sa(fp)
 funpass(fp);
 
 % init vars
-if ~exist('fileName','var'), fileName = get(findobj('tag','Subjects.mat File'),'tooltipstring'); end;
-if ~exist('task','var'), task = get(findobj('tag','Subject Array Name'),'string'); end;
-if isempty(task)||strcmp(task,'Subject Array Name'), task = 'sa'; end;
+if ~exist('fileName','var'), fileName = get(findobj('tag','subjects.mat file'),'tooltipstring'); end;
+if ~exist('task','var'), task = get(findobj('tag','subject array name'),'string'); end;
+if isempty(task)||strcmp(task,'subject array name'), task = 'sa'; end;
 if ~exist('flds','var'), flds = get(findobj('tag',[mfilename 'listbox']),'string'); end;
 
 % save subject array
 if ~exist('saveyn','var')
 saveyn = questdlg(['Save Subject Array ' task '?'],'Save Subject Array?','Yes','No','Yes');
 end
-
-% set subrun if none
-if ~exist('subrun','var'), subrun = 1:numel(sa); end;
 
 % set fileName, if none
 if isempty(fileName), fileName = choose_SubjectArray; end;
@@ -476,7 +486,10 @@ savefile = {savefile}; spath = {spath}; sfile = {sfile};
 end
 
 % for each output type
-for x = 1:numel(savefile) 
+for x = 1:numel(savefile)
+% choose subjects to save
+subrun = sawa_subrun(sa);
+
 % choose fields to save
 if ~exist('flds','var')
 flds = choose_fields(sa,subrun,['Choose fields to save to ' savefile{x} ' file']);

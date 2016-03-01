@@ -203,10 +203,7 @@ if ~exist('auto_f','var'), auto_f = 1:numel(funcs); end;
 if ~exist('options','var'), options(auto_f,1) = {repmat({''},[numel(funrun),1])}; end;
 if ~iscell(options), options = {{options}}; end;
 if ~all(cellfun('isclass',options,'cell')), options = cellfun(@(x){{x}},options); end;
-for f = auto_f, 
-    if f > size(options,1), options{f,1} = {[]}; end;
-    if numel(funrun) > numel(options{f,1}), options{f,1}(1:numel(funrun),1) = options{f,1}(1); end; 
-end;
+for f = auto_f, if f > size(options,1), options{f,1} = {[]}; end; end;
 if ~exist('hres','var'), hres = []; end;
 
 % for each subj 
@@ -220,8 +217,9 @@ if numel(funrun)==numel(subrun)&&all(funrun==subrun),
     printres(sa(i).subj,hres);
 end;
 
-% get subject index
+% get subject index; if greater than number of options, set to 1
 s = find(funrun==i,1);
+if s>numel(options{f,1}), s = 1; end;
 
 % evaluate options
 valf{f} = sawa_evalvars(options{f,1}{s},'cmd');

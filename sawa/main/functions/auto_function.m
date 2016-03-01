@@ -205,9 +205,10 @@ if numel(funrun)==numel(subrun)&&all(funrun==subrun),
     printres(sa(i).subj,hres);
 end;
 
-% get subject index
+% get subject index; if greater than number of options, set to 1
 s = find(funrun==i,1);
-
+if s>numel(options{f,1}), s = 1; end;
+    
 % get outargs, inargs
 clear inargs valf tmpout; 
 [outargs,inargs] = getargs(funcs{f}); 
@@ -216,7 +217,7 @@ if isempty(inargs)&&abs(nargin(funcs{f}))>0, inargs = {'varargin'}; end;
 
 % evaluate options
 for x = find(~cellfun('isempty',options(f,:))), 
-    if s>numel(options{f,x})||isempty(options{f,x}{s}), continue; end;
+    if isempty(options{f,x}{s}), continue; end;
     valf{x} = sawa_evalvars(options{f,x}{s});
 end
 if ~exist('valf','var'), valf = {}; end;

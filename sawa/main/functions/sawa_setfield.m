@@ -35,6 +35,17 @@ if ~exist('sub','var')||isempty(sub),sub=''; end;
 if iscell(structure)||~isstruct(structure), s='{}'; else s='()'; end
 if isempty(varargin), varargin{1} = {[]}; end;
 
+% allocate new cells if needed
+if iscell(structure) 
+    for x = find(idx > numel(structure)), 
+        eval(['structure{' num2str(x) '}=[];']); 
+    end;
+elseif isstruct(structure)
+    for x = find(idx > numel(structure)), 
+        structure(x) = cell2struct(cell(size(fieldnames(structure))),fieldnames(structure)); 
+    end;
+end
+    
 % if field, set if needed
 if ~isempty(field)
 % remove non-allowable from field
@@ -44,10 +55,6 @@ if ~iscell(structure) && ~isfield(structure,field),
 evalin('caller',['[' inputname(1) '.' field ']=deal([]);']);    
 end % add period before 
 field = ['.' field]; 
-elseif any(idx > numel(structure))&&iscell(structure) % if not using field and idx greater than struct
-for x = find(idx > numel(structure)), % set structure empty for idx > numel
-    eval(['structure{' num2str(x) '}=[];']);
-end
 end
 
 % create reps for each struct
