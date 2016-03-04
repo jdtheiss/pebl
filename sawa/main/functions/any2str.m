@@ -22,9 +22,9 @@ out = cellfun(@(x){evalc('disp(x)')},varargin);
 
 % remove leading spaces
 out = regexprep(out,'^([^\n])','\n$1');
-[ns,ne] = regexp(out,'\n\s+\S','start','end');
+[ns,ne] = regexp(out,'\n\s*\S','start','end');
 out = cellfun(@(x,y,z){regexprep(x,['\n\s{' num2str(min(z-y)-1) '}'],'\n')},out,ns,ne);
-out = regexprep(out,'^\n','');
+out = regexprep(out,{'^\n','\n$'},'');
 
 % get rid of links
 out = regexprep(out,{'<a href=[^>]+>','</a>'},'');

@@ -59,7 +59,8 @@ switch class(varargin{1})
     case 'char' % set char to cellstr
         vars = cellstr(varargin{1}); ival = 1;
     case 'double' % if double, num2str
-        vars = {num2str(varargin{1})}; ival = 2;
+        if isempty(varargin{1}), ival = 1; else ival = 2; end;
+        vars = {num2str(varargin{1})};
     case 'struct' % if struct
         vars = varargin{1}; ival = 5;
     case 'function_handle' % if function_handle, set to choices
@@ -95,23 +96,36 @@ case 'Cell' % cell
     vars = sawa_createvars(varnam,msg,subrun,sa,varargin{:});
     vals = cat(1,vals,{vars}); continue;
 case 'Structure' % struct
-    if isstruct(vars), substr = vertcat(fieldnames(vars),'Add'); else vars = struct; substr = {'Add'}; end;
-    done = 0; 
-    while ~done
-        % choose fields to edit, add, delete
-        subchc = listdlg('PromptString',{['Add/Edit subfields for ' varnam ' (cancel when finished):'],'',''},...
-            'ListString',substr,'selectionmode','single');
-        if isempty(subchc), done = 1; break; end;
-        if subchc == numel(substr), tmpfld = ''; else tmpfld = substr{subchc}; end;
-        % set field
-        fld = cell2mat(inputdlg('Enter field name to add to structure (cancel to delete):','Field Name',1,{tmpfld}));
-        if isempty(fld)&&~isempty(tmpfld), vars = rmfield(vars,substr{subchc}); substr(subchc) = []; continue; end; % if no fld, remove
-        % run sawa_createvars
-        if ~isempty(fld), 
-            if isfield(vars,fld), varargin{1} = vars.(fld); else varargin{1} = {}; end;
-            vars.(fld) = sawa_createvars(fld,'',subrun,sa,varargin{:}); 
-            substr = vertcat(fieldnames(vars),'Add'); 
-        end;
+    if isstruct(vars), % if exists, choose component to edit
+        substr = vertcat(fieldnames(vars),'Add'); 
+        n = listdlg('PromptString','Choose component to edit:','ListString',...
+        [arrayfun(@(x){num2str(x)},1:numel(vars)),'Add']);
+        if isempty(n), return; end;
+        if any(n > numel(vars)), vars(n(end)) = cell2struct(cell(size(fieldnames(vars))),fieldnames(vars)); end;
+    else % if new, create struct
+        n = cell2mat(inputdlg('Enter number of components to create'));
+        n = 1:str2double(n); if isnan(n), return; end;
+        vars = repmat(struct,1,max(n)); substr = {'Add'};
+    end;
+    % for each component
+    for n = n
+        done = 0; 
+        while ~done
+            % choose fields to edit, add, delete
+            subchc = listdlg('PromptString',{['Add/Edit subfields for ' varnam '(' num2str(n) ') (cancel when finished):'],'',''},...
+                'ListString',substr,'selectionmode','single');
+            if isempty(subchc), done = 1; break; end;
+            if subchc == numel(substr), tmpfld = ''; else tmpfld = substr{subchc}; end;
+            % set field
+            fld = cell2mat(inputdlg('Enter field name to add to structure (cancel to delete):','Field Name',1,{tmpfld}));
+            if isempty(fld)&&~isempty(tmpfld), vars = rmfield(vars,substr{subchc}); substr(subchc) = []; continue; end; % if no fld, remove
+            % run sawa_createvars
+            if ~isempty(fld), 
+                if isfield(vars(n),fld), varargin{1} = vars(n).(fld); else varargin{1} = {}; end;
+                vars(n).(fld) = sawa_createvars(fld,'',subrun,sa,varargin{:}); 
+                substr = vertcat(fieldnames(vars),'Add'); 
+            end;
+        end
     end
 case 'Choose File' % choose file
     vars = cellstr(spm_select(Inf,'any',['Select file for ' varnam],vars));

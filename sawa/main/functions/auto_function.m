@@ -199,7 +199,7 @@ if ~exist('hres','var'), hres = []; end;
 for i = auto_i
 % for each func
 for f = auto_f
-try
+% try
 % print subject 
 if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
     printres(sa(i).subj,hres);
@@ -207,7 +207,7 @@ end;
 
 % get subject index; if greater than number of options, set to 1
 s = find(funrun==i,1);
-if s>numel(options{f,1}), s = 1; end;
+if any(s>cellfun('size',options(f,:),1)), s = 1; end;
     
 % get outargs, inargs
 clear inargs valf tmpout; 
@@ -243,7 +243,7 @@ outchc{f} = 1; outargs = {''};
 
 else % otherwise set tmpout 
 % set outchc if needed
-if ~exist('outchc','var'), outchc{f} = 1:numel(outargs); end;
+if ~exist('outchc','var')||~iscell(outchc), outchc{f} = 1:numel(outargs); end;
 
 % run feval
 [tmpout{1:max(outchc{f})}] = feval(funcs{f},valf{:});
@@ -257,9 +257,9 @@ if ~isempty(outchc{f})
 printres(cell2strtable(sawa_cat(1,outargs(outchc{f}),any2str(output{i}{f,outchc{f}})),' '),hres);
 end
 
-catch err % if error, display message
-printres(['Error: ' funcs{f} ' ' sa(i).subj ': ' err.message],hres);
-end
+% catch err % if error, display message
+% printres(['Error: ' funcs{f} ' ' sa(i).subj ': ' err.message],hres);
+% end
 end
 end
 
