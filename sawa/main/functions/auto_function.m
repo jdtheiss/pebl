@@ -199,16 +199,12 @@ if ~exist('hres','var'), hres = []; end;
 for i = auto_i
 % for each func
 for f = auto_f
-% try
+try
 % print subject 
 if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
     printres(sa(i).subj,hres);
 end;
 
-% get subject index; if greater than number of options, set to 1
-s = find(funrun==i,1);
-if any(s>cellfun('size',options(f,:),1)), s = 1; end;
-    
 % get outargs, inargs
 clear inargs valf tmpout; 
 [outargs,inargs] = getargs(funcs{f}); 
@@ -216,7 +212,8 @@ if isempty(outargs)&&abs(nargout(funcs{f}))>0, outargs = {'varargout'}; end;
 if isempty(inargs)&&abs(nargin(funcs{f}))>0, inargs = {'varargin'}; end;
 
 % evaluate options
-for x = find(~cellfun('isempty',options(f,:))), 
+for x = find(~cellfun('isempty',options(f,:))),
+    clear s; s = min([numel(options{f,x}),find(funrun==i,1)]);
     if isempty(options{f,x}{s}), continue; end;
     valf{x} = sawa_evalvars(options{f,x}{s});
 end
@@ -257,12 +254,12 @@ if ~isempty(outchc{f})
 printres(cell2strtable(sawa_cat(1,outargs(outchc{f}),any2str(output{i}{f,outchc{f}})),' '),hres);
 end
 
-% catch err % if error, display message
-% printres(['Error: ' funcs{f} ' ' sa(i).subj ': ' err.message],hres);
-% end
+catch err % if error, display message
+printres(['Error ' funcs{f} ' ' sa(i).subj ': ' err.message],hres);
+end
 end
 end
 
 % set vars to fp
-fp = funpass(fp,'output');
+fp = funpass(fp,{'output','outchc'});
 return;

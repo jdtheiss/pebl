@@ -217,9 +217,8 @@ if numel(funrun)==numel(subrun)&&all(funrun==subrun),
     printres(sa(i).subj,hres);
 end;
 
-% get subject index; if greater than number of options, set to 1
-s = find(funrun==i,1);
-if s>numel(options{f,1}), s = 1; end;
+% get subject index; if greater than number of options, set to end
+clear s; s = min([numel(options{f,1}),find(funrun==i,1)]);
 
 % evaluate options
 valf{f} = sawa_evalvars(options{f,1}{s},'cmd');

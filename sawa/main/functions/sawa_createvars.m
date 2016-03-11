@@ -132,9 +132,9 @@ case 'Choose File' % choose file
 case 'Choose Directory' % choose dir
     vars = cellstr(spm_select(Inf,'dir',['Select directory for ' varnam],vars));
 case 'Function' % function
-    fp = funpass(struct,'sa'); 
+    fp = funpass(struct,'sa'); fp.idx = 1; 
     fp = auto_function([],fp); 
-    vars = [fp.output{1}{fp.outchc{1}}]; 
+    vars = arrayfun(@(x)fp.output{x}(fp.outchc{1}),1:numel(fp.output));
     clear fp; 
 case 'Subject Array' % subject array
     % choose group

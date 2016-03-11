@@ -48,6 +48,7 @@ function valf = sawa_evalvars(val,opt)
 % init vars
 valf = val; 
 if ~exist('opt','var')||isempty(opt), opt = ''; end;
+chng = false;
 
 % if char and 'cmd', split find paths/files and split by spaces
 if ischar(val)&&strcmp(opt,'cmd'), 
@@ -65,7 +66,7 @@ clear vals reps;
 [~,vals,~,reps] = sawa_find(@regexp,'sa\([\d\w]+\)\.',valf,'valf',''); 
 for x = 1:numel(vals), % sawa_evalchar
     vals{x} = evalin('caller',['sawa_evalchar(''' vals{x} ''');']); 
-    valf = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
+    [valf,chng] = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
 end; 
 
 % find cells with 'eval'
@@ -73,14 +74,14 @@ clear vals reps;
 [~,vals,~,reps] = sawa_find(@strncmp,{'eval',4},valf,'valf',''); 
 for x = find(~cellfun('isempty',vals)), 
     vals{x} = eval(vals{x}); % eval
-    valf = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
+    [valf,chng] = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
 end
 
 % find cells with filesep
 clear vals reps;
 [~,vals,~,reps] = sawa_find(@strfind,filesep,valf,'valf',''); 
 for x = find(~cellfun('isempty',vals)),
-    valf = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
+    [valf,chng] = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
 end
 
 % if ischar and 'cmd', output as string
@@ -92,12 +93,13 @@ end
 % output
 if iscell(valf)&&numel(valf)==1,
     valf = valf{1}; 
-else
+elseif chng
     try valf = cellfun(@(x)x,valf); end;
 end;
 if isempty(valf), valf = []; end;
 
-function valf = local_mkdir_select(valf,val,rep,opt)
+function [valf,chng] = local_mkdir_select(valf,val,rep,opt)
+chng = true;
 % skip if not char
 if ischar(val), 
 % create ival, in case multi files and wildcard

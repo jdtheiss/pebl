@@ -289,16 +289,13 @@ for i = auto_i
         printres(sa(i).subj,hres);
     end;
     
-    % get subject index
-    s = find(funrun==i,1);
-    
     % set matlabbatch
     clear matlabbatch; matlabbatch = funcs;
     
     % for each module
     for m = find(~cellfun('isempty',preidx))
         % set matlabbatch
-        matlabbatch = local_setbatch(fp,matlabbatch,m,s);
+        matlabbatch = local_setbatch(fp,matlabbatch,m,i);
     end
     
     % set dependencies
@@ -340,18 +337,15 @@ for i = auto_i
 end
 return;
 
-function matlabbatch = local_setbatch(fp,matlabbatch,m,s)
+function matlabbatch = local_setbatch(fp,matlabbatch,m,i)
 % get vars from fp
 funpass(fp,{'options','itemnames','itemidx','funrun','sa','rep','hres'});
-
-% set i for sawa_eval
-i = funrun(s);
 
 % for each itemidx
 for mx = 1:numel(itemidx{m})
 
-% if not enough options, set to 1; if empty options, skip
-if s>numel(options{m,mx}), s = 1; end;
+% if not enough options, set to end; if empty options, skip
+clear s; s = min([numel(options{m,mx}),find(funrun==i,1)]);
 if isempty(options{m,mx}), continue; end;
 
 % eval vars
