@@ -27,6 +27,7 @@ end
 % if inputs but no file, get
 if ~exist(fileName,'file')
 % get only fileName
+disp('Choose the subjects.mat file to use');
 [file,path] = uigetfile('*.mat','Choose the subjects.mat file to use:');
 if ~any(file) % if no file chosen, output []
 fileName = []; disp('No subjects.mat file chosen.');

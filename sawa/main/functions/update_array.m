@@ -1,6 +1,5 @@
 function sa = update_array(task)
 % sa = update_array(task)
-%
 % Used to update array (sa) with the latest data. Primarily used when
 % savedvars is chosen, to ensure that the array is not going to save older
 % data.

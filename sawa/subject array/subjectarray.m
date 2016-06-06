@@ -102,8 +102,10 @@ function fp = fileName_Callback(fp)
 funpass(fp);
 
 % choose subjects.mat file
+disp('Choose the subjects.mat file to save to (or cancel to create)');
 [lfile,lpath] = uigetfile('*.mat','Choose the subjects.mat file to save to (or cancel to create):');
 if ~any(lfile), % if none, create
+    disp('Choose folder to save subjects.mat file into');
     fileName = fullfile(uigetdir(pwd,'Choose folder to save subjects.mat file into:'),'subjects.mat');
 else % otherwise set fileName
     fileName = fullfile(lpath,lfile);
@@ -132,7 +134,8 @@ if strcmp(questdlg('Choose directory and use subject names as subject folders?',
 % get subjects
 if ~exist('subrun','var'), subrun = sawa_subrun(sa); end;
     
-% choose maindir    
+% choose maindir   
+disp('Choose directory for subject folders');
 maindir = uigetdir(pwd,'Choose directory for subject folders:');
 if ~any(maindir), return; end;
 
@@ -176,8 +179,8 @@ if isnumeric(field)&&~isempty(fields)
 f = field; 
 
 % get subjs, vals, and display
-subjs = sawa_getfield(sa,'','subj$')';
-tmpvals = sawa_getfield(sa,'',[regexptranslate('escape',fields{f}) '$'])';
+subjs = {sa.subj}';
+tmpvals = sawa_getfield(sa,'str',fields{f})';
 try disp(cell2strtable([subjs,tmpvals],': ')); end; clear tmpvals;
 
 % copy or delete?
@@ -267,10 +270,10 @@ if ~iscell(vals)||numel(vals)~=numel(subrun), vals = {vals}; end;
 if strcmpi(fields{f},'subj'), vals = cellfun(@(x){num2str(x)},vals); end;
 
 % set field
-sa(subrun) = sawa_setfield(sa,subrun,fields{f},sub,vals{:});
+sa = sawa_setfield(sa,'idx',subrun,'field',[fields{f} sub],'vals',vals);
 
 % if all field empty, remove
-if all(cellfun('isempty',sawa_getfield(sa,'',regexptranslate('escape',fields{f}))))
+if all(cellfun('isempty',sawa_getfield(sa,'str',fields{f})))
 sa = rmfield(sa,fields{f}); fields(f) = []; sub = [];
 else % reset fields
 fields{f} = strcat(fields{f},sub);
@@ -300,6 +303,7 @@ if isempty(los), return; end;
 
 % run load_sa or save_sa
 if strcmpi(los,'load'), 
+    if isfield(fp,'fileName'), fp = rmfield(fp,'fileName'); end;
     fp = load_sa(fp); % load
 else % save
     fp = save_sa(struct('sa',sa,'subrun',subrun)); 
@@ -312,7 +316,7 @@ funpass(fp,{'sa','subrun','task','fileName','saveyn','savefile'});
 if ~exist('sa','var')||isempty(sa), return; end;
 
 % if no subjs, set 
-subjs = sawa_getfield(sa(subrun),'','subj$');
+subjs = {sa(subrun).subj}';
 
 % print results
 hres = printres(mfilename); 
@@ -335,12 +339,15 @@ return;
 
 function fp = load_sa(fp)
 % get vars from fp
-funpass(fp,{'task','subrun','flds'});
+funpass(fp,{'fileName','task','subrun','flds'});
     
 % choose fileName
+if ~exist('fileName','var')
+disp('Choose file to load subject array from');
 [lfile,lpath] = uigetfile('*.xls*;*.txt;*.mat','Choose file to load subject array from:');
 if ~any(lfile), return; end; % if none chosen, return
 fileName = fullfile(lpath,lfile);  % set fileName
+end
 
 % if subjects.mat file, choose sa
 if any(strfind(fileName,'subjects.mat')), 
@@ -353,7 +360,7 @@ end
 
 % get subjs
 if ~exist('subrun','var'), subrun = sawa_subrun(sa); end;
-subjs = sawa_getfield(sa(subrun),'','subj$');
+subjs = {sa(subrun).subj}';
 
 % get flds
 if ~exist('flds','var'), flds = choose_fields(sa,subrun,'Choose fields to load:'); end;
@@ -367,7 +374,7 @@ set(findobj('tag','subject array name'),'string',task);
 else % otherwise, load
 % if task, get current array
 if exist('task','var'), sa = update_array(task); else sa = struct; end;
-presubjs = sawa_getfield(sa,'','subj$');
+presubjs = {sa.subj}';
 
 [~,~,ext] = fileparts(fileName); % switch based on ext
 % switch file ext
@@ -405,7 +412,7 @@ subjs = vals{strcmpi(flds,'subj')};
 % set subjs to sa
 newsubs = find(~ismember(subjs,presubjs));
 newi = numel(sa)+1:numel(sa)+numel(newsubs);
-sa(newi) = sawa_setfield(sa,newi,'subj',[],subjs{newsubs}); 
+sa = sawa_setfield(sa,'idx',newi,'field','subj','vals',subjs(newsubs)); 
 
 % choose subrun
 subrun = sawa_subrun(sa);
@@ -428,13 +435,14 @@ flds = regexprep(flds,'(\.?[^\{\(\.]+).*','$1');
 flds = regexprep(flds,'\W','_');
 
 % get subject indices for subjs
-clear newi; newi = cellfun(@(x){find(strcmp(subjs,x))},{sa(subrun).subj});
+clear newi; newi = cellfun(@(x){find(strcmp(subjs,x))},{sa(subrun).subj}');
 newi = [newi{:}];
 
 % set fields
 for x = fldchc 
-sa = sawa_setfield(sa,subrun,flds{x},sub{x},vals{x}{newi});  
+sa = sawa_setfield(sa,'idx',subrun,'field',[flds{x} sub{x}],'vals',vals{x}(newi));  
 end
+sa = sa(subrun);
 
 % strcat flds and sub
 flds = strcat(flds,sub);
@@ -495,18 +503,19 @@ if ~exist('flds','var')
 flds = choose_fields(sa,subrun,['Choose fields to save to ' savefile{x} ' file']);
 end
 flds = flds(~strcmpi(flds,'subj')); % not subj
-subjs = sawa_getfield(sa(subrun),'','subj$')'; % get subjs
+subjs = {sa(subrun).subj}'; % get subjs
 
 % choose file directory
 if ~exist('spath','var')||~exist('sfile','var')||x>numel(spath)||x>numel(sfile)
-spath{x} = uigetdir(pwd,['Choose path to save ' savefile{x} ' to']);
+disp(['Choose path to save ' savefile{x}]);
+spath{x} = uigetdir(pwd,['Choose path to save ' savefile{x}]);
 sfile{x} = cell2mat(inputdlg(['Enter name for ' savefile{x}],'File Name',1,{task}));
 if isempty(sfile{x}), sfile{x} = task; end;
 end
 
 % get fields
 for f = 1:numel(flds),
-    vals{f} = sawa_getfield(sa(subrun),'',[regexptranslate('escape',flds{f}) '$'])'; 
+    vals{f} = sawa_getfield(sa(subrun),'str',flds{f})'; 
 end
 
 % set to raw

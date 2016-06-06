@@ -5,7 +5,7 @@ function fp = sawa_editor(cmd,varargin)
 %
 % Inputs: 
 % cmd - function to be called (i.e. 'load_sawafile','set_environments',
-% 'choose_subjects','add_function','set_options','save_presets', or 'load/save/run')
+% 'choose_subjects','add_function','set_options','save_presets', or 'loadsaverun')
 % varargin - arguments to be sent to call of cmd (in most cases, the
 % funpass struct of variables to use with fieldnames as variable names)
 %
@@ -31,46 +31,61 @@ function fp = sawa_editor(cmd,varargin)
 % init vars
 if ~exist('cmd','var'), cmd = 'load_sawafile'; end;
 if ~iscell(cmd), cmd = {cmd}; end;
-if isempty(varargin), 
+if isempty(varargin),
+varargin = {'wrapper_automation.mat'}; 
+if ~exist(varargin{1},'file')==2,
+disp('Choose sawa file to load');
 [fl,pt] = uigetfile('*.mat','Choose sawa file to load:');
 if ~any(fl), return; end;
-varargin{1} = fullfile(pt,fl);
+varargin{1} = fullfile(pt,fl); 
 end
+end
+
 % for each cmd, run
 for x = 1:numel(cmd), fp = feval(cmd{x},varargin{:}); end;
 
 % load sawafile and run make_gui
-function fp = load_sawafile(sawafile,sv,savedvars)
+function fp = load_sawafile(varargin)
+% fp = load_sawafile(fp)
+% fp = load_sawafile(sawafile,sv,savedvars)
 
+% init fp/sawafile
+if isstruct(varargin{1}), fp = varargin{1}; funpass(fp); else sawafile = varargin{1}; end;
+
+% set sv, savedvars
+vars = {'sv','savedvars'};
+arrayfun(@(x)assignin('caller',vars{x-1},varargin{x}),2:nargin);
+    
 % load sawafile
-load(sawafile);  
+load(sawafile,'structure');  
 
-% init vars
+% init other vars if not already
+if ~exist('funcs','var'), funcs = {}; end;
+if ~exist('options','var'), options = {}; end;
 if ~exist('sv','var')||isempty(sv), sv = 0; end;
 if ~exist('savedvars','var'), savedvars = ''; end;
 if ~exist('fp','var'), fp = struct; end;
 
 % load savedvars
-if ~isempty(savedvars)&&sv, load(savedvars,'fp'); end;
+if ~isempty(savedvars)&&sv, load(savedvars,'fp'); funpass(fp,{'~sv','~savedvars'}); end;
 
 % set sawafile, sv, and savedvars to fp
-fp = funpass(fp,{'sawafile','sv','savedvars'});
+fp = funpass(fp,{'funcs','options','sawafile','sv','savedvars'});
 
 % get vars from fp
 funpass(fp);
-
-% if no structure, return
-if ~exist('structure','var'), error('Missing "structure".'); end;
 
 % set path/environment
 fp = set_new_environments(fp);
 
 % set structure.listbox.string to funcs
-if ~exist('names','var'), names = funcs; end;
-structure.listbox.string = names; 
+if exist('structure','var'),
+    if ~exist('names','var'), names = funcs; end;
+    structure.listbox.string = names; 
+end
 
 % run make_gui if all inputs (otherwise output fp structure)
-if ~sv && nargin > 1
+if ~sv
 fp = make_gui(structure,struct('data',fp));  
 elseif sv % using savedvars
 fp = loadsaverun(fp,'run');    
@@ -183,7 +198,7 @@ for x = 1:size(setfun,1), feval(setfun{x,~cellfun('isempty',setfun(x,:))},initpa
 fp = rmfield(fp,'initpath');
 return;
 
-% choose subjects to use 
+% choose subjects 
 function fp = choose_subjects(fp)
 % create vars from fp
 funpass(fp); 
@@ -211,7 +226,7 @@ end
 % set tooltipstring
 set(findobj('tag','choose subjects'),'tooltipstring',toolstr);
 
-% set batch editor struct
+% set vars to fp
 fp = funpass(fp,{'subrun','sa','task','fileName','funrun'});
 return;
 
@@ -223,28 +238,22 @@ funpass(fp);
 % get auto_ programs in main
 d = dir(fullfile(fileparts(mfilename('fullpath')),'auto_*.m'));
 
+% set idx
+if ~exist('funcs','var'), funcs = {}; end;
+fp.idx = numel(funcs)+1; 
+
 % choose program to use
 chc = listdlg('PromptString','Choose program to use:','ListString',{d.name},'SelectionMode','single');
 if isempty(chc), return; end;
 
 % get program name
-if ~exist('program','var'), program = {}; end;
-[~,program{end+1}] = fileparts(d(chc).name);
+[~,prog] = fileparts(d(chc).name);
 
 % run program's add_function
-fp = feval(program{end},'add_function',fp);
+fp = feval(prog,'add_function',fp);
 
 % set names
-set(findobj('-regexp','tag','_listbox'),'string',fp.names);
-
-% update program for auto_batch
-if strcmp(program{end},'auto_batch'), 
-    if ~exist('names','var'), names = {}; end;
-    program = horzcat(program{1:end-1},repmat({'auto_batch'},1,numel(fp.names)-numel(names)));
-end
-
-% set program to struct
-fp = funpass(fp,'program');
+try set(findobj('-regexp','tag','_listbox'),'string',fp.names); catch; return; end;
 return;
 
 % set options for function
@@ -256,8 +265,7 @@ funpass(fp);
 if ~exist('funcs','var')||isempty(funcs), return; end;
 
 % get idx from listbox
-if ~exist('idx','var'), idx = get(findobj('-regexp','tag','_listbox'),'value'); end;
-if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
+idx = get(findobj('-regexp','tag','_listbox'),'value'); fp.idx = idx;
 
 % if no program, get program
 if ~exist('program','var')||idx > numel(program)
@@ -292,7 +300,7 @@ if ~any(savefile), return; end;
 fp = funpass(fp,{'names','funcs','options'});
 
 % set structure
-load(sawafile,'structure','program');
+load(sawafile,'structure');
 
 % set sawafile
 sawafile = fullfile(savepath,savefile);
@@ -314,48 +322,78 @@ helpmsg = char(textwrap(inputdlg(['Enter "help message" for ' savefile],'help me
 save(sawafile,'structure','fp','program','helpmsg');
 return;
 
-% listbox callback for copy/delete
+% listbox callback for copy/delete/insert
 function fp = listbox_callback(fp,fx,x)
+
+% if not right click
+if ~strcmp(get(fx,'selectiontype'),'alt'), return; end;
+
 % get vars from fp
-funpass(fp,{'funcs','names','options','program','idx','itemidx','str'});
+chngvars = {'funcs','names','options','program','itemidx','str','rep','itemnames','vars','output','outchc'};
+funpass(fp,chngvars);
 
 % if no funcs, fx, or x, return
 if ~exist('funcs','var')||nargin < 3, return; end;
 
 % get names
-if ~exist('names','var')||isempty(names), names = get(x,'string'); end;
-if isempty(names), return; end;
+names = get(x,'string'); if isempty(names), return; end;
+if size(names,1) > 1, names = names'; end;
 
 % get idx
-if ~exist('idx','var')||isempty(idx), idx = get(x,'value'); end;
-if idx > numel(names), return; end;
+idx = get(x,'value'); if idx > numel(names), return; end;
+fp.idx = idx;
 
 % if no options, set idx options
 if ~exist('options','var')||idx > numel(options), options{idx,1} = {[]}; end;
 
-% get click type
-if strcmp(get(fx,'selectiontype'),'alt') % right click
-    edcode = questdlg('copy or delete?','copy or delete','copy','delete','copy');
-else % otherwise
-    return; 
-end
+% question
+edtype = listdlg('PromptString',names{idx},'ListString',{'copy','delete','edit','insert'},'selectionmode','single');
+if isempty(edtype), return; end; 
 
-% switch based on edcode
-switch edcode
-case 'copy' % copy funcs and options idx
-    funcs{end+1} = funcs{idx}; names{end+1} = names{idx}; options(end+1,:) = options(idx,:);
-    program{end+1} = program{idx};
-    if exist('itemidx','var')&&idx==numel(itemidx), itemidx{end+1} = itemidx{idx}; str{end+1} = str{idx}; end;
-case 'delete' % delete funcs and options idx
-    funcs(idx) = []; names(idx) = []; options(idx,:) = []; program(idx) = [];
-    if exist('itemidx','var')&&idx==numel(itemidx), itemidx(idx) = []; str(idx) = []; end;
-end
+% edit 
+if edtype==3, fp=feval(fp.program{idx},'add_function',fp); set(x,'string',fp.names); return; end;
+
+% insert
+ifp = []; if edtype==4, ifp=add_function(struct); if isempty(ifp.funcs), return; end; end;
+
+% update each var
+cellfun(@(x)assignin('caller',x,local_update(x,edtype,idx,ifp)),chngvars);
 
 % set listbox
 set(x,'string',names); set(x,'value',1);
 
 % set vars to fp
-fp = funpass(fp,{'funcs','names','options','program','itemidx','str'});
+fp = funpass(fp,chngvars);
+return;
+
+% locally update var
+function output = local_update(varnam,edtype,idx,ifp)
+
+% get input
+if ~evalin('caller',['exist(''' varnam ''',''var'')'])
+    output = {}; return;
+else
+    output = evalin('caller',varnam);
+end
+
+% set nidx 
+if any(strcmp(varnam,{'options','vars','output'})), nidx = {idx,':'}; else nidx = {':',idx}; end;
+
+% if empty output, return
+if idx > max(size(output))||isempty({output{nidx{:}}}), return; end; 
+
+% set based on type
+switch edtype
+    case 1 % copy
+        idx = nidx; nidx{~cellfun('isclass',nidx,'char')} = numel(output)+1;
+        output(nidx{:}) = output(idx{:});
+    case 2 % delete
+        output(nidx{:}) = [];
+    case 4 % insert
+        if ~isfield(ifp,varnam), return; end;
+        nidx{~cellfun('isclass',nidx,'char')} = -idx;
+        output = sawa_insert(output,nidx,ifp.(varnam));
+end
 return;
 
 % load/save/run
@@ -369,21 +407,26 @@ lsr = questdlg('Load/Save/Run','Load/Save/Run','Load','Save','Run','Load');
 end
 
 % get savename
-if ~exist('sawafile','var'), savename = 'wrapper_automation'; else [~,savename]=fileparts(sawafile); end;
+if ~exist('sawafile','var')||isempty(sawafile), savename = 'wrapper_automation'; 
+else [~,savename]=fileparts(sawafile); end;
 
 % switch based on lsr
 switch lower(lsr)
 
 case {'load','save'} % load or save
 curdir = pwd; % get current dir
+
 % cd to jobs folder
 cd(fileparts(fileparts(mfilename('fullpath'))));
 if ~isdir('jobs'), mkdir('jobs'); end;
 cd('jobs');
+
 if strcmpi(lsr,'load') % load
+disp('Load savedvars file to use');
 [savedvars, spath] = uigetfile('*savedvars*.mat','Load savedvars file to use:');
 if ~any(savedvars), return; end; % return if none chosen
 savedvars = fullfile(spath, savedvars); load(savedvars,'fp'); % load savedvars
+
 % set path/environment
 fp = set_new_environments(fp);
 % set structure names to fp.names
@@ -392,9 +435,7 @@ set(findobj('-regexp','tag','_listbox'),'string',names); % set names
 guidata(gcf,fp); return; % set new data to guidata
 
 else % save
-if ~exist('savedvars','var')||isempty(savedvars)
 savedvars = cell2mat(inputdlg('Enter savedvars filename to save:','savedvars',1,{[savename '_savedvars.mat']}));
-end
 if isempty(savedvars), return; end; save(savedvars,'fp'); % save savedvars
 end % return to curdir, and clear
 cd(curdir); clear curdir; 
@@ -403,33 +444,56 @@ case 'run' % run
 % init vars
 if ~exist('program','var')||isempty(program), load(sawafile,'program'); end;
 if ~iscell(program), program = {program}; end;
+if ~exist('funrun','var'), funrun = 1; fp.funrun = funrun; end;
+if ~exist('subrun','var'), subrun = []; end;
+output = {}; vars = {};
+
 % print results
 hres = printres(savename); fp = funpass(fp,'hres'); 
-% run for each subject
+
+% remove output field
+if isfield(fp,'output'), fp = rmfield(fp,'output'); end;
+
+% run for each iteration/subject
 wb = settimeleft;
 for i = funrun
+% print subject/iteration
+if ~isempty(subrun)&&all(funrun==subrun), printres(sa(i).subj,hres); end; 
+
+% set output to pass to auto program
+fp.output = cell(numel(funcs),1); fp.vars = {};
+
 % get unique programs in order as they appear
-[uprog,frun] = collapse_array(program);
+[uprog,uiter] = collapse_array(program);
+
 % for each unique program
 for f = 1:numel(uprog),
 % auto_run program
-fp.auto_i = i; fp.auto_f = frun{f};
+fp.i = i; fp.fiter = uiter{f};
 fp = feval(uprog{f},'auto_run',fp);
-fp = rmfield(fp,{'auto_i','auto_f'});
 end
+clear uprog uiter;
+
+% set output
+output{end+1} = fp.output;
+vars = fp.vars;
+fp = rmfield(fp,{'output','vars'});
+
+% print separator
+printres(repmat('-',1,75),hres); 
+
 % display time left
 settimeleft(i,funrun,wb);
 end
-% if output, set to workspace
-if isfield(fp,'output'), assignin('base','output',fp.output); end;
+
 % print notes
 printres('Notes:',hres);
 end
 
 % set tooltipstring
-if ~ischar(savedvars), savedvars = ''; end;
+if ~exist('savedvars','var')||~ischar(savedvars), savedvars = ''; end;
 set(findobj('string','load/save/run'),'tooltipstring',savedvars);
 
 % set vars to fp
-clear lsr; fp = funpass(fp,who);
+clear lsr wb hres; fp = funpass(fp,who);
 return;

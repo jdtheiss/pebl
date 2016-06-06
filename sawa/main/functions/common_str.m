@@ -1,6 +1,5 @@
 function str = common_str(strs)
 % str = commmon_str(strs)
-%
 % This function will find the greatest common string (str) among a cell 
 % array of strings (strs)
 %

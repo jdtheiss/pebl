@@ -33,6 +33,7 @@ svars = struct;
 
 % if no mfil, choose
 if nargin == 0, 
+disp('Choose function to set variables for');
 [tmpfil,tmppath]=uigetfile({'*.m';'*.mat'},'Choose function to set variables for:');
 mfil = fullfile(tmppath,tmpfil); clear tmpfil tmppath;
 end

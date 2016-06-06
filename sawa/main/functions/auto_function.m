@@ -35,7 +35,7 @@ function varargout = auto_function(cmd,varargin)
 % toast
 %
 % requires: any2str cell2strtable funpass getargs printres sawa_cat 
-% sawa_createvars sawa_evalvars sawa_setfield sawa_strjoin settimeleft
+% sawa_createvars sawa_evalvars sawa_strjoin settimeleft
 %
 % Created by Justin Theiss
 
@@ -57,14 +57,26 @@ funpass(fp);
 % init vars
 if ~exist('funcs','var'), funcs = {}; end;
 if ~exist('names','var'), names = {}; end;
+if ~exist('idx','var'), idx = numel(funcs)+1; end;
+if ~exist('program','var'), program = {}; end;
 
 % enter function
-funcs{end+1} = cell2mat(inputdlg('Enter function to use:','Function'));
-if isempty(funcs{end}), return; end;
-names{end+1} = funcs{end};
+funcs{idx} = cell2mat(inputdlg('Enter function to use:','Function'));
+if isempty(funcs{idx}), return; end;
+names{idx} = funcs{idx};
+
+% set outputs
+fp = funpass(fp,'funcs');
+fp = set_output(fp,idx);
+
+% set options
+if ~exist('options','var')||idx > size(options,1), options{idx,1} = {}; end;
+
+% set program
+program{idx} = mfilename;
 
 % set vars to fp
-fp = funpass(fp,{'funcs','names'});
+fp = funpass(fp,{'funcs','options','names','program'});
 return;
 
 % set input/output args
@@ -73,18 +85,10 @@ function fp = set_options(fp)
 funpass(fp);
 
 % init vars
-if ~exist('funcs','var')||isempty(funcs),
-funcs = get(findobj('-regexp','tag','_listbox'),'string');
-end
-if ~iscell(funcs), funcs = {funcs}; end;
-if isempty(funcs), return; end;
+if ~exist('funcs','var')||isempty(funcs), return; end;
 if ~exist('names','var')||isempty(names), names = funcs; end;
-if ~exist('idx','var'), idx = get(findobj('-regexp','tag','_listbox'),'value'); end;
-if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
+if ~exist('idx','var')||isempty(idx)||idx==0, idx = numel(funcs); end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
-if ~exist('funrun','var'), if isempty(subrun), funrun = []; else funrun = subrun; end; end;
-if ~exist('program','var')||isempty(program), program = repmat({'auto_function'},1,numel(funcs)); end;
-iter = 1:numel(funrun);
 
 % display help msg
 feval(@help,funcs{idx});
@@ -93,36 +97,19 @@ feval(@help,funcs{idx});
 if isempty(which(funcs{idx})), return; end;
 
 % get out and in args
-[outargs,inargs] = getargs(funcs{idx}); 
-if isempty(outargs)&&abs(nargout(funcs{idx}))>0, outargs = {'varargout'}; end;
+[~,inargs] = getargs(funcs{idx}); 
 if isempty(inargs)&&abs(nargin(funcs{idx}))>0, inargs = {'varargin'}; end;
 
 % set options
 if ~exist('options','var')||idx>size(options,1), 
-    options(idx,1:numel(inargs)) = {repmat({{}},[numel(funrun),1])}; 
+    options(idx,1:numel(inargs)) = {[]}; 
 end;
 
 % choose input vars
-if ~exist('invars','var'), 
 if ~isempty(inargs)
-inchc = listdlg('PromptString','Choose inputs to set:','ListString',inargs);
+inchc = listdlg('PromptString','Choose input variables:','ListString',inargs);
 else % no inargs
 inchc = [];    
-end
-else % get inchc
-inchc = find(strcmp(inargs,invars));
-end
-
-% choose output vars
-if ~exist('outvars','var'),
-if ~isempty(outargs)
-outchc{idx} = listdlg('PromptString','Choose output variables:','ListString',outargs);
-else % no outargs
-outchc{idx} = [];
-end
-else % set outchc by outvars
-outchc{idx} = find(strcmp(outargs,outvars)); 
-if strcmp(outargs,'varargout'), outchc{idx} = 1; end;
 end
 
 % set invars based on input, file, sa
@@ -136,32 +123,24 @@ while ~done1 % loop for varargin
 % set ind if not varargin
 if strncmp(inargs{v},'varargin',8), inargs{v} = ['varargin ' num2str(varnum)]; end;
 
-% set tmpfuncs
-tmpnames = names(1:idx-1); funidx = strcmp(program(1:idx-1),'auto_function');
-tmpnames(funidx) = strcat('@',tmpnames(funidx));
+% set tmpnames and tmpvars
+tmpnames = strcat('@', names(1:idx-1));
+if ~exist('vars','var'), vars = {}; else vars = vars(1:idx-1,:); end;
+tmpnames = tmpnames(~prod(cellfun('isempty',vars),2)');
+tmpvars = vars(~prod(cellfun('isempty',vars),2),:);
 
 % set default options
-clear defopts; try defopts = options{idx,ind}{1}; catch, defopts = {}; end;
+clear defopts; try defopts = options{idx,ind}; catch, defopts = {}; end;
     
 % create val
 val = {}; done2 = 0;
 while ~done2
-val{end+1,1} = sawa_createvars(inargs{v},'(cancel when finished)',subrun,sa,defopts,tmpnames{:});
+val{end+1,1} = sawa_createvars(inargs{v},'(cancel when finished)',subrun,sa,defopts,tmpnames{:},tmpvars);
 if isempty(val{end}), val(end) = []; done2 = 1; end;
 end
 
-% if only once cell, set to inner cell
-if numel(val)==1, val = val{1}; end;
-
-% set funrun if empty 
-if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
-   
-% if iterations don't match, set to all
-if ~iscell(val)||numel(funrun)~=numel(val)&&numel(val)>1, val = {val}; end;
-
 % set to options
-if ind > numel(options(idx,:)), options{idx,ind} = repmat({{}},[numel(funrun),1]); end;
-options{idx,ind}(iter,1) = sawa_setfield(options{idx,ind},iter,[],[],val{:});
+if numel(val)==1&&iscell(val{1}), options{idx,ind} = val{1}; else options{idx,ind} = val; end;
 
 % if varargin, ask to continue
 if strncmp(inargs{v},'varargin',8)&&strcmp(questdlg('New varargin?','New Varargin?','Yes','No','No'),'Yes'),
@@ -173,7 +152,44 @@ end
 end
 
 % output
-fp = funpass(fp,{'funrun','funcs','options','subgrp','outchc'});
+fp = funpass(fp,{'funcs','options','outchc'});
+return;
+
+% set outputs
+function fp = set_output(fp,f,n,tmpout)
+% get vars from fp
+funpass(fp,{'funcs','vars','output','outchc'});
+
+% init vars
+if ~exist('funcs','var'), return; end;
+if ~exist('f','var'), f = 1; end;
+if ~exist('outchc','var')||f > numel(outchc), outchc{f} = []; end;
+
+% get outargs
+outargs = getargs(funcs{f}); 
+if isempty(outargs), outargs = {'varargout'}; end;
+
+if nargin==2,
+    % choose output vars
+    outchc{f} = listdlg('PromptString','Choose output variables:','ListString',outargs);
+    if any(strcmp(outargs(outchc{f}),'varargout')),
+        v0 = find(strcmp(outargs(outchc{f}),'varargout'));
+        v = cell2mat(inputdlg('Enter range of variable outputs to return:','Variable Outputs',1,{'1'}));
+        if ~strcmp(v,':'), try v = eval(v); end; end;
+        if ~any(isnan(v))&& all(v > 0) && ~any(isinf(v)), outchc{f} = v; end;
+        outargs = sawa_insert(outargs,find(strcmp(outargs,'varargout')),arrayfun(@(x){['varargout ' num2str(x)]},v));
+    end
+% set outputs
+elseif nargin==4 
+    if strcmp(outchc{f},':'), outchc{f} = find(~cellfun('isempty',tmpout)); end;    
+    for x = 1:numel(outchc{f}), output{f,x}{n,1} = tmpout{outchc{f}(x)}; end;
+end
+
+% set vars
+for x = 1:numel(outchc{f}), vars{f,x} = outargs{outchc{f}(x)}; end;
+
+% set vars to fp
+fp = funpass(fp,{'vars','output','outchc'});
 return;
 
 % run wrapper
@@ -182,42 +198,46 @@ function fp = auto_run(fp)
 funpass(fp);
 
 % init vars
-if ~exist('funcs','var'), return; end;
+if ~exist('funcs','var')||isempty(funcs), return; end;
 if ~iscell(funcs), funcs = {funcs}; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
-if ~exist('funrun','var')||isempty(funrun), if isempty(subrun), funrun = 1; else funrun = subrun; end; end;
-if isempty(sa), subjs = arrayfun(@(x){num2str(x)},funrun); [sa(funrun).subj] = deal(subjs{:}); end;
-if ~exist('auto_i','var'), auto_i = funrun; end;
-if ~exist('auto_f','var'), auto_f = 1:numel(funcs); end;
-if ~exist('options','var'), options(auto_f,1) = {{}}; end;
-if ~iscell(options), options = {{options}}; end;
-if ~all(cellfun('isclass',options,'cell')), options = cellfun(@(x){{x}},options); end;
-if numel(funcs)>numel(options), options(numel(options)+1:numel(funcs),1) = {repmat({{}},[numel(funrun),1])}; end;
+if ~exist('output','var'), output = cell(size(funcs,1),1); end; if ~exist('vars','var'), vars = {}; end;
+if ~exist('program','var'), program = repmat({mfilename},size(funcs)); end;
+if ~exist('fiter','var'), fiter = find(ismember(program,mfilename)); end;
 if ~exist('hres','var'), hres = []; end;
+if ~exist('i','var'), i = 1; end;
 
-% for each subject, run func
-for i = auto_i
+% if funrun == options, set n to i
+if isfield(fp,'funrun')&&numel(funrun)==max(max(cellfun('size',options,1)))
+    if isfield(fp,'i'), iter = find(funrun==i); else iter = 1:numel(funrun); end;
+else % otherwise set to options
+    iter = 1:max(max(cellfun('size',options,1)));
+end
+
+% for each iteration
+for n = iter
+
 % for each func
-for f = auto_f
+for f = fiter
 try
-% print subject 
-if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
-    printres(sa(i).subj,hres);
-end;
+% skip if already run
+if ~all(iter==n) && n > max(max(cellfun('size',options(f,:),1))), continue; end;
 
 % get outargs, inargs
-clear inargs valf tmpout; 
 [outargs,inargs] = getargs(funcs{f}); 
 if isempty(outargs)&&abs(nargout(funcs{f}))>0, outargs = {'varargout'}; end;
 if isempty(inargs)&&abs(nargin(funcs{f}))>0, inargs = {'varargin'}; end;
-
+    
 % evaluate options
+valf = {}; clear s; 
 for x = find(~cellfun('isempty',options(f,:))),
-    clear s; s = min([numel(options{f,x}),find(funrun==i,1)]);
+    s = min([size(options{f,x},1),n]); % set n to minimum between n and iterations
     if isempty(options{f,x}{s}), continue; end;
-    valf{x} = sawa_evalvars(options{f,x}{s});
+    valf{x} = sawa_evalvars(options{f,x}{s}); 
 end
-if ~exist('valf','var'), valf = {}; end;
+
+% set subject integer for output
+s = find(iter==n);
 
 % print command
 if isempty(valf), printres(funcs{f},hres);
@@ -225,18 +245,67 @@ else printres(cell2strtable(sawa_cat(1,funcs{f},inargs,any2str(valf{:})),' '),hr
 
 % evaluate function
 if nargout(funcs{f})==0 
-% no argout, try to get output (e.g., load)
-try 
-[~,tmpout{1}] = evalc([funcs{f} '(valf{:})']);
-catch % otherwise get command prompt output
-tmpout{1} = evalc([funcs{f} '(valf{:})']);
+% if function is save, get vars    
+if strcmp(funcs{f},'save')&&~isempty(vars),
+    if size(valf,2) > 1, % specific vars
+        ivars = valf(2:end); 
+    else % all vars
+        ivars = vars(~cellfun('isempty',vars));
+        ivars = unique(ivars);
+    end
+    % save the only latest variables found
+    ivals = cell(size(ivars));
+    for x = 1:numel(ivars)
+        [r,c] = find(strcmp(vars,ivars{x})); A = sortrows([r,c]);
+        if ~any(isempty(A)), ivals{x} = output{A(end,1),A(end,2)}{s}; end;
+    end
+    % if user entered -struct option
+    if strcmp(ivars{1},'-struct'), 
+        ivars(1)=[]; ivals(1)=[]; % remove '-struct'
+        for x = 1:numel(ivars)
+            ivars = horzcat(ivars,fieldnames(ivals{x})');
+            ivals = horzcat(ivals,struct2cell(ivals{x})');
+            ivars(x) = []; ivals(x) = [];
+        end
+    end
+    % get other options and remove from ivals/ivars
+    opts = ivars(strncmp(ivars,'-',1));
+    ivals(strncmp(ivars,'-',1)) = [];
+    ivars(strncmp(ivars,'-',1)) = []; 
+    % set to struct
+    ivars = reshape(ivars,1,numel(ivars));
+    ivals = reshape(ivals,1,numel(ivals));
+    tmp = cell2struct(ivals,ivars,2);
+    % set valf 
+    valf = horzcat(valf(1),'-struct','tmp',opts{:});
+elseif strcmp(funcs{f},'assignin') % if using assignin, set to output/vars
+    vars = sawa_cat(1,vars,valf{2});
+    outchc{f} = 1;
+    output{f,1}{s,1} = valf{3};
+    % if workspace is base, set
+    if strcmp(valf{1},'base'), feval(funcs{f},valf{:}); end;
+    continue; % skip rest
 end
 
-% print output
-if ~isempty(hres), disp(tmpout{1}); end;
-    
-% set outchc to 1 and outargs to {''}
-outchc{f} = 1; outargs = {''};
+% if chosen outputs, try to get output 
+try
+    [~,tmpout{1:max(outchc{f})}] = evalc([funcs{f} '(valf{:})']);
+catch % otherwise get command prompt output
+    tmpout{1} = evalc([funcs{f} '(valf{:})']);
+end
+
+% if no tmpout, set to {[]}
+if isempty(tmpout), tmpout = {[]}; end;
+
+% if output is structure (e.g., load), output struct2cell of tmpout{1}
+if isstruct(tmpout{1}),
+    outargs = fieldnames(tmpout{1})';
+    tmpout = struct2cell(tmpout{1});
+else % otherwise set outargs to {''}
+    outargs = {''};
+    % print output
+    if ~isempty(hres), disp(tmpout{1}); end;
+end
 
 else % otherwise set tmpout 
 % set outchc if needed
@@ -247,19 +316,21 @@ if ~exist('outchc','var')||~iscell(outchc), outchc{f} = 1:numel(outargs); end;
 end
 
 if ~isempty(outchc{f})
-% output
-[output{i}(f,outchc{f})] = tmpout(outchc{f});
+% set output
+fp = funpass(fp,{'output','outchc'});
+fp = set_output(fp,f,find(iter==n),tmpout); % n or find(iter==n)?
+funpass(fp,{'output','outchc','vars'});
 
 % print output
-printres(cell2strtable(sawa_cat(1,outargs(outchc{f}),any2str(output{i}{f,outchc{f}})),' '),hres);
+printres(cell2strtable(sawa_cat(1,vars(f,:),cellfun(@(x)any2str(x{end}),output(f,:))),' '),hres); %output(f,outchc{f}))),' '),hres);
 end
 
 catch err % if error, display message
-printres(['Error ' funcs{f} ' ' sa(i).subj ': ' err.message],hres);
+printres(['Error ' funcs{f} ': ' err.message],hres);
 end
 end
 end
 
 % set vars to fp
-fp = funpass(fp,{'output','outchc'});
+fp = funpass(fp,{'output','outchc','vars'});
 return;

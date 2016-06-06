@@ -28,7 +28,6 @@ if exist('spm','file')
     % switch versions
     if ~isempty(spmver) && ~strcmpi(spm('ver'),spmver) 
     spm_rmpath; % remove path
-    evalin('base','clear classes;'); % clear classes for cfg_ui
     spmpath = fullfile(fileparts(spmpath),spmver); % change spmpath
     k = addspmpath(spmpath); % add spmpath
     spm_jobman('initcfg'); cfg_util('initcfg'); % reinitialize 
@@ -46,6 +45,7 @@ function k = addspmpath(spmpath)
 if ~exist('spmpath','var'), spmpath = ''; end;
 k = 1;
 if ~isdir(spmpath) % not directory, choose
+    disp('Choose path to spm');
     spmpath = uigetdir(pwd,'Choose path to spm:');
     if ~any(spmpath), disp('Must download spm first.'); k = 0; return; end;
     addpath(spmpath);

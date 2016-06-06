@@ -1,5 +1,5 @@
-function [matlabbatch, itemidx, str] = sawa_setupjob(matlabbatch, itemidx)
-% [matlabbatch, itemidx, str] = sawa_setupjob(matlabbatch, itemidx)
+function [matlabbatch, itemidx, str] = sawa_setupjob(matlabbatch, itemidx, m)
+% [matlabbatch, itemidx, str] = sawa_setupjob(matlabbatch, itemidx, m)
 % Opens matlabbatch job using batch editor (cfg_ui) and records items to be 
 % used as sawa variables as well as the input user data.
 % 
@@ -7,6 +7,7 @@ function [matlabbatch, itemidx, str] = sawa_setupjob(matlabbatch, itemidx)
 % matlabbatch - (optional) job to be loaded. default is empty job
 % itemidx - (optional) item indices to be set as sawa variables. default is
 % empty
+% m - (optional) module index to set to initially
 % 
 % Outputs: 
 % matlabbatch - final job returned with user data
@@ -41,16 +42,17 @@ function [matlabbatch, itemidx, str] = sawa_setupjob(matlabbatch, itemidx)
 if ~exist('spm','file'), error('Must set SPM to matlab path.'); end;
 if ~exist('matlabbatch','var'), matlabbatch = {}; end;
 if ~exist('itemidx','var')||isempty(itemidx), itemidx = {[]}; end;
-if ~exist('str','var')||isempty(str), str = {[]}; end;
+if ~exist('m','var')||isempty(m)||m>numel(matlabbatch), m = 1; end;
+str = {[]};
 
 % prevent matlab from giving warnings when a text entered matches a function
 warning('off','MATLAB:dispatcher:InexactCaseMatch');
      
-% initcfg
+% initialize cfg_ui
 spm_jobman('initcfg'); cfg_util('initcfg');
 
 % open cfg_ui and get guidata
-h = cfg_ui; handles = guidata(h);
+h = cfg_ui; handles = guidata(h); 
 
 % set closerequestfcn to set to invisible (rather than try to save)
 set(h,'CloseRequestFcn',@(x,y)set(x,'visible','off'));
@@ -71,6 +73,10 @@ imsg = '----sawa variable----';
 if ~isempty(matlabbatch) % if matlabbatch isn't empty, open job
 evalc('cfg_util(''initjob'',matlabbatch)'); cfg_ui('local_showjob',h);
 end;
+
+% set modlist value
+set(handles.modlist,'value',m); 
+clear m;
 
 % init om and ostr
 om = 0; ostr = {};

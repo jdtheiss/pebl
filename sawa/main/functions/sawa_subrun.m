@@ -34,7 +34,7 @@ function [subrun,sa,task,fileName] = sawa_subrun(sa,subrun,isubrun)
 % to the subjects. Choosing "Refine" will only return subjects that have
 % met criteria across all function/searches.
 %
-% requires: choose_SubjectArray choose_fields sawa_find
+% requires: choose_SubjectArray choose_fields sawa_getfield
 %
 % Created by Justin Theiss
 
@@ -87,12 +87,12 @@ func = cell2mat(inputdlg(['Enter the function to use for ' flds{f} ' (e.g., isem
 search = cell2mat(inputdlg(['Enter search to use for ' flds{f} ' separate by comma if applicable (e.g., Control or 14):'],'Search')); % enter search
 
 % strsplit by commas and convert any digits to double
-if ~isempty(search), search = strsplit(search); end;
+if ~isempty(search), search = strsplit(search,','); end;
 for x = 1:numel(search), if all(isstrprop(search{x},'digit')), search{x} = str2double(search{x}); end; end;
 
-% run sawa_find for each subject individually
+% run sawa_getfield for each subject individually
 clear nsubrun; 
-nsubrun = find(arrayfun(@(x)any(sawa_find(func,search,sa(x),'',['\.',regexptranslate('escape',flds{f}),'$'])),1:numel(sa)));
+nsubrun = find(arrayfun(@(x)~isempty(sawa_getfield(sa(x),'func',func,'search',search,'str',['.' flds{f}])),1:numel(sa)));
 
 % refine or add
 addto = questdlg('Refine or add new subjects to subject list?','Refine or Add','Refine','Add','Refine');

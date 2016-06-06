@@ -15,14 +15,12 @@ function varargout = auto_batch(cmd,varargin)
 % options{1,1}(1:4,1) = {'test1','test2','test3','test4'};
 % itemidx{1}(1) = 3;
 % rep{1}(1) = 0;
-% funrun = 1:4;
-% fp = struct('funcs',{funcs},'options',{options},'itemidx',{itemidx},'rep',{rep},...
-% 'funrun',{funrun});
+% fp = struct('funcs',{funcs},'options',{options},'itemidx',{itemidx},'rep',{rep});
 % fp = auto_batch('run_batch',fp)
 %
 % requires: choose_fields choose_spm closedlg funpass printres 
-% sawa_createvars sawa_evalchar sawa_evalvars sawa_find 
-% sawa_savebatchjob sawa_setbatch sawa_setdeps sawa_setfield 
+% sawa_createvars sawa_evalvars sawa_getfield
+% sawa_savebatchjob sawa_setbatch sawa_setdeps  
 % sawa_setupjob sawa_strjoin settimeleft subidx
 %
 % Created by Justin Theiss
@@ -40,13 +38,30 @@ varargout = varargin{1};
 % callback functions
 function fp = add_function(fp)
 % create vars from fp
-funpass(fp,{'funcs','itemidx','str','sawafile','sa','subrun'});
+funpass(fp);
+
 % init vars
-if ~exist('funcs','var'), funcs = {}; end;
-if ~exist('itemidx','var')||isempty(itemidx), itemidx = cell(size(funcs)); end;
+if ~exist('funcs','var'), fp.funcs = {}; funcs = {}; end;
+if ~exist('program','var')||isempty(program), fp.program = {}; program = {}; end;
+if ~exist('idx','var')||isempty(idx)||idx==0, idx = numel(funcs)+1; end;
+fx = ismember(program,'auto_batch'); fx(find(~fx(idx:end),1)+idx:end) = false;
+fx = find(fx);
+if ~exist('itemidx','var')||isempty(itemidx), fp.itemidx = cell(size(funcs)); itemidx = fp.itemidx; end;
+if ~exist('rep','var')||isempty(rep), fp.rep = cell(size(funcs)); else clear rep; end;
+if ~exist('str','var')||isempty(str), fp.str = cell(size(funcs)); else clear str; end;
+if ~exist('names','var')||isempty(names), fp.names = cell(size(funcs)); else clear names; end;
+if ~exist('options','var')||isempty(options), fp.options = cell(numel(funcs),1); end;
+if ~exist('outchc','var')||isempty(outchc), fp.outchc = cell(size(funcs)); end;
+if ~exist('vars','var')||isempty(vars), fp.vars = cell(numel(funcs),1); end;
 if ~exist('sa','var'), sa = {}; end; 
 if ~exist('subrun','var'), subrun = []; end;
 if ~exist('sawafile','var'), sawafile = []; end;
+
+% get only auto_batch funcs %PROBLEM?
+funcs = funcs(fx); itemidx = itemidx(fx); options = fp.options(fx,:);
+
+% set m
+m = find(fx==idx); if isempty(m), m = 1; end;
 
 % choose spm ver
 spmver = choose_spm;
@@ -59,7 +74,7 @@ disp(char('Load/Choose Modules to use:',...
         'Close Batch Editor when finished.'));
     
 % load matlabbatch with sawa_setupjob 
-[funcs,itemidx,str]=sawa_setupjob(funcs,itemidx);
+[funcs,itemidx,str]=sawa_setupjob(funcs,itemidx,m); 
 
 try % get job/module ids 
 [~,cjob,mod_ids] = evalc('cfg_util(''initjob'',funcs)'); 
@@ -71,10 +86,12 @@ end
 for m = 1:numel(funcs)
 [~,~,contents{m}]=cfg_util('listmod',cjob,mod_ids{m},[],cfg_findspec({{'hidden',false}}),...
     cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'name','all_set_item'});
-itemnames{m} = contents{m}{1}; names{m} = contents{m}{1}{1};
+names{m} = contents{m}{1}{1};
 end
+clear cjob mod_ids;
 
 % save folder
+disp('Choose a folder to save the job(s) for this function. Click cancel to choose a subject field (e.g., subjFolders)');
 jobsavfld = uigetdir(cd, 'Choose a folder to save the job(s) for this function. Click cancel to choose a subject field (e.g., subjFolders)');
 try % if no folder chosen, ask to choose fields
 if ~any(jobsavfld), jobsavfld = strcat('sa(i).',subidx(choose_fields(sa,subrun,'Choose a field to save jobs folder:'),'{1}')); end; 
@@ -82,6 +99,7 @@ if strcmp(jobsavfld,'sa(i).'), jobsavfld = []; disp('Will not save jobs.'); end;
 catch err % if no jobsavfld, empty and disp warning
 jobsavfld = []; disp(['Will not save jobs: ' err.message]);
 end;
+clear err;
 
 % job name
 if isempty(sawafile) % enter job name
@@ -102,9 +120,11 @@ if ~all(cell2mat(contents{m}{2}(~ismember(1:numel(contents{m}{2}),itemidx{m}))))
 job_sts = 'Incomplete'; break; % if any not set (other than itemidx), incomplete
 end
 end
+clear contents m;
 
 % set job status
 set(findobj('tag','setup batch job'),'tooltipstring',[jobname ': ' job_sts]);
+clear job_sts; 
 
 % save or run?
 if ~isempty(jobsavfld), 
@@ -113,38 +133,64 @@ else % can't save
 saveorrun = 'Run';    
 end
 
-% overwrite previous data? (for spm jobs only)
-if any(~cellfun('isempty',sawa_getfield(funcs,'','\.spm')))
+% overwrite previous data? (for spm jobs with dir only) 
+if ~isempty(sawa_getfield(funcs,'expr','\.spm\..*\.dir$'))
 overwrite = questdlg('Overwrite previous SPM files? (if applicable)','Overwrite','Yes','No','No');
 end
 
+% set options for any changes
+prenames = fp.names(fx);
+preidx = fp.itemidx(fx);
+preopts = fp.options(fx,:);
+noptions = cell(numel(names),max(cellfun('size',[itemidx,1],2))); 
+for n = 1:numel(names),
+f = find(strcmp(prenames(n:end),names{n}),1)+n-1;
+noptions(n,ismember(itemidx{n},[preidx{f}])) = preopts(f,ismember([preidx{f}],itemidx{n}));
+end
+clear prenames preidx preopts n f;
+
+% if no fx, set to idx:idx+numel(funcs)-1
+if ~any(fx), fx = idx:idx+numel(funcs)-1; end;
+
+% insert vars into previous
+itemidx = sawa_insert(fp.itemidx,fx,itemidx);
+rep = sawa_insert(fp.rep,fx,cell(size(funcs)));
+str = sawa_insert(fp.str,fx,str);
+names = sawa_insert(fp.names,fx,names);
+options = sawa_insert(fp.options,{fx,':'},noptions);
+program = sawa_insert(fp.program,fx,repmat({'auto_batch'},size(funcs)));
+outchc = sawa_insert(fp.outchc,fx,cell(size(funcs)));
+vars = sawa_insert(fp.vars,{fx,':'},cell(numel(funcs),1));
+funcs = sawa_insert(fp.funcs,fx,funcs);
+clear noptions fx;
+
 % set vars to fp
-fp = funpass(fp,{'spmver','funcs','itemidx','str','names','jobsavfld','jobname','saveorrun','overwrite'});
+fp = funpass(fp);
+
+% set outputs for each module
+fx = ismember(program,'auto_batch'); fx(find(~fx(idx:end),1)+idx:end) = false;
+fx = find(fx);
+fp = set_output(fp,fx); 
 return;
 
 function fp = set_options(fp)
 % get vars from fp
-funpass(fp,{'funcs','idx','itemidx','rep','options','sa','subrun','funrun'});
+funpass(fp);
 
 % init vars
 if ~exist('funcs','var'), return; elseif ~iscell(funcs), funcs = {funcs}; end;
-if ~exist('idx','var'), idx = get(findobj('-regexp','tag','_listbox'),'value'); end; 
-if iscell(idx), idx = idx{1}; end; if isempty(idx)||idx==0, idx = 1; end;
+if ~exist('idx','var')||isempty(idx)||idx==0, idx = 1; end;
 if ~exist('itemidx','var'), return; elseif ~iscell(itemidx), itemidx{idx} = itemidx; end;
-if ~exist('rep','var')||idx>numel(rep), rep{idx} = zeros(size(itemidx{idx})); end;
-if ~exist('options','var')||idx>numel(options), options(idx,1:numel(itemidx{idx})) = {{}}; end;
+if ~exist('names','var'), names = {}; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
-if ~exist('funrun','var'), if isempty(subrun), funrun = []; else funrun = subrun; end; end;
-iter = 1:numel(funrun);
 
-% get only funcs that are struct
-fx = cellfun(@(x)isstruct(x),funcs);
-[~,ix] = collapse_array(fx);
-ii = cellfun(@(x)any(x==idx),ix);
-funcs = funcs(ix{ii});
+% get auto_batch indices
+fx = ismember(program,'auto_batch');
+fx(find(~fx(idx:end),1)+idx:end) = false; 
+funcs = funcs(fx); 
 
-try % get job/module ids 
-[~,cjob,mod_ids] = evalc('cfg_util(''initjob'',funcs)'); 
+try % get job/module ids  
+[~,cjob,mod_ids(fx)] = evalc('cfg_util(''initjob'',funcs)'); 
 catch err
 disp(err.message); set(findobj('tag','setup batch job'),'string','Empty'); return; 
 end
@@ -191,36 +237,78 @@ for v = listdlg('PromptString','Choose items to set:','ListString',itemnames{idx
     % set rep
     if ~isempty(pchc), rep{idx}(v) = p(pchc); else rep{idx}(v) = 0; end;
     
+    % set tmpnames and tmpvars
+    tmpnames = strcat('@', names(1:idx-1));
+    if ~exist('vars','var'), vars = {}; else vars = vars(1:idx-1,:); end;
+    tmpnames = tmpnames(~prod(cellfun('isempty',vars),2)');
+    tmpvars = vars(~prod(cellfun('isempty',vars),2),:);
+
     % set default options
-    clear defopts; try defopts = options{idx,v}{1}; catch, defopts = {}; end; 
+    clear defopts; try defopts = options{idx,v}; catch, defopts = {}; end; 
     
     % create val
     val = {}; done = 0;
     while ~done
-    val{end+1,1} = sawa_createvars([itemnames{idx}{v} ' ' num2str(defidx)],'(cancel when finished)',subrun,sa,defopts);
+    val{end+1,1} = sawa_createvars([itemnames{idx}{v} ' ' num2str(defidx)],'(cancel when finished)',subrun,sa,defopts,tmpnames{:},tmpvars);
     if isempty(val{end}), val(end) = []; done = 1; end;
     end
     
-    % if only one cell, set to inner cell
-    if numel(val)==1, val = val{1}; end;
-    
-    % set funrun if empty 
-    if isempty(funrun), funrun = 1:size(val,1); iter = funrun; end;
-    
-    % prep val
-    if ~iscell(val)||numel(funrun)~=numel(val)&&numel(val)>1, val = {val}; end;
-
     % set to options
-    if v > numel(options(idx,:)), options{idx,v} = repmat({{}},[numel(iter),1]); end;
-    options{idx,v}(iter,1) = sawa_setfield(options{idx,v},iter,[],[],val{:});
+    if numel(val)==1&&iscell(val{1}), options{idx,v} = val{1}; else options{idx,v} = val; end;
 end
 end
 
-% set updated funcs to original funcs
-funcs = horzcat(fp.funcs{[ix{1:ii-1}]},funcs,fp.funcs{[ix{ii+1:end}]});
+% insert vars into previous
+funcs = sawa_insert(fp.funcs,fx,funcs);
 
 % set vars to fp
-fp = funpass(fp,{'funrun','funcs','options','rep'});
+fp = funpass(fp,{'funcs','options','rep'});
+return;
+
+% set/get output based on dependencies
+function fp = set_output(fp,f,n,cjob)
+% get vars from fp
+funpass(fp,{'funcs','vars','output','outchc'});
+
+% init vars
+if ~exist('funcs','var'), return; end;
+if ~exist('f','var'), f = 1; end;
+if ~exist('outchc','var'), outchc{f} = []; end;
+if f > numel(outchc), outchc(end+1:max(f)) = {[]}; end; 
+if ~exist('cjob','var'), [~,cjob] = evalc('cfg_util(''initjob'',funcs(f))'); end;
+
+% get str, dep and sout
+[~,str,sts,~,sout]=cfg_util('showjob',cjob); 
+
+% for each module
+for m = 1:numel(f)
+if isempty([sout{m}]), continue; end; 
+
+if nargin==2
+% choose dependency to output
+outchc{f(m)} = listdlg('PromptString',{['Choose dependencies to output from ' str{m} ':'],'',''},...
+    'ListString',{sout{m}.sname});
+end
+
+% for each outchc
+for x = outchc{f(m)}
+% get name from sout sname
+varnam = regexp(sout{m}(x).sname,['^' str{m} ': (?<name>.+):?'],'names');
+if isempty(varnam), varnam.name = ['Output ' num2str(x)]; end;
+
+% set vars
+vars{f(m),x} = varnam.name;
+
+% set output
+if sts(m) && nargin > 2, 
+vals = cfg_util('getalloutputs',cjob); 
+output{f(m),x}{n,1} = subsref(vals{m}(x),sout{m}(x).src_output); 
+end
+end
+end
+
+% set vars to fp
+fp = funpass(fp,{'vars','output','outchc'});
 return;
 
 function fp = auto_run(fp)
@@ -230,127 +318,140 @@ funpass(fp);
 % init vars
 if ~exist('funcs','var')||isempty(funcs), return; elseif ~iscell(funcs), funcs = {funcs}; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
-if ~exist('funrun','var')||isempty(funrun), if isempty(subrun), funrun = 1; else funrun = subrun; end; end;
-if ~exist('auto_i','var'), auto_i = funrun; end;
-if ~exist('auto_f','var'), auto_f = 1:numel(funcs); end;
-funcs = funcs(auto_f); 
-if ~exist('itemidx','var'), return; elseif ~iscell(itemidx), itemidx{idx} = itemidx; end;
-if ~exist('rep','var')||isempty(rep), rep{1} = zeros(size(itemidx{1})); end;
-if numel(rep)<numel(funcs), for x = numel(rep)+1:numel(funcs), rep{x} = zeros(size(itemidx{x})); end; end;
-if ~exist('options','var'), options(1:numel(funcs),1:max(cellfun('size',itemidx,2))) = {repmat({{}},[numel(funrun),1])}; end;
-if ~all(cellfun('isclass',options,'cell')), options = cellfun(@(x){{x}},options); end;
-if isempty(sa), subjs = arrayfun(@(x){num2str(x)},funrun); [sa(funrun).subj] = deal(subjs{:}); end;
+if ~exist('itemidx','var'), return; elseif ~iscell(itemidx), itemidx{idx} = itemidx; fp.itemidx = itemidx; end;
+if ~exist('rep','var')||isempty(rep), fp.rep(fiter) = {zeros(size(itemidx{1}))}; end;
 if ~exist('saveorrun','var'), saveorrun = 'Run'; end;
 if ~exist('overwrite','var'), overwrite = 'No'; end;
 if ~exist('hres','var'), hres = []; end;
 if ~exist('jobsavfld','var'), jobsavfld = []; end;
 if ~exist('sawafile','var')||isempty(sawafile), sawafile = 'Batch Editor'; end;
 if ~exist('jobname','var')||isempty(jobname), [~, jobname] = fileparts(sawafile); end;
+if ~exist('output','var'), output = cell(size(funcs,1),1); end; if ~exist('vars','var'), vars = {}; end;
+if ~exist('program','var'), program = repmat({mfilename},size(funcs)); end;
+if ~exist('fiter','var'), fiter = find(ismember(program,mfilename)); end;
+if ~exist('i','var'), i = 1; end;
 
 % ensure correct spmver
 if exist('spmver','var'), spmver = choose_spm(spmver); else spmver = spm('ver'); end;
 
 % get matlabbatch from funcs and set preidx
-matlabbatch = funcs; preidx = itemidx;
+matlabbatch = funcs(fiter); preidx = itemidx;
 
 % get updated job id and mod ids 
-[~,cjob,mod_ids] = evalc('cfg_util(''initjob'',matlabbatch)');
+cfg_util('initcfg');
+[~,cjob,mod_ids(fiter)] = evalc('cfg_util(''initjob'',matlabbatch)');
 
 % get names
-for m = 1:numel(funcs)
-[~,~,contents{m}]=cfg_util('listmod',cjob,mod_ids{m},[],...
+for f = fiter
+[~,~,contents{f}]=cfg_util('listmod',cjob,mod_ids{f},[],...
 cfg_findspec({{'hidden',false}}),cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'name','val','all_set_item'});
-itemnames{m} = contents{m}{1};
+itemnames{f} = contents{f}{1};
 end
 
 % set options, names, itemidx, rep, sa, and hres
-fp = funpass(fp,{'options','itemnames','itemidx','rep','sa','hres'});
+fp = funpass(fp,{'options','fiter','itemnames','itemidx','rep','sa','hres'});
 
-% print current variables
-if funrun(1)==auto_i(1), 
-% print spmver
+% print current variables/spm version
+if (~isfield(fp,'funrun')&&~isfield(fp,'i'))||i==funrun(1),
 if ~isempty(spmver), printres(['SPM version: ' spmver],hres); end;
-for m = 1:numel(matlabbatch)
-prntidx{m} = ~ismember(1:numel(itemnames{m}),itemidx{m});
+for f = fiter
+prntidx{f} = ~ismember(1:numel(itemnames{f}),itemidx{f});
 % print itemnames and string rep of values for non-itemidx
-cellfun(@(x,y){printres([x ': ' sawa_strjoin(any2str(y),'\n')],hres)},itemnames{m}(prntidx{m}),contents{m}{2}(prntidx{m}));
-end; % print separator
-printres(repmat('-',1,75),hres); 
-end;
+cellfun(@(x,y){printres([x ': ' sawa_strjoin(any2str(y),'\n')],hres)},itemnames{f}(prntidx{f}),contents{f}{2}(prntidx{f}));
+end; 
+end
 
 % set warning off
-warning('off'); 
+w = warning; warning('off','all'); 
 
-% for each subrun
-for i = auto_i
-    try
-    % print subject 
-    if numel(funrun)==numel(subrun)&&all(funrun==subrun), 
-        printres(sa(i).subj,hres);
-    end;
-    
-    % set matlabbatch
-    clear matlabbatch; matlabbatch = funcs;
-    
-    % for each module
-    for m = find(~cellfun('isempty',preidx))
-        % set matlabbatch
-        matlabbatch = local_setbatch(fp,matlabbatch,m,i);
-    end
-    
-    % set dependencies
-    matlabbatch = sawa_setdeps(funcs,matlabbatch); 
-    
-    % check if able to run
-    [~,cjob] = evalc('cfg_util(''initjob'',matlabbatch)');
-    clear run; [~,~,run] = cfg_util('showjob',cjob);
-    
-    % run cfg_util
-    if all(run) && strcmp(saveorrun,'Run')
-    
-    % if overwriting, set str to continue, otherwise stop (if applicable)
-    if strcmpi(overwrite,'yes'), str = 'continue'; else str = 'stop'; end;
-    % close dlg if opens
-    closedlg({'-regexp','tag',spm('ver')},{'string',str});
-    
-    % run serial
-    spm_jobman('initcfg');
-    cfg_util('runserial',matlabbatch); 
-    
-    elseif ~all(run) % if can't run, print reason
-    printres('Could not run. Empty components:',hres);
-    for m = find(~run)
-        printres([itemnames{m}{1} ': ' sawa_strjoin(itemnames{m}(~cell2mat(contents{m}{3})),', ')], hres);
-    end
-    end
-    
-    catch err % error, print message
-    printres(['Error ' jobname ' ' sa(i).subj ': ' err.message],hres);
-    end
-    
-    % save matlabbatch job
-    if ~isempty(jobsavfld)
-    clear jobsave; jobsave = sawa_evalchar(jobsavfld); 
-    jobsave = sawa_savebatchjob(jobsave,jobname,matlabbatch);
-    printres(['Saving job to ' jobsave],hres); 
-    end
+% if funrun == options, set n to i
+if isfield(fp,'funrun')&&numel(funrun)==max(max(cellfun('size',options,1)))
+    if isfield(fp,'i'), iter = find(funrun==i); else iter = 1:numel(funrun); end;
+else % otherwise set to options
+    iter = 1:max(max(cellfun('size',options,1)));
+    if isempty(iter), iter = 1; end;
 end
+
+% for each iteration
+for n = iter
+try
+% skip if already run
+if ~all(iter==n) && n > max(max(cellfun('size',options(fiter,:),1))), continue; end;
+
+% set matlabbatch
+clear matlabbatch; matlabbatch = funcs(fiter);
+
+% set variables for each module
+for f = fiter, matlabbatch = local_setbatch(fp,matlabbatch,f,n); end;
+
+% set dependencies
+matlabbatch = sawa_setdeps(matlabbatch); 
+
+% check if able to run 
+[~,cjob] = evalc('cfg_util(''initjob'',matlabbatch)'); 
+clear run; [~,~,run] = cfg_util('showjob',cjob); 
+
+% run cfg_util
+if all(run) && strcmp(saveorrun,'Run')
+
+% if overwriting, set str to continue, otherwise stop (if applicable)
+if strcmpi(overwrite,'yes'), str = 'continue'; else str = 'stop'; end;
+% close dlg if opens
+closedlg({'-regexp','tag',spm('ver')},{'string',str});
+
+% run serial
+cfg_util('runserial',cjob);
+
+% set outputs
+fp = set_output(fp,fiter,find(iter==n),cjob); 
+
+% print outputs
+funpass(fp,{'vars','output'}); 
+for f = fiter
+try cellfun(@(x,y){printres(cell2strtable(sawa_cat(1,x,any2str(y{end})),' '),hres)},vars(f,:),output(f,:)); end;
+end
+
+elseif ~all(run) % if can't run, print reason
+printres('Could not run. Empty components:',hres);
+printres([itemnames{f}{1} ': ' sawa_strjoin(itemnames{f}(~cell2mat(contents{f}{3})),', ')], hres);
+end
+
+catch err % error, print message
+printres(['Error ' jobname ': ' err.message],hres);
+end
+
+% save matlabbatch job
+if ~isempty(jobsavfld)
+clear jobsave; jobsave = sawa_evalvars(jobsavfld); 
+jobsave = sawa_savebatchjob(jobsave,jobname,matlabbatch);
+printres(['Saving job to ' jobsave],hres); 
+end
+end
+
+% reset warnings
+warning(w.state,w.identifier);
+
+% set fp 
+fp = rmfield(fp,'itemnames');
 return;
 
-function matlabbatch = local_setbatch(fp,matlabbatch,m,i)
+function matlabbatch = local_setbatch(fp,matlabbatch,m,n)
 % get vars from fp
-funpass(fp,{'options','itemnames','itemidx','funrun','sa','rep','hres'});
+funpass(fp); 
+
+% init valf
+valf = cell(1, numel(itemidx{m}));
 
 % for each itemidx
 for mx = 1:numel(itemidx{m})
 
 % if not enough options, set to end; if empty options, skip
-clear s; s = min([numel(options{m,mx}),find(funrun==i,1)]);
+clear s; s = min([numel(options{m,mx}),n]);
 if isempty(options{m,mx}), continue; end;
 
 % eval vars
 valf{mx} = sawa_evalvars(options{m,mx}{s});
-if iscell(valf{mx})&&rep{m}(mx)==0, valf{mx} = sawa_getfield(valf{mx},'',''); end;
+if iscell(valf{mx})&&rep{m}(mx)==0, valf{mx} = sawa_getfield(valf{mx}); end;
 
 % print vars
 printres([itemnames{m}{itemidx{m}(mx)} ': ' sawa_strjoin(any2str(valf{mx}),'\n')],hres);
@@ -369,10 +470,6 @@ end
 end
 
 % set items
-[matlabbatch,sts] = sawa_setbatch(matlabbatch,valf,itemidx{m},rep{m},m);
-
-% if failed to set vals in repeat
-for mx = 1:numel(itemidx{m})
-arrayfun(@(x){printres(['Could not set vals for ' itemnames{m}{itemidx{m}(mx)} ' ' num2str(x)],hres)},find(~sts{mx})); 
-end;
+if isempty(valf)||all(cellfun('isempty',valf)), return; end;
+[matlabbatch,sts] = sawa_setbatch(matlabbatch,valf,itemidx{m},rep{m},find(fiter==m));
 return;

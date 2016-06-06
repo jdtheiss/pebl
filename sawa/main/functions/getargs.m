@@ -17,7 +17,9 @@ function [outArgs, inArgs] = getargs(fun, subfun)
 % inparams = {'x','m','varargin'}
 % 
 % NOTE: This function will only work for functions that have a file listed
-% when calling functions(func) or built-in matlab functions
+% when calling functions(func) or built-in matlab functions. This function
+% will also only work if the output/input arguments are separated by
+% commas.
 %
 % requires: subidx
 %
@@ -28,7 +30,7 @@ outArgs = {}; inArgs = {};
 if ~exist('subfun','var'), subfun = []; end;
 if ~isa(subfun,'function_handle')&&~isempty(subfun), subfun = str2func(subfun); end;
 % if ischar, set to function handle
-if ~isa(fun,'function_handle'), fun = str2func(fun); end;
+if ~isa(fun,'function_handle'), try fun = str2func(fun); catch, return; end; end;
 % get file, if doesn't exist, return
 file = subidx(functions(fun),'.file');
 if isempty(file)||strcmp(file,'MATLAB built-in function'), return; end;

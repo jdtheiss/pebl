@@ -10,7 +10,8 @@ function structure = funpass(structure,vars)
 % -structure - structure array with fields that are the intended variables
 % to use
 % -vars - cellstr variables to add to structure (who adds current variables 
-% except structure and ans) or variables from structure to add to workspace
+% except structure and ans) or variables from structure to add to
+% workspace. place '~' in front of variables not to pass (see example).
 %
 % Outputs:
 % -structure - structure array with fields updated from entered variables
@@ -30,8 +31,8 @@ function structure = funpass(structure,vars)
 %
 % function structure = subfunction2(structure,a,b,c)
 % funpass(structure);
-% z = f*a*b; r = b/c; clear a b c;
-% structure=funpass(structure,who);
+% z = f*a*b; r = b/c; 
+% structure=funpass(structure,{'~a','~b','~c'});
 %
 % structure = 
 %
@@ -52,21 +53,38 @@ if nargin > 0, strucnam = inputname(1); else strucnam = []; end;
 if isempty(strucnam), strucnam = 'structure'; end; 
 if ~exist('vars','var'), vars = {}; end; if ~iscell(vars), vars = {vars}; end;
 flds = fieldnames(structure)'; if isempty(flds), flds = {}; end;
+
 % switch based on nargout
 if nargout==0, 
+% get vars not to set
+nvars = strrep(vars(strncmp(vars,'~',1)),'~',''); 
+vars = vars(~strncmp(vars,'~',1));
+
 % if no vars, set vars to fieldnames
-if isempty(vars), vars = flds; end; 
+if isempty(vars), vars = flds; end;
+
 % ensure vars are in fieldnames
 vars = vars(ismember(vars,flds));
+
+% remove nvars
+vars = vars(~ismember(vars,nvars));
+
 % create variables from structure
 for x = 1:numel(vars), assignin('caller',vars{x},structure.(vars{x})); end;   
 else
+% get vars not to set
+nvars = strrep(vars(strncmp(vars,'~',1)),'~','');
+vars = vars(~strncmp(vars,'~',1));
+
 % if no vars, set vars to who
 if isempty(vars), vars = evalin('caller','who;'); end;
+
 % ensure vars are in who
 vars = vars(ismember(vars,evalin('caller','who;')));
-% remove ans, strucnam
-vars = vars(~ismember(vars,{'ans',strucnam}));
+
+% remove ans, strucnam, nvars
+vars = vars(~ismember(vars,['ans',strucnam,nvars]));
+
 % create structure from variable
 for x = 1:numel(vars), structure = setfield(structure,vars{x},evalin('caller',vars{x})); end;
 end

@@ -26,13 +26,18 @@ function sawa(funcs,sv,savedvars)
 % set to path if not 
 if ~any(strfind(path,fileparts(mfilename('fullpath'))))
     path(path,fileparts(mfilename('fullpath')));
+if isempty(which('cfg_util')), 
+    disp('Choose path containing cfg_util.m');
+    cfgpath = uigetdir(cd,'Choose path containing cfg_util.m');
+    if any(cfgpath), path(path,cfgpath); end;
+end
 end
 
 % no args
 if nargin == 0
 % check if any sawa's open
-if ~isempty(findobj('type','figure','name','subject array and wrapper automation'))
-    close('subject array and wrapper automation'); sawa; return;
+if ~isempty(findobj('type','figure','-regexp','tag','make_gui.*'))
+    delete(findobj('-regexp','tag','make_gui.*')); sawa; return;
 end
 
 % get fileName
@@ -182,7 +187,7 @@ return;
     
 function exit_Callback(source,eventdata)
 % exit program
-close('subject array and wrapper automation');
+delete(findobj('-regexp','tag','make_gui.*'));
 disp('goodbye'); 
 return;
 
@@ -216,6 +221,7 @@ cd(fullfile(fileparts(fileparts(mfilename('fullpath'))),'jobs'));
 
 % for each function, choose savedvars
 for f = 1:numel(funcs)
+disp(['Choose savedvars for ' funcs{f}]);
 savedvars{f} = uigetfile('*savedvars*.mat',['Choose savedvars for ' funcs{f} ':']);
 savedvars{f} = fullfile(pwd,savedvars{f});
 end
@@ -230,7 +236,7 @@ return;
 
 function quit_Callback(source,eventdata)
 % close functions to run figure
-close('functions to run');
+delete(findobj('name','functions to run'));
 return;
 
 function run_Callback(source,eventdata,funcs,sv,asavedvars)

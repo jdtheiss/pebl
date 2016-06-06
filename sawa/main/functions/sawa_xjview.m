@@ -1,6 +1,6 @@
 function sawa_xjview(varargin)
-% sawa_xjview(varargin)
-% this function will allow for saving images and cluster details from
+% sawa_xjview('property1','value1','property2','value2',...)
+% This function will allow for saving images and cluster details from
 % multiple files using xjview
 %
 % variables to input can be any of the following:
@@ -8,33 +8,30 @@ function sawa_xjview(varargin)
 % outfld - cell/str/cellstr of folders to save resulting images and cluster details 
 % into. outfld can be empty cell(s) for same as file folders, str/cellstr subfolder, 
 % or str/cellstr fullpath (default is same as file folders)
-% pval - pvalue to use (default is 0.001, must be less than or equal to 1)
-% kval - cluster threshold (default is 5, must be greater than 1)
+% pval - pvalue to use (must be less than or equal to 1) [0.001]
+% kval - cluster threshold (must be greater than 1) [5]
 % defxyz - x,y,z coordinates to snap to (default is global max)
-% mask - string of default mask to use (default is 'single T1') or fullfile
-% to other mask
-% slc - structure with any of following fields for slice view images:
-% - sep - separation (in mm) of slices
-% - col - number of columns to display in image
-% - row - number of rows to display in image
-% itype - image type for saving images (default is .png)
-% options:
-% 'notxt' - option to not save txt files 
-% 'noxls' - option to not save xlsx files
-% 'noimg' - option to not save xjview main images
-% 'noslc' - option to not save slice view images
+% mask - string of default mask to use or fullfile
+% to other mask ['single T1']
+% sep - separation (in mm) of slices [4]
+% col - number of columns to display in image [8]
+% row - number of rows to display in image [8]
+% itype - image type for saving images ['.png']
+% output - cell/str of outputs to save ['all'] (enter 'none' for no outputs) 
+% - 'all' - all outputs
+% - 'txt' - text file of cluster details
+% - 'xls' - excel file of cluster details
+% - 'img' - main xjview screen capture at coordinates
+% - 'slcs' - all slices screen capture
+% - 'axial' - axial slices screen capture
+% - 'coronal' - coronal slices screen capture
+% - 'sagittal' - sagittal slices screen capture
 %
 % Example:
-% sawa_xjvie(fullfile(cd,'spmT_0001.nii'),0.01,124,[12,-8,14],'notxt','noxls')
+% sawa_xjview('files','spmT_0001.nii','pval',0.01,'kval',124,'defxyz',[12,-8,14],'output',{'img','slcs'})
 % This example would save xjview main image and slice view images for
 % 'spmT_0001.nii', use a pval of 0.01, kval of 124 voxels, jump to
-% coordinates [12, -8, 14], and save the resulting images into the
-% directory cd.
-%
-% NOTE: Order of input variables generally does not matter, except that
-% pval, kval, and sep must be input in order (e.g., if pval does
-% not exist and sep is entered as .5, pval would errantly be set to .5).
-% Likewise, if using an other mask, the mask must be input after files.
+% coordinates [12, -8, 14], and save the resulting images into the current directory.
 %
 % requires: sawa_cat, sawa_screencapture, sawa_strjoin, subidx, xjview
 %
@@ -43,45 +40,12 @@ function sawa_xjview(varargin)
 % set masks
 masks = {'single T1','avg152PD','avg152T1','avg152T2','avg305T1','ch2','ch2bet','aal','brodmann'};
 
-% get vars
-for v = 1:nargin
-switch class(varargin{v})
-case 'cell'
-if all(cellfun(@(x)exist(x,'file'),varargin{v})==2), 
-files = varargin{v}; % files    
-else 
-outfld = varargin{v}; % outfld    
-end
-case 'double'
-if numel(varargin{v})==3
-defxyz = varargin{v};    % defxyz
-elseif varargin{v}<=1
-pval = varargin{v}; % pval
-elseif varargin{v}>1
-kval = varargin{v}; % kval
-end     
-case 'struct'
-flds = fieldnames(varargin{v}); % slice view struct
-for x = 1:numel(flds), eval([flds{x} '=varargin{v}.' flds{x} ';']); end;
-case 'char'
-if exist(varargin{v},'file')==2&&exist('files','var')
-mask = varargin{v}; % other mask
-elseif exist(varargin{v},'file')
-files = varargin(v); % files
-elseif any(strcmp({'notxt','noxls','noimg','noslc'},varargin{v}))
-eval([varargin{v} '= 1;']); % option    
-elseif any(strcmp(masks,varargin{v}))
-mask = varargin{v}; % mask
-elseif strncmp(varargin{v},'.',1)
-itype = varargin{v}; % itype
-else
-outfld = varargin(v); % outfld    
-end
-end
-end
+% set vars
+arrayfun(@(x)assignin('caller',varargin{x},varargin{x+1}),1:2:nargin);
 
 % init other vars
 if isempty(which('xjview')), 
+    disp('Choose path to xjview');
     xjpath = uigetdir(pwd,'Choose path to xjview:'); 
     if ~any(xjpath)
     error('Need to download xjview'); 
@@ -101,10 +65,13 @@ if ~exist('outfld','var'), outfld = cell(size(files)); end;
 if ~iscell(outfld), outfld = {outfld}; end;
 if numel(files)>numel(outfld), outfld = repmat(outfld(1),1,numel(files)); end;
 if ~exist('itype','var'), itype = '.png'; end;
-if ~exist('notxt','var'), notxt = 0; end;
-if ~exist('noxls','var'), noxls = 0; end;
-if ~exist('noimg','var'), noimg = 0; end;
-if ~exist('noslc','var'), noslc = 0; end;
+if ~exist('output','var')||any(strcmp(output,'all')), 
+    opts = true(1,4); slc_chc = 1:3; 
+else
+    opts = ismember({'txt','xls','img','slcs'},output); 
+    slc_chc = find(ismember({'axial','coronal','sagittal'},output));
+    if isempty(slc_chc)&&opts(4), slc_chc = 1:3; elseif ~isempty(slc_chc), opts(4) = true; end;
+end
 
 % open xjview
 xjview; xj_fig = gcf;
@@ -167,9 +134,10 @@ cd(outfld{f}); % cd to fullpath, make folder in outfld
 if ~isempty(tmpfld), mkdir(tmpfld); cd(tmpfld); end; clear tmpfld;
 end
 xjimg = ['xjview_p' num2str(pval) 'k' num2str(kval) '_' ifil];
-if ~noimg, sawa_screencapture(xj_fig,xjimg,itype); end;
+if opts(3), sawa_screencapture(xj_fig,xjimg,itype); end;
 
 % get report
+if any(opts(1:2))
 cb = get(hrep,'Callback'); report = evalc('cb(hrep,[])');
 
 % calculate percent of mask volumes
@@ -197,11 +165,11 @@ for i = 1:numel(n)
 report = sawa_strjoin({report,rows(n(i)-4:n(i)),cell2strtable(cat(2,vols{i}',pct{i}',names{i}'),' ')},'\n');
 end
 outtxt = ['ClusterDetails_p' num2str(pval) 'k' num2str(kval) '_' ifil '.txt'];
-if ~notxt
+if opts(1)
 save(outtxt); fid = fopen(outtxt,'w'); fwrite(fid,report); fclose(fid);
 end
 
-if ~noxls
+if opts(2)
 % output report to excel
 outxls = strrep(outtxt,'.txt','.xlsx');
 ncl = regexp(report,'Cluster\s+(?<names>\d+)','names'); ncl = {ncl.names}';
@@ -214,8 +182,10 @@ dat = sawa_cat(1,files{f},{'p value =',pval},{'cluster size =',kval},...
 sawa_cat(2,ncl,sizecl,coorcl,intcl,regcl));
 xlwrite(outxls,dat);
 end
+end
 
 % get slice views
+if opts(4)
 cb = get(hslc,'Callback'); cb(hslc,[]); 
 % get slice figure and save each view
 slc_fig = findobj('name','xjView slice view'); 
@@ -226,7 +196,7 @@ hsep = findobj(slc_fig,'style','edit','string','4');
 % get columns, rows
 hcol = subidx(findobj(slc_fig,'style','edit','string','8'),1); 
 hrow = subidx(findobj(slc_fig,'style','edit','string','8'),2);
-for x = 1:3 % set sep, col, row, and view
+for x = slc_chc % set sep, col, row, and view
 set(hsep,'string',num2str(sep)); cb = get(hsep,'Callback'); cb(hsep,[]); 
 set(hcol,'string',num2str(col)); cb = get(hcol,'Callback'); cb(hcol,[]);
 set(hrow,'string',num2str(row)); cb = get(hrow,'Callback'); cb(hrow,[]);
@@ -234,9 +204,10 @@ set(htcs,'value',x); cb = get(htcs,'Callback'); cb(htcs,[]);
 
 % save slcimg
 slcimg = [subidx(get(htcs,'string'),['{' num2str(x) '}']) '_p' num2str(pval) 'k' num2str(kval) '_' ifil];
-if ~noslc, sawa_screencapture(slc_fig,slcimg,itype); end;
+sawa_screencapture(slc_fig,slcimg,itype);
 end % close slice views
 close(slc_fig);
+end
 catch err
 disp(['Error: ' files{f} ' ' err.message]);    
 end

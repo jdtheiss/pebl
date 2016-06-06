@@ -1,10 +1,10 @@
 function hobj = settimeleft(varargin)
 % hobj = settimeleft(varargin)
-% sets time left display
+% Sets time left display
 %
 % Inputs:
 % i - (optional) current iteration
-% subrun - (optional) numeric array of all iterations
+% iterarray - (optional) numeric array of all iterations
 % hobj - (optional) handle for settimeleft obj
 % wmsg - (optional) message to update
 %
@@ -20,7 +20,7 @@ function hobj = settimeleft(varargin)
 % 
 % Note: the tag for the hobj is set to SAWA_WAITBAR. Also, the waitbar
 % automatically closes once the final iteration has completed (i.e. i =
-% subrun(end)).
+% iterarray(end)).
 %
 % Created by Justin Theiss
 
@@ -33,15 +33,15 @@ set(hobj,'tag','SAWA_WAITBAR');
 
 else % update
 % get vargs
-i = varargin{1}; subrun = varargin{2}; 
+i = varargin{1}; iterarray = varargin{2}; 
 if nargin>2, hobj = varargin{3}; else hobj = []; end;
-pl = find(ismember(subrun,i)); % find place in subrun
+pl = find(ismember(iterarray,i)); % find place in iterarray
 
 % if no hobj
 if ~any(ishandle(hobj)),
     tm = timerfind('Name','SAWA_TIMER'); % stop/delete timer
     if ~isempty(tm), stop(tm); delete(tm); clear tm; end;
-    hobj = waitbar(pl/numel(subrun)); % reset
+    hobj = waitbar(pl/numel(iterarray)); % reset
 end;
 
 % set msg
@@ -50,19 +50,19 @@ if nargin > 3 % update msg
 else % use please wait...
     wmsg = 'Please wait...';
 end % set to hobj
-set(hobj,'Name',wmsg);  
+try set(hobj,'Name',wmsg); end;
 
 % set time left
 if nargin == 5 % if using timer to set time 
 t = varargin{5}; set(timerfind('Name','SAWA_TIMER'),'UserData',t-1); 
 else % set time based on tic/toc
-t = fix(max(toc,.25)*(length(subrun)-pl)); % get time left
+t = fix(max(toc,.25)*(length(iterarray)-pl)); % get time left
 % create timer to count down seconds in between
 tm = timerfind('Name','SAWA_TIMER'); % stop/delete previous timers
 if ~isempty(tm), stop(tm); delete(tm); clear tm; end;
 if fix(t) > 0, % only when t > 0
 tm = timer('Name','SAWA_TIMER','TasksToExecute',fix(t),'ExecutionMode','fixedSpacing',...
-    'UserData',t,'TimerFcn',@(x,y)settimeleft(i,subrun,hobj,wmsg,get(x,'UserData')));
+    'UserData',t,'TimerFcn',@(x,y)settimeleft(i,iterarray,hobj,wmsg,get(x,'UserData')));
 start(tm); % start timer
 end
 end
@@ -76,10 +76,10 @@ tdisp = strcat(num2str(h),':',num2str(m),':',num2str(s));
 wdisp = ['Time Remaining: ' tdisp];
 
 % waitbar
-waitbar(pl/numel(subrun), hobj, wdisp); 
+waitbar(pl/numel(iterarray), hobj, wdisp); 
 
 % close waitbar if pl/length == 1
-if pl/numel(subrun)==1,
+if pl/numel(iterarray)==1,
     if ishandle(hobj), close(hobj); end; % close waitbar
     tm = timerfind('Name','SAWA_TIMER'); % stop/delete timer
     if ~isempty(tm), stop(tm); delete(tm); clear tm; end;

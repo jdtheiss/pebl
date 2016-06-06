@@ -32,6 +32,7 @@ new_fil = fil;
 if ~exist('filvar','var'), filvar = inputname(1); end;
 if ~isdir(fil)&&exist(fil,'file')~=2
 filfold = questdlg('Choose file or folder?','File or Folder','File','Folder','Folder');
+disp(['Choose the ' lower(filfold) ' location for ' filvar]);
 if strcmp(filfold,'Folder') % if no ext, get folder
 new_fil = uigetdir(pwd,['Choose the folder location for ' filvar ':']);
 elseif strcmp(filfold,'File') % otherwise get file

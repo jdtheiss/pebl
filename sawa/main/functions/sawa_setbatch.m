@@ -49,7 +49,6 @@ if ~exist('rep','var')||isempty(rep), rep = zeros(size(val)); end;
 if ~exist('m','var'), m = 1; end;
 
 % initialize job from matlabbatch
-cfg_util('initcfg');
 [~,cjob,mod_ids] = evalc('cfg_util(''initjob'',matlabbatch)');
 
 % get unique reps
@@ -99,7 +98,7 @@ for r = u_rep
         for xx = fnd
         % if emtpy val, skip
         if isempty(val{xx}{x}), continue; end;
- 
+        
         % load job and get item ids and contents
         [id,~,contents]=cfg_util('listmod',cjob,mod_ids{m},[],...
         cfg_findspec({{'hidden',false}}),cfg_tropts({{'hidden',true}},1,inf,1,inf,false),...
@@ -113,7 +112,7 @@ for r = u_rep
         case 'cfg_entry' % for entry, not cell
             if iscell(val{xx}{x}), val{xx}{x} = [val{xx}{x}{:}]; end;
         end
-
+        
         % set values to matlabbatch
         sts{xx}(x) = cfg_util('setval',cjob,mod_ids{m},id{idx(xx)},val{xx}{x}); 
         end

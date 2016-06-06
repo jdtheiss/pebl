@@ -1,39 +1,54 @@
-function [files,pos] = sawa_searchfile(str,folder,filetype)
-% [files, pos] = sawa_searchfile(str,folder,filetype)
-% search for str within each .m file (default) in folder
+function [files,pos] = sawa_searchfile(expr,fld,filetype)
+% [files, pos] = sawa_searchfile(expr,fld,filetype)
+% search for expr within each .m file (default) in fld
 %
 % Inputs:
-% str - string (regular expression)
-% folder - location of scripts to search
-% filetype - a regular expression to search files (e.g., \.m$)
+% expr - regular expression to search within files
+% fld - location of scripts to search
+% filetype - a regular expression to search files (default: '\.m$')
 %
 % Output:
-% files - full file script locations in which str was found
+% files - full file script locations in which expr was found
 % pos - cell array of character position within each func
 %
+% Example:
+% expr = 'sawa_searchfile'; fld = fileparts(which('sawa_searchfile')); 
+% filetype = '\.m$';
+% [files, pos] = sawa_searchfile(expr,fld,filetype)
+% 
+% files = 
+% 
+%     '/Applications/sawa/main/functions/sawa_searchfile.m'
+% 
+% pos = 
+% 
+%     [1x6 double]
+% 
 % requires: sawa_searchdir
 %
 % Created by Justin Theiss
 
 
 % init vars
-if ~exist('str','var'), return; end;
-if isempty(str), str = ''; end;
-if ~exist('folder','var'), folder = pwd; end;
+if ~exist('expr','var'), return; end;
+if isempty(expr), expr = ''; end;
+if ~exist('fld','var'), fld = pwd; end;
 if ~exist('filetype','var'), filetype = '\.m$'; end;
 files = {}; pos = {};
 
 % use sawa_searchdir to get flds
-[~,flds] = sawa_searchdir(folder,filetype);
+flds = sawa_searchdir(fld,filetype);
 
 % fore each fld
 for i = 1:numel(flds)
 if ~isdir(flds{i}) % if not dir, get txt
 clear txt; txt = fileread(flds{i});
-% find str
-if ~isempty(regexp(txt,str,'once'))||isempty(str)
+
+% find expr
+if ~isempty(regexp(txt,expr,'once'))||isempty(expr)
 files{end+1} = flds{i}; % set files
-pos{end+1} = regexp(txt,str); % set position
+pos{end+1} = regexp(txt,expr); % set position
 end
 end
 end
+return;

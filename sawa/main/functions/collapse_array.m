@@ -1,10 +1,9 @@
 function [C, idx] = collapse_array(A)
 % [C, idx] = collapse_array(A)
-%
 % This functon collapses consecutive identical components of an array.
 %
 % Inputs:
-% - A - array (string, cell, numeric)
+% - A - array (string, cellstr, numeric)
 % 
 % Outputs:
 % - C - new collapsed array

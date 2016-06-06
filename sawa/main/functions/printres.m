@@ -31,7 +31,6 @@ function [hres,fres,outtxt] = printres(varargin)
 %
 % Created by Justin Theiss
 
-
 try
 % init outputs
 hres = []; fres = []; outtxt = [];
@@ -101,22 +100,33 @@ function outtxt = savebutton_Callback(source, eventdata, hres, savepath)
 % get string and tag
 prints = get(hres,'String'); mfil = get(hres,'Tag');
 
+% edit filename/set filpath to empty
+mfil = cell2mat(inputdlg('Enter filename to save:','Filename',1,{mfil}));
+if isempty(mfil), return; end;
+[~,mfil] = fileparts(mfil);
+filpath = [];
+
 % if pressed "save"
 if ~exist('savepath','var')
 % get fileName
 fileName = choose_SubjectArray; 
 
-% if no fileName, choose dir to save to
-if isempty(fileName), 
-    filpath = uigetdir(pwd,'Choose directory to save .txt file:'); 
-    task = [];
-else % choose task
+% if fileName, choose task to save to
+if ~isempty(fileName), 
     try [~, task] = choose_SubjectArray(fileName); catch, return; end;
-    if isempty(task), return; end; 
+    if ~isempty(task),
+        % set filpath
+        filpath = fileparts(fileName); 
+        filpath = fullfile(filpath, 'Notes');
+    end
+end
 
-    % set filpath
-    filpath = fileparts(fileName); 
-    filpath = fullfile(filpath, 'Notes');
+% if no filpath, set using uigetdir
+if isempty(filpath)
+msg = ['Choose directory to save ' mfil '.txt:']; disp(msg);
+filpath = uigetdir(pwd,msg); 
+if ~any(filpath), return; end;
+task = [];
 end
 
 % set savepath
@@ -139,6 +149,9 @@ fclose(fid);
 
 % outtxt
 outtxt = fullfile(savepath,[mfil '.txt']);
+
+% run local_jscroll
+local_jscroll(hres,[]);
 return;
 
 function local_jscroll(source,eventdata)

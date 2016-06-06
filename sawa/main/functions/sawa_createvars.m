@@ -39,7 +39,7 @@ if ~exist('vars','var')||isempty(vars), vars = {''}; end;
 vals = {};
 
 % set choices
-choices = {'String','Number','Evaluate','Cell','Structure','Choose File','Choose Directory','Function','Subject Array'};
+choices = {'String','Number','Evaluate','Index','Structure','Choose File','Choose Directory','Function','Subject Array'};
 if isempty(sa), choices = choices(1:end-1); end;
 
 % get varargin class for defaults
@@ -47,14 +47,19 @@ if numel(varargin) > 0,
 % get functions to add to choices
 funcs = varargin(strncmp(varargin,'@',1)); 
 choices = horzcat(choices,funcs{:});
+% default vars
+vars = varargin{1};
 
 % set defaults based on class
+try
 switch class(varargin{1})
-    case 'cell' % if not cellstr, set iv to 2
-        if numel(varargin{1})==1&&~isempty(varargin{1}{1}), % single cell
-            varargin{1} = varargin{1}{1}; ival = 4; 
-        elseif iscellstr(varargin{1})&&~isempty(varargin{1}), % cellstr 
+    case 'cell' % if cellstr, set to 1
+        if iscellstr(varargin{1})&&~isempty(varargin{1}), % cellstr 
             vars = varargin{1}; ival = 1; 
+        elseif all(cellfun(@(x)iscell(x)||isstruct(x),varargin{1})) % all cell/struct
+            vars = varargin{1}; ival = 4; % set to index
+        elseif ~isempty(varargin{1}) % otherwise, set to number
+            vars = varargin{1}; ival = 2;
         end;
     case 'char' % set char to cellstr
         vars = cellstr(varargin{1}); ival = 1;
@@ -63,11 +68,7 @@ switch class(varargin{1})
         vars = {num2str(varargin{1})};
     case 'struct' % if struct
         vars = varargin{1}; ival = 5;
-    case 'function_handle' % if function_handle, set to choices
-        funcs = cellfun(@(x){['@' func2str(x)]},varargin);
-        choices = horzcat(choices,funcs{:});
-    otherwise % otherwise set default without iv
-        vars = varargin{1};
+end
 end
 
 % if cellstr, check for evals/files/dirs
@@ -85,16 +86,28 @@ for c = chc
 % set based on choice
 switch choices{c}
 case {'String','Number','Evaluate'} % input
-    if ~iscellstr(vars)&&~ischar(vars), vars = []; end;
+    if ~iscell(vars), vars = {vars}; end;
+    if ~iscellstr(vars), vars = any2str(vars{:}); end;
     vars = cell2mat(inputdlg(['Set ' varnam],varnam,[max(numel(vars),2),50],{char(vars)}));
     if isempty(vars), vars = {}; return; end;
     vars = strtrim(arrayfun(@(x){vars(x,:)},1:size(vars,1)));
     if c > 1 % number or evaluate
-        vars = cellfun(@(x){eval(['[' x ']'])},vars);
+        % if @, convert to function handle
+        vars(strncmp(vars,'@',1)) = cellfun(@(x){str2func(x)},vars(strncmp(vars,'@',1)));
+        % if string, evaluate
+        vars(cellfun(@(x)ischar(x),vars)) = cellfun(@(x){eval(['[' x ']'])},vars(cellfun(@(x)ischar(x),vars)));
     end
-case 'Cell' % cell
-    vars = sawa_createvars(varnam,msg,subrun,sa,varargin{:});
-    vals = cat(1,vals,{vars}); continue;
+case 'Index' % index
+    if ival==4, [~,~,tmpr]=sawa_getfield(vars,'rep','','r',2); end; ind = '{1}'; 
+    while ~isempty(ind), % set index
+    if ival==4&&~isempty(tmpr), ind = tmpr{1}; tmpr(1)=[]; end; % get input index
+    ind = cell2mat(inputdlg(['Enter index to set for ' varnam ' (e.g., {1,1} or (2)). Cancel when done.'],'Index',1,{ind}));
+    if isempty(ind), break; end;
+    s = substruct(ind([1,end]),eval(ind)); % create s var for subsasgn
+    if ival==4, try varargin{1} = subsref(vars,s); end; end; % set varargin
+    vals = subsasgn(vals,s,sawa_createvars([varnam ind],msg,subrun,sa,varargin{:}));
+    end
+    continue; % done, vals already set
 case 'Structure' % struct
     if isstruct(vars), % if exists, choose component to edit
         substr = vertcat(fieldnames(vars),'Add'); 
@@ -134,7 +147,10 @@ case 'Choose Directory' % choose dir
 case 'Function' % function
     fp = funpass(struct,'sa'); fp.idx = 1; 
     fp = auto_function([],fp); 
-    vars = arrayfun(@(x)fp.output{x}(fp.outchc{1}),1:numel(fp.output));
+    if strcmp(fp.vars{1},'varargout'), 
+        fp.outchc{1} = str2double(cell2mat(inputdlg('Enter index of varargout:','Index',1,{'1'})));
+    end
+    vars = arrayfun(@(x)fp.output{x,fp.outchc{1}},1:numel(fp.output));
     clear fp; 
 case 'Subject Array' % subject array
     % choose group
@@ -160,23 +176,19 @@ case 'Subject Array' % subject array
     end
 case funcs % functions 
     % find choice relative to functions
-    n = find(find(strncmp(choices,'@',1))==c); 
-    % get only char varargins
-    tmpvars = varargin(cellfun('isclass',varargin,'char'));
-    % find relative idx
-    r = subsref(find(strncmp(tmpvars,'@',1)),struct('type',{'()'},'subs',{{n}}));
-    % get outargs
-    outargs = getargs(choices{c});
-    if isempty(outargs), outargs = {'varargout'}; end;
+    r = c - (numel(choices)-numel(funcs));
+    % get outargs from vars
+    outargs = varargin{end}(r,:);
+    outargs(cellfun('isempty',outargs)) = []; 
+    if isempty(outargs), return; end;
     % choose outargs
     v = listdlg('PromptString',{['Choose output from ' choices{c}],''},'ListString',outargs);
     if isempty(v), return; end;
     % strcat
-    vars = strcat('evalin(''caller'',','''output{i}{',num2str(r),',',arrayfun(@(x){num2str(x)},v),'}'');');
+    vars = strcat('evalin(''caller'',','''output{',num2str(r),',',arrayfun(@(x){num2str(x)},v),'}{end}'');');
 end
 if iscell(vars)&&size(vars,2) > size(vars,1), vars = vars'; end; % if horizontal
 % vertcat
 vals = cat(1,vals,vars);
 if iscell(vals)&&numel(vals) == 1, vals = vals{1}; end; % if one cell
 end
-

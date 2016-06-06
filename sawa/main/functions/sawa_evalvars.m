@@ -41,14 +41,13 @@ function valf = sawa_evalvars(val,opt)
 % if the 'cmd' options is used and a wildcard is used for files multiple files, 
 % the inital wildcard search will be retained with "" around it i.e. "/Volumes/Folder/*.img". 
 %
-% requires: sawa_evalchar sawa_find 
+% requires: sawa_getfield 
 %
 % Created by Justin Theiss
 
 % init vars
 valf = val; 
 if ~exist('opt','var')||isempty(opt), opt = ''; end;
-chng = false;
 
 % if char and 'cmd', split find paths/files and split by spaces
 if ischar(val)&&strcmp(opt,'cmd'), 
@@ -61,27 +60,27 @@ elseif ~iscell(valf)&&~isstruct(valf) % set to cell if not
     valf = {valf};
 end; 
 
-% find cells with sa\([\d\w\]+\)\.
-clear vals reps;
-[~,vals,~,reps] = sawa_find(@regexp,'sa\([\d\w]+\)\.',valf,'valf',''); 
-for x = 1:numel(vals), % sawa_evalchar
-    vals{x} = evalin('caller',['sawa_evalchar(''' vals{x} ''');']); 
-    [valf,chng] = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
-end; 
-
 % find cells with 'eval'
-clear vals reps;
-[~,vals,~,reps] = sawa_find(@strncmp,{'eval',4},valf,'valf',''); 
-for x = find(~cellfun('isempty',vals)), 
-    vals{x} = eval(vals{x}); % eval
-    [valf,chng] = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
+clear vals S; 
+[C,S] = sawa_getfield(valf,'func',@strncmp,'search',{'eval',4}); 
+for x = 1:numel(C), 
+    C{x} = eval(C{x}); % eval
+    valf = local_mkdir_select(valf,C{x},S{x},opt); % mkdir/select
 end
 
+% find cells with sa\([\d\w\]+\)\.
+clear vals S;
+[C,S] = sawa_getfield(valf,'func',@(x)ischar(x)&&regexp(x,'sa\([\d\w]+\)\.')); 
+for x = 1:numel(C), % evalchar
+    C{x} = evalin('caller',['local_evalchar(''' C{x} ''');']); 
+    valf = local_mkdir_select(valf,C{x},S{x},opt); % mkdir/select
+end; 
+
 % find cells with filesep
-clear vals reps;
-[~,vals,~,reps] = sawa_find(@strfind,filesep,valf,'valf',''); 
-for x = find(~cellfun('isempty',vals)),
-    [valf,chng] = local_mkdir_select(valf,vals{x},reps{x},opt); % mkdir/select
+clear vals S; 
+[C,S] = sawa_getfield(valf,'func',@(x)ischar(x)&&any(strfind(x,filesep))); 
+for x = 1:numel(C),
+    valf = local_mkdir_select(valf,C{x},S{x},opt); % mkdir/select
 end
 
 % if ischar and 'cmd', output as string
@@ -93,13 +92,43 @@ end
 % output
 if iscell(valf)&&numel(valf)==1,
     valf = valf{1}; 
-elseif chng
-    try valf = cellfun(@(x)x,valf); end;
 end;
 if isempty(valf), valf = []; end;
+return;
 
-function [valf,chng] = local_mkdir_select(valf,val,rep,opt)
-chng = true;
+function out = local_evalchar(str,expr)
+% init expr/out
+if ~exist('expr','var'), expr = 'sa\([\w\d]+\)\.'; end;
+out = str; if ~ischar(out)||size(out,1)>1, return; end;
+
+% find match for expr
+m = regexp(out,expr); 
+if isempty(m), return; else m = [m, numel(out)+1]; end; 
+mstr = arrayfun(@(x){out(m(x):m(x+1)-1)},1:numel(m)-1); % separate based on matches
+mstr = regexprep(mstr,'[/*+-]',''); % remove math chars to avoid eval problems
+
+% for each found match, eval
+for x = 1:numel(mstr),
+    set = 0; meval{x} = {};
+    while ~set % until set, remove end char
+    try meval{x} = evalin('caller',mstr{x}); set = 1; catch; mstr{x} = mstr{x}(1:end-1); end;
+    if isempty(mstr{x}), break; end; % if removed all chars
+    end; 
+end
+
+% output
+% if all char, strrep matches
+if all(cellfun('isclass',meval,'char')), 
+% strrep each match
+for x = 1:numel(mstr), out = strrep(out,mstr{x},num2str(meval{x})); end;
+else % otherwise output match evals
+out = meval;
+end
+if iscell(out)&&numel(out)==1, out = out{1}; end;
+return;
+
+function valf = local_mkdir_select(valf,val,S,opt)
+try
 % skip if not char
 if ischar(val), 
 % create ival, in case multi files and wildcard
@@ -141,10 +170,11 @@ val = regexprep(val,['.*' filesep '.*'],'"$0"'); val = regexprep(val,'""','"');
 end;
 
 % set to one if only one char
-if iscell(val)&&numel(val)==1, val = val{1}; end;
+if iscell(val)&&numel(val)==1, val = val{1}; end; 
+end
 end
 end
 
-% set vals to valf rep
-try eval([rep '=val;']); end;
+% set vals to valf
+try valf = subsasgn(valf,S,val); end;
 return;

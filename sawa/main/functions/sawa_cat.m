@@ -20,23 +20,31 @@ function out = sawa_cat(dim,varargin)
 % Created by Justin Theiss
 
 % set out to empty
-out = {}; 
+if any(cellfun('isclass',varargin,'cell')), out = {}; else out = []; end;
+
 % for each varargin
 for x = 1:numel(varargin)
-% make cell if not already
-if ~iscell(varargin{x}), varargin{x} = varargin(x); end;
+% make cell if out is cell
+if ~iscell(varargin{x})&&iscell(out), varargin{x} = varargin(x); end;
+
 % get current sizes
 outsize = size(out); varsize = size(varargin{x});
+
 % create padding
 pad(mod(dim,2)+1) = abs(outsize(mod(dim,2)+1)-varsize(mod(dim,2)+1));
+
+% pad cell or pad nan
+if iscell(out), padfun = @cell; else padfun = @nan; end;
+
 % pad out or varargin
 if varsize(mod(dim,2)+1) > outsize(mod(dim,2)+1)
 pad(dim) = outsize(dim);
-out = cat(mod(dim,2)+1,out,cell(pad));
+out = cat(mod(dim,2)+1,out,padfun(pad));
 elseif outsize(mod(dim,2)+1) > varsize(mod(dim,2)+1)
 pad(dim) = varsize(dim);
-varargin{x} = cat(mod(dim,2)+1,varargin{x},cell(pad));
+varargin{x} = cat(mod(dim,2)+1,varargin{x},padfun(pad));
 end
+
 % cat
 out = cat(dim,out,varargin{x});
 end
