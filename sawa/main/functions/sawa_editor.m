@@ -374,6 +374,7 @@ if ~evalin('caller',['exist(''' varnam ''',''var'')'])
     output = {}; return;
 else
     output = evalin('caller',varnam);
+    if isempty(output), return; end;
 end
 
 % set nidx 

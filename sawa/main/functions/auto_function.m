@@ -176,8 +176,7 @@ if nargin==2,
         v0 = find(strcmp(outargs(outchc{f}),'varargout'));
         v = cell2mat(inputdlg('Enter range of variable outputs to return:','Variable Outputs',1,{'1'}));
         if ~strcmp(v,':'), try v = eval(v); end; end;
-        if ~any(isnan(v))&& all(v > 0) && ~any(isinf(v)), outchc{f} = v; end;
-        outargs = sawa_insert(outargs,find(strcmp(outargs,'varargout')),arrayfun(@(x){['varargout ' num2str(x)]},v));
+        if ~any(isnan(v))&& all(v > 0) && ~any(isinf(v)), outchc{f} = [outchc{f}(1:end-1),v0-1+v]; end;
     end
 % set outputs
 elseif nargin==4 
@@ -186,7 +185,11 @@ elseif nargin==4
 end
 
 % set vars
-for x = 1:numel(outchc{f}), vars{f,x} = outargs{outchc{f}(x)}; end;
+v0 = find(strcmp(outargs,'varargout'));
+if ~isempty(v0),
+outargs = sawa_insert(outargs,v0,arrayfun(@(x){['varargout ' num2str(x)]},outchc{f}(v0:end)));
+end; 
+for x = 1:numel(outchc{f}),vars{f,x} = outargs{outchc{f}(x)}; end;
 
 % set vars to fp
 fp = funpass(fp,{'vars','output','outchc'});
@@ -318,11 +321,11 @@ end
 if ~isempty(outchc{f})
 % set output
 fp = funpass(fp,{'output','outchc'});
-fp = set_output(fp,f,find(iter==n),tmpout); % n or find(iter==n)?
+fp = set_output(fp,f,find(iter==n),tmpout); 
 funpass(fp,{'output','outchc','vars'});
 
 % print output
-printres(cell2strtable(sawa_cat(1,vars(f,:),cellfun(@(x)any2str(x{end}),output(f,:))),' '),hres); %output(f,outchc{f}))),' '),hres);
+printres(cell2strtable(sawa_cat(1,vars(f,:),cellfun(@(x)any2str(x{end}),output(f,~cellfun('isempty',output(f,:))))),' '),hres);
 end
 
 catch err % if error, display message

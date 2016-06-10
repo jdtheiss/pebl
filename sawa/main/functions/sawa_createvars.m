@@ -39,7 +39,8 @@ if ~exist('vars','var')||isempty(vars), vars = {''}; end;
 vals = {};
 
 % set choices
-choices = {'String','Number','Evaluate','Index','Structure','Choose File','Choose Directory','Function','Subject Array'};
+choices = {'String','Number','Evaluate','Index','Structure','Choose File',...
+    'Choose Directory','Function','Workspace Variable','Subject Array'};
 if isempty(sa), choices = choices(1:end-1); end;
 
 % get varargin class for defaults
@@ -152,6 +153,13 @@ case 'Function' % function
     end
     vars = arrayfun(@(x)fp.output{x,fp.outchc{1}},1:numel(fp.output));
     clear fp; 
+case 'Workspace Variable' % workspace variable
+    varnam = cell2mat(inputdlg('Enter variable name from base workspace:'));
+    if evalin('base',['exist(''' varnam ''',''var'')']), % check for varnam
+        vars = evalin('base',varnam); % evaluate
+    else % display that it does not exist
+        disp([varnam ' does not exist in the base workspace.']);
+    end
 case 'Subject Array' % subject array
     % choose group
     if ~isempty(subrun),

@@ -64,7 +64,7 @@ end;
 clear vals S; 
 [C,S] = sawa_getfield(valf,'func',@strncmp,'search',{'eval',4}); 
 for x = 1:numel(C), 
-    C{x} = eval(C{x}); % eval
+    try C{x} = eval(C{x}); catch, return; end; % eval
     valf = local_mkdir_select(valf,C{x},S{x},opt); % mkdir/select
 end
 

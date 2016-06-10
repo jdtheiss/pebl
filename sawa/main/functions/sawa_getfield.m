@@ -264,5 +264,5 @@ if isempty(fnd), fnd = false; end;
 if n, fnd = not(fnd); end;
 
 % return if any 
-fnd = any(fnd); 
+while any(size(fnd) > 1), fnd = any(fnd); end;
 return;
