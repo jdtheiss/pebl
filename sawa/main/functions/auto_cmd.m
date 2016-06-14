@@ -293,7 +293,6 @@ fp = set_output(fp,f,find(iter==n),tmpout);
 funpass(fp,{'vars','output'}); 
 if ~exist('vars','var')||f > numel(vars), continue; end;
 cellfun(@(x,y){printres(cell2strtable(sawa_cat(1,x,any2str(y{end})),' '),hres)},vars(f,:),output(f,:));
-% % printres(cell2strtable(sawa_cat(1,vars(f,:),cellfun(@(x)any2str(x{end}),output(f,:))),' '),hres);
 
 catch err % if error
     printres(['Error ' funcs{f} ': ' err.message],hres);
