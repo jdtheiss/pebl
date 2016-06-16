@@ -19,10 +19,12 @@ function varargout = auto_function(cmd,varargin)
 % options(1,1:3) = {{'test'},{'e'},{'oa'}};
 % fp = struct('funcs',{funcs},'options',{options})
 % auto_function('auto_run',fp)
+%
 % Command Prompt:
-% 1
-% strrep(test, e, oa)
-% varargout
+% strrep
+% varargin
+% test     e oa
+% varargout 1
 % toast
 %
 % fp = 
@@ -202,7 +204,7 @@ funpass(fp);
 
 % init vars
 if ~exist('funcs','var')||isempty(funcs), return; end;
-if ~iscell(funcs), funcs = {funcs}; end;
+if ~iscell(funcs), funcs = {funcs}; fp.funcs = funcs; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~exist('output','var'), output = cell(size(funcs,1),1); end; if ~exist('vars','var'), vars = {}; end;
 if ~exist('program','var'), program = repmat({mfilename},size(funcs)); end;

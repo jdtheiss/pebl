@@ -16,11 +16,12 @@ function varargout = auto_cmd(cmd,varargin)
 % - subrun - numeric array of subjects/iterations run
 %
 % Example:
-% fp = struct('funcs',{'echo'},'options',{' this is a test'});
+% fp = struct('funcs',{{'echo'}},'options',{{' this is a test'}});
 % fp = auto_cmd('auto_run',fp)
+%
 % Command Prompt:
-% 1
 % echo this is a test
+% Output1
 % this is a test
 %
 % fp = 
@@ -122,18 +123,36 @@ end % get unique and remove space etc.
 opts = unique(regexprep(opts,'[^-+/\w]',''));
 opts = opts(~ismember(opts,hswitch));
 % set other, edit to end
-opts{end+1} = 'other'; opts{end+1} = 'edit';
+opts{end+1} = 'other'; % opts{end+1} = 'edit';
+
+% get current options
+if idx <= size(options,1)&&~all(cellfun('isempty',options(idx,:))),
+curopts = cellfun(@(x){regexp(x{1},'^\S+','match')},options(idx,~cellfun('isempty',options(idx,:))));
+if ~isempty(curopts)&&~all(cellfun('isempty',curopts)), 
+params = arrayfun(@(x){['param' num2str(x)]},1:sum(cellfun('isempty',curopts)));
+curopts(cellfun('isempty',curopts)) = params;
+curopts = [curopts{:}]; if ~iscell(curopts), curopts = {curopts}; end;
 
 % choose options
-chc = listdlg('PromptString','Choose option(s) to edit:','ListString',opts);
-
-% Edit
-if any(strcmp(opts(chc),'edit'))
-options{idx,1} = cell2mat(inputdlg('Edit options:','Edit',[max([numel(options{idx,1}),2]),50],{char(options{idx,1})}));
-if isempty(options{idx,1}), options{idx,1} = ' '; end;
-options{idx,1} = strtrim(arrayfun(@(x){options{idx,1}(x,:)},1:size(options{idx,1},1)))';
-chc = []; % empty chc 
+chc = listdlg('PromptString','Choose option(s) to edit:','ListString',[curopts,'delete','append']);
+if isempty(chc), return; end;
 end
+end
+
+% if no curopts or append choose other options
+if ~exist('chc','var') || chc == numel(curopts)+2, % append
+    chc = listdlg('PromptString','Choose option(s) to append:','ListString',opts); 
+    v = numel(options(idx,:))+1:numel(options(idx,:))+numel(chc);
+    if isempty(options{idx,1}), v = v-1; end;
+elseif chc == numel(curopts)+1 % delete
+    chc = listdlg('PromptString','Choose option(s) to delete:','ListString',curopts);
+    % delete choice
+    options = sawa_insert(options,{idx,':'},options(idx,~ismember(1:size(options,2),chc))); 
+    if isempty(options), options{idx,1} = {}; end;
+    chc = []; % skip setting choice
+else % otherwise set to curopts
+    opts = curopts; v = chc;
+end;
 
 % for each choice
 for o = chc 
@@ -150,10 +169,13 @@ for o = chc
     tmpnames = tmpnames(~prod(cellfun('isempty',vars),2)');
     tmpvars = vars(~prod(cellfun('isempty',vars),2),:);
 
+    % set default options
+    clear defopts; try defopts = strtrim(regexprep(options{idx,v},opts{o},'')); catch, defopts = {}; end;
+    
     % create val
     val = {}; done = 0;
     while ~done
-    val{end+1,1} = sawa_createvars(opts{o},'(cancel when finished)',subrun,sa,tmpnames{:},tmpvars);
+    val{end+1,1} = sawa_createvars(opts{o},'(cancel when finished)',subrun,sa,defopts,tmpnames{:},tmpvars);
     if isempty(val{end}), val(end) = []; done = 1; end;
     end
     
@@ -162,18 +184,14 @@ for o = chc
     if isempty(val), val = {''}; end;
     
     % set "" around paths
-    val = regexprep(val,['.*' filesep '.*'],'"$0"');
+    val = regexprep(val,['[\s"]*(.+' filesep '[^"]+)"?'],'"$1"'); 
     
-    % if iter greater than options, init
-    if numel(val)>size(options{idx,1},1), 
-        if isempty(options{idx,1}), options{idx,1} = {''}; end;
-        options{idx,1}(1:numel(val),1) = options{idx,1}(end);
-    elseif numel(val)<size(options{idx,1},1),
-        val(numel(val)+1:numel(options{idx,1}),1) = val(end);
-    end
+    % set opt to val
+    if strncmp(opts{o},'param',5), opts{o} = ''; end;
+    val = strcat(opts{o},{' '},val); 
     
     % set options
-    options{idx,1} = cellfun(@(x,y){sawa_strjoin({x,opts{o},y},' ')},options{idx,1},val);
+    if numel(val)==1&&iscell(val{1}), options{idx,v} = val{1}; else options{idx,v} = val; end;
     
     catch err % if error, display message
         disp(err.message);
@@ -181,7 +199,13 @@ for o = chc
 end
 
 % display options
-cellfun(@(x)disp([funcs{idx} ' ' x]),options{idx,1});
+n = max(cellfun('size',options(idx,:),1)); 
+if ~all(cellfun('isempty',options(idx,:)))
+catopts = cellfun(@(x){cat(1,x,repmat(x(end),n-numel(x),1))},options(idx,:));
+catopts = cellfun(@(x){strcat({' '},x)},catopts);
+catopts = strcat(catopts{:});
+cellfun(@(x)disp([funcs{idx}, x]),catopts);
+end
 
 % set vars to fp
 fp = funpass(fp,'options');
@@ -242,7 +266,7 @@ funpass(fp);
 
 % init vars
 if ~exist('funcs','var'), return; end;
-if ~iscell(funcs), funcs = {funcs}; end;
+if ~iscell(funcs), funcs = {funcs}; fp.funcs = funcs; end;
 if ~exist('sa','var'), sa = {}; end; if ~exist('subrun','var'), subrun = []; end;
 if ~iscell(options), options = {{options}}; end;
 if ~all(cellfun('isclass',options,'cell')), options = cellfun(@(x){{x}},options); end;
@@ -263,29 +287,32 @@ end
 % for each iteration 
 for n = iter
 % func, run with options
-clear valf; valf = cell(size(funcs));
+clear valf; valf = cell(numel(funcs),1);
 for f = fiter
 try
  % skip if already run
 if ~all(iter==n) && n > max(max(cellfun('size',options(f,:),1))), continue; end;
 
-% get subject index; if greater than number of options, set to end
-clear s; s = min([numel(options{f,1}),n]);
-
 % evaluate options
-valf{f} = sawa_evalvars(options{f,1}{s},'cmd');
+clear s; 
+for x = find(~cellfun('isempty',options(f,:))),
+    s = min([size(options{f,x},1),n]); % set n to minimum between n and iterations
+    if isempty(options{f,x}{s}), continue; end;
+    valf{f,x} = sawa_evalvars(options{f,x}{s},'cmd'); 
+end
+valf(f,:) = strcat({' '},valf);
 
 % print command
-printres([funcs{f} ' ' valf{f}],hres); 
+printres([funcs{f}, valf{f,:}],hres); 
 
 % run command
-clear tmpout; [~,tmpout]= sawa_system(funcs(fiter),valf(fiter),f); 
+clear tmpout; [~,tmpout]= sawa_system(funcs(fiter),strcat(valf{fiter,:}),f); 
 
 % set outputs
 if strcmp(funcs{f}(end),'='), % set vars mac
-    clear tmpout; tmpout = valf{f}; 
+    clear tmpout; tmpout = valf{f,1}; 
 elseif strcmp(funcs{f},'set'), % set vars pc
-    clear tmpout; tmpout = strtrim(regexprep(valf{f},'.*=',''));
+    clear tmpout; tmpout = strtrim(regexprep(valf{f,1},'.*=',''));
 end; 
 fp = set_output(fp,f,find(iter==n),tmpout);
 
