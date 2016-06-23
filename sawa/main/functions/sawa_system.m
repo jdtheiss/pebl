@@ -64,7 +64,8 @@ end
 % join fun and opts
 funcs = regexprep(funcs,'([^=])$','$1 ');
 opts = regexprep(opts,'([^;])$','$1; ');
-vars = strcat(funcs,opts);
+opts = regexprep(opts,'= ','=');
+vars = strcat(funcs,opts); 
 
 % run system
 [~,sts,msg]=evalc('system(strcat(vars{:}),''-echo'')'); 

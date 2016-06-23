@@ -58,9 +58,8 @@ else % mac
 end
 
 % set pathvals, pathreps  
-pathC = C(logical((pv+cb))); pathS= S(logical(pv+cb)); 
+pathC = C(logical(pv+cb)); pathS= S(logical(pv+cb)); 
 cb = cellfun('size',pathC,1)>1; % update char blocks locations
-pathC(~cb) = regexprep(pathC(~cb),'^/',''); 
 
 % remove first / for mac paths (otherwise match_string won't be effective)
 for xx = find(cb), pathC{xx} = regexprep(cellstr(pathC{xx}),'^/',''); end;

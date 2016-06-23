@@ -128,10 +128,11 @@ opts{end+1} = 'other'; % opts{end+1} = 'edit';
 % get current options
 if idx <= size(options,1)&&~all(cellfun('isempty',options(idx,:))),
 curopts = cellfun(@(x){regexp(x{1},'^\S+','match')},options(idx,~cellfun('isempty',options(idx,:))));
-if ~isempty(curopts)&&~all(cellfun('isempty',curopts)), 
+if ~isempty(curopts)&&~all(cellfun('isempty',options(idx,:))), 
 params = arrayfun(@(x){['param' num2str(x)]},1:sum(cellfun('isempty',curopts)));
 curopts(cellfun('isempty',curopts)) = params;
-curopts = [curopts{:}]; if ~iscell(curopts), curopts = {curopts}; end;
+if any(cellfun('isclass',curopts,'cell')), curopts = [curopts{:}]; end;
+if ~iscell(curopts), curopts = {curopts}; end;
 
 % choose options
 chc = listdlg('PromptString','Choose option(s) to edit:','ListString',[curopts,'delete','append']);
@@ -140,11 +141,11 @@ end
 end
 
 % if no curopts or append choose other options
-if ~exist('chc','var') || chc == numel(curopts)+2, % append
+if ~exist('chc','var') || any(chc == numel(curopts)+2), % append
     chc = listdlg('PromptString','Choose option(s) to append:','ListString',opts); 
-    v = numel(options(idx,:))+1:numel(options(idx,:))+numel(chc);
-    if isempty(options{idx,1}), v = v-1; end;
-elseif chc == numel(curopts)+1 % delete
+    if ~all(cellfun('isempty',options(idx,:))), n = numel(curopts); else n = 0; end;
+    v = n+1:n+numel(chc);
+elseif any(chc == numel(curopts)+1) % delete
     chc = listdlg('PromptString','Choose option(s) to delete:','ListString',curopts);
     % delete choice
     options = sawa_insert(options,{idx,':'},options(idx,~ismember(1:size(options,2),chc))); 
@@ -157,6 +158,7 @@ end;
 % for each choice
 for o = chc 
     try
+    x = find(chc==o);
     % Other or chosen
     if strcmp(opts{o},'other')
     opts{o} = cell2mat(inputdlg('Enter the option to use (e.g., -flag or leave blank if none):')); 
@@ -164,13 +166,13 @@ for o = chc
     end 
     
     % set tmpnames and tmpvars
-    tmpnames = strcat('@', names(1:idx-1));
-    if ~exist('vars','var'), vars = {}; else vars = vars(1:idx-1,:); end;
+    tmpnames = strcat('@', names(1:idx-1)); 
+    if ~exist('vars','var')||isempty(vars), vars = {}; else vars = vars(1:idx-1,:); end;
     tmpnames = tmpnames(~prod(cellfun('isempty',vars),2)');
     tmpvars = vars(~prod(cellfun('isempty',vars),2),:);
 
     % set default options
-    clear defopts; try defopts = strtrim(regexprep(options{idx,v},opts{o},'')); catch, defopts = {}; end;
+    clear defopts; try defopts = strtrim(regexprep(options{idx,v(x)},opts{o},'')); catch, defopts = {}; end;
     
     % create val
     val = {}; done = 0;
@@ -191,7 +193,7 @@ for o = chc
     val = strcat(opts{o},{' '},val); 
     
     % set options
-    if numel(val)==1&&iscell(val{1}), options{idx,v} = val{1}; else options{idx,v} = val; end;
+    if numel(val)==1&&iscell(val{1}), options{idx,v(x)} = val{1}; else options{idx,v(x)} = val; end;
     
     catch err % if error, display message
         disp(err.message);
@@ -200,8 +202,8 @@ end
 
 % display options
 n = max(cellfun('size',options(idx,:),1)); 
-if ~all(cellfun('isempty',options(idx,:)))
-catopts = cellfun(@(x){cat(1,x,repmat(x(end),n-numel(x),1))},options(idx,:));
+if ~all(cellfun('isempty',options(idx,:))), 
+catopts = cellfun(@(x){cat(1,x,repmat(x(end),n-numel(x),1))},options(idx,~cellfun('isempty',options(idx,:))));
 catopts = cellfun(@(x){strcat({' '},x)},catopts);
 catopts = strcat(catopts{:});
 cellfun(@(x)disp([funcs{idx}, x]),catopts);
@@ -300,13 +302,13 @@ for x = find(~cellfun('isempty',options(f,:))),
     if isempty(options{f,x}{s}), continue; end;
     valf{f,x} = sawa_evalvars(options{f,x}{s},'cmd'); 
 end
-valf(f,:) = strcat({' '},valf);
+valf(f,:) = cellfun(@(x){strcat({' '},x)},valf(f,:));
 
 % print command
-printres([funcs{f}, valf{f,:}],hres); 
+printres(char(strcat(funcs{f}, valf{f,:})),hres); 
 
 % run command
-clear tmpout; [~,tmpout]= sawa_system(funcs(fiter),strcat(valf{fiter,:}),f); 
+clear tmpout; [~,tmpout]= sawa_system(funcs(fiter<=f),arrayfun(@(x)strcat(valf{x,:}),find(fiter<=f)),f); 
 
 % set outputs
 if strcmp(funcs{f}(end),'='), % set vars mac
