@@ -44,8 +44,8 @@ if isempty(cjob)||~any(arrayfun(@(x)cfg_util('isjob_id',x),cjob)),
 [~,~,~,~,outputs] = cfg_util('showjob',cjob2); 
 
 % get src_outputs for current job and expected
-srcouts = sawa_getfield([outputs{m0}],'str','src_output(end).subs');
-tgtouts = sawa_getfield([C{:}],'str','src_output(end).subs');
+srcouts = sawa_getfield([outputs{m0}],'str','.src_output(end).subs','func',@ischar);
+tgtouts = sawa_getfield([C{:}],'str','.src_output(end).subs','func',@ischar);
 
 % if same amount, skip module
 if sum(ismember(srcouts,tgtouts))==numel(tgtouts), continue; end;
@@ -74,7 +74,7 @@ for y = m0
 % find outputs with matching src_output
 n0 = [];
 if isempty(cjob),
-n0 = ismember(sawa_getfield(outputs{y},'str','src_output(end).subs'),sawa_getfield(C{x},'str','src_output(end).subs'));
+n0 = ismember(sawa_getfield(outputs{y},'str','.src_output(end).subs','func',@ischar),sawa_getfield(C{x},'str','.src_output(end).subs','func',@ischar));
 end
 if ~isempty(n0), outputs{y} = outputs{y}(n0); end;
 

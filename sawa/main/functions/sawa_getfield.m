@@ -173,24 +173,27 @@ return;
 % get substructs
 function S = local_substruct(A,str)
 % set initial to empty
-S = {}; S1 = {};
+S = {}; S1 = {}; fx = [];
 if ~exist('str','var')||isempty(str), str = []; end;
 
 % create substruct from str
 if ~isempty(str) % get types
     types = regexp(str,'(?<type1>\([^\)]+\))?(?<type2>\.[\w\d]+)?(?<type3>\{[^\}]+\})?','names');
-     % get type in order
-    type = squeeze(struct2cell(types));
+    % get type in order
+    type = squeeze(struct2cell(types)); 
     type = type(~cellfun('isempty',type)); 
-    type = reshape(type,1,numel(type));
+    type = reshape(type,1,numel(type)); 
     % get val in order
     subs = cellfun(@(x)x,regexp(type,'[^\(\)\.\{\}]+','match'));
     % remove val from type
     type = strrep(type,subs,'');
     % set quotes around :
-    subs = strrep(subs,':',''':''');
+    subs = strrep(subs,':',''':'''); 
+    % replace end with 0 and get index
+    fx = find(ismember(type,{'()','{}'})&~cellfun('isempty',regexp(subs,'end')));
+    subs(fx) = strrep(subs(fx),'end','0');
     % eval subs for {} or ()
-    subs(ismember(type,{'()','{}'})) = cellfun(@(x){eval(['{' x '}'])},subs(ismember(type,{'()','{}'})));
+    subs(ismember(type,{'()','{}'})) = cellfun(@(x){eval(['{' x '}'])},subs(ismember(type,{'()','{}'})));   
     % get new substruct
     S1 = cellfun(@(x,y)substruct(x,y),type,subs);
 end
@@ -219,8 +222,22 @@ else % otherwise set to index
     S = arrayfun(@(x){substruct(type,n(x,:))},1:size(n,1));
 end
 
+% update fx to reflect S
+fx = fx + numel(S{end});
+
 % if str, append
 if ~isempty(S1), S = cellfun(@(x){cat(2,x,S1)},S); end;
+
+% correct for "end"
+for f = fx, % get size prior to f and "end" index
+clear sz; sz = cellfun(@(x){size(subsref(A,x(1:f-1)))},S); 
+clear eidx; eidx = cellfun(@(x)lt(x,1),S{end}(f).subs);
+% if one dim, set sz to prod of sz
+if eidx ==1, sz = cellfun(@(x){prod(x)},sz); end;
+for x = 1:numel(S), % for each S, set updated size
+S{x}(f).subs{eidx} = sz{x}(eidx) + [S{x}(f).subs{eidx}];
+end;
+end;
 return;
 
 % generate string rep

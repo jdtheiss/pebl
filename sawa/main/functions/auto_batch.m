@@ -294,7 +294,7 @@ end
 for x = outchc{f(m)}
 % get name from sout sname
 varnam = regexp(sout{m}(x).sname,['^' str{m} ': (?<name>.+):?'],'names');
-if isempty(varnam), varnam.name = ['Output ' num2str(x)]; end;
+if isempty(varnam), varnam(1).name = ['Output ' num2str(x)]; end;
 
 % set vars
 vars{f(m),x} = varnam.name;
