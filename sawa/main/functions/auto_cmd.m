@@ -222,6 +222,7 @@ funpass(fp,{'funcs','options','vars','output','outchc','dlm'});
 if ~exist('funcs','var'), return; end;
 if ~exist('f','var'), f = 1; end;
 if ~exist('outchc','var')||f > numel(outchc), outchc{f} = []; end;
+if ~exist('dlm','var'), dlm{f} = []; end;
 
 % choose output vars
 if strcmp(funcs{f}(end),'=') % set vars mac
