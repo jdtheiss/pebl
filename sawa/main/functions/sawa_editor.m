@@ -464,16 +464,12 @@ if ~isempty(subrun)&&all(funrun==subrun), printres(sa(i).subj,hres); end;
 % set output to pass to auto program
 fp.output = cell(numel(funcs),1); fp.vars = {};
 
-% get unique programs in order as they appear
-[uprog,uiter] = collapse_array(program);
-
 % for each unique program
-for f = 1:numel(uprog),
+for f = 1:numel(program),
 % auto_run program
-fp.i = i; fp.fiter = uiter{f};
-fp = feval(uprog{f},'auto_run',fp);
+fp.i = i; fp.fiter = f; 
+fp = feval(program{f},'auto_run',fp);
 end
-clear uprog uiter;
 
 % set output
 output{end+1} = fp.output;

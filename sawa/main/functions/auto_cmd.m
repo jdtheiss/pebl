@@ -222,7 +222,7 @@ funpass(fp,{'funcs','options','vars','output','outchc','dlm'});
 if ~exist('funcs','var'), return; end;
 if ~exist('f','var'), f = 1; end;
 if ~exist('outchc','var')||f > numel(outchc), outchc{f} = []; end;
-if ~exist('dlm','var'), dlm{f} = []; end;
+if ~exist('dlm','var')||f > numel(dlm), dlm{f} = []; end;
 
 % choose output vars
 if strcmp(funcs{f}(end),'=') % set vars mac
@@ -257,6 +257,7 @@ if strcmp(outchc{f},':'), outargs = {'Output1'}; end;
 
 % set vars
 for x = 1:numel(outchc{f}), vars{f,x} = outargs{outchc{f}(x)}; end;
+if isempty(outchc{f}), vars{f,1} = outargs{1}; end;
 
 % set vars to fp
 fp = funpass(fp,{'output','vars','outchc','dlm'});
@@ -297,19 +298,23 @@ try
 if ~all(iter==n) && n > max(max(cellfun('size',options(f,:),1))), continue; end;
 
 % evaluate options
+runchc = ismember(program,mfilename) & [1:numel(funcs)]<=f;
+for ff = find(runchc),
+if any(~cellfun('isempty',valf(ff,:)),2), continue; end;
 clear s; 
-for x = find(~cellfun('isempty',options(f,:))),
-    s = min([size(options{f,x},1),n]); % set n to minimum between n and iterations
-    if isempty(options{f,x}{s}), continue; end;
-    valf{f,x} = sawa_evalvars(options{f,x}{s},'cmd'); 
+for x = find(~cellfun('isempty',options(ff,:))),
+    s = min([size(options{ff,x},1),n]); % set n to minimum between n and iterations
+    if isempty(options{ff,x}{s}), continue; end;
+    valf{ff,x} = sawa_evalvars(options{ff,x}{s},'cmd'); 
 end
-valf(f,:) = cellfun(@(x){strcat({' '},x)},valf(f,:));
+valf(ff,:) = cellfun(@(x){strcat({' '},x)},valf(ff,:));
+end
 
 % print command
 printres(char(strcat(funcs{f}, valf{f,:})),hres); 
 
-% run command
-clear tmpout; [~,tmpout]= sawa_system(funcs(fiter<=f),arrayfun(@(x)strcat(valf{x,:}),find(fiter<=f)),f); 
+% run command 
+clear tmpout; [~,tmpout]= sawa_system(funcs(runchc),arrayfun(@(x)strcat(valf{x,:}),find(runchc)),sum(runchc)); 
 
 % set outputs
 if strcmp(funcs{f}(end),'='), % set vars mac

@@ -353,7 +353,6 @@ fp = funpass(fp,{'options','fiter','itemnames','itemidx','rep','sa','hres'});
 
 % print current variables/spm version
 if (~isfield(fp,'funrun')&&~isfield(fp,'i'))||i==funrun(1),
-if ~isempty(spmver), printres(['SPM version: ' spmver],hres); end;
 for f = fiter
 prntidx{f} = ~ismember(1:numel(itemnames{f}),itemidx{f});
 % print itemnames and string rep of values for non-itemidx
@@ -379,17 +378,19 @@ try
 if ~all(iter==n) && n > max(max(cellfun('size',options(fiter,:),1))), continue; end;
 
 % set matlabbatch
-clear matlabbatch; matlabbatch = funcs(fiter);
+cfg_util('initcfg'); clear cjob; cjob = [];
+clear matlabbatch; matlabbatch = funcs(ismember(program,mfilename));
 
+for f = fiter, 
 % set variables for each module
-for f = fiter, matlabbatch = local_setbatch(fp,matlabbatch,f,n); end;
+matlabbatch = local_setbatch(fp,matlabbatch,f,n);
 
 % set dependencies
-matlabbatch = sawa_setdeps(matlabbatch); 
+matlabbatch = sawa_setdeps(matlabbatch,cjob,f); 
 
 % check if able to run 
-[~,cjob] = evalc('cfg_util(''initjob'',matlabbatch)'); 
-clear run; [~,~,run] = cfg_util('showjob',cjob); 
+[~,cjob(f)] = evalc('cfg_util(''initjob'',matlabbatch(f))'); 
+clear run; [~,~,run] = cfg_util('showjob',cjob(f)); 
 
 % run cfg_util
 if all(run) && strcmp(saveorrun,'Run')
@@ -400,20 +401,21 @@ if strcmpi(overwrite,'yes'), str = 'continue'; else str = 'stop'; end;
 closedlg({'-regexp','tag',spm('ver')},{'string',str});
 
 % run serial
-cfg_util('runserial',cjob);
+cfg_util('runserial',cjob(f));
 
 % set outputs
-fp = set_output(fp,fiter,find(iter==n),cjob); 
+fp = set_output(fp,f,find(iter==n),cjob(f)); 
 
 % print outputs
 funpass(fp,{'vars','output'}); 
-for f = fiter
+% for f = fiter
 try cellfun(@(x,y){printres(cell2strtable(sawa_cat(1,x,any2str(y{end})),' '),hres)},vars(f,:),output(f,:)); end;
-end
+% end
 
 elseif ~all(run) % if can't run, print reason
 printres('Could not run. Empty components:',hres);
 printres([itemnames{f}{1} ': ' sawa_strjoin(itemnames{f}(~cell2mat(contents{f}{3})),', ')], hres);
+end
 end
 
 catch err % error, print message
@@ -471,5 +473,5 @@ end
 
 % set items
 if isempty(valf)||all(cellfun('isempty',valf)), return; end;
-[matlabbatch,sts] = sawa_setbatch(matlabbatch,valf,itemidx{m},rep{m},find(fiter==m));
+[matlabbatch,sts] = sawa_setbatch(matlabbatch,valf,itemidx{m},rep{m},m); 
 return;

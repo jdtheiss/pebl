@@ -1,5 +1,5 @@
 function matlabbatch = sawa_setdeps(matlabbatch, cjob, m)
-% matlabbatch = sawa_setdeps2(matlabbatch, cjob)
+% matlabbatch = sawa_setdeps2(matlabbatch, cjob, m)
 % This function will set dependencies for matlabbatch jobs based on
 % outputs from previous jobs. 
 % 
