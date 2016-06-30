@@ -101,7 +101,7 @@ if nargin==0, return; end;
 A = varargin{1}; 
 arrayfun(@(x)assignin('caller',varargin{x},varargin{x+1}),2:2:numel(varargin)-1); 
 if ~exist('S0','var'), S0 = []; end; 
-if ~exist('rep','var')||isempty(rep), rep = inputname(1); end;
+if ~exist('rep','var'), rep = inputname(1); end;
 if isempty(rep), rep = ' '; end;
 if ~exist('str','var')||isempty(str), str = []; end; 
 if ~exist('expr','var')||isempty(expr), expr = '.*'; end;

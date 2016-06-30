@@ -76,7 +76,7 @@ tdisp = strcat(num2str(h),':',num2str(m),':',num2str(s));
 wdisp = ['Time Remaining: ' tdisp];
 
 % waitbar
-waitbar(pl/numel(iterarray), hobj, wdisp); 
+try waitbar(pl/numel(iterarray), hobj, wdisp); end;
 
 % close waitbar if pl/length == 1
 if pl/numel(iterarray)==1,
