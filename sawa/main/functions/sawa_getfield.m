@@ -102,7 +102,7 @@ A = varargin{1};
 arrayfun(@(x)assignin('caller',varargin{x},varargin{x+1}),2:2:numel(varargin)-1); 
 if ~exist('S0','var'), S0 = []; end; 
 if ~exist('rep','var'), rep = inputname(1); end;
-if isempty(rep), rep = ' '; end;
+if isempty(rep), rep = ' '; end; 
 if ~exist('str','var')||isempty(str), str = []; end; 
 if ~exist('expr','var')||isempty(expr), expr = '.*'; end;
 if ~exist('r','var')||isempty(r), r = inf; end;
@@ -153,7 +153,7 @@ elseif ~isempty(S1) % otherwise set C with subsref
 end
 
 % set vars for sawa_getfield
-vars = cellfun(@(x){[x,{eval(x)}]},{'rep','expr','r','func','search'}); vars = [vars{:}];
+vars = cellfun(@(x){[x,{evalin('caller',x)}]},{'rep','expr','r','func','search'}); vars = [vars{:}]; 
 
 % for each val, sawa_getfield
 for x = 1:numel(C), 
