@@ -51,7 +51,6 @@ function d = make_gui(structure,opt)
 %
 % Created by Justin Theiss
 
-
 % init vars 
 if ~exist('structure','var')||isempty(structure), return; end;
 if ~iscell(structure), structure = {structure}; end;
@@ -94,7 +93,7 @@ hpage(1) = uicontrol(f{i},'style','pushbutton','string','next',...
     'position',next_pos,'Callback',{@(x,y)nextbutton_Callback(x,y,f)});
 elseif ~isfield(opt,'nodone') % "done" button
 hpage(3) = uicontrol(f{i},'style','pushbutton','string','done','position',next_pos,...
-    'Callback',{@(x,y)eval('d = donebutton_Callback(x,y,f);')});
+    'Callback',{@(x,y)donebutton_Callback(x,y,f)}); 
 end
 
 % if previous structure, set "previous" button
@@ -102,6 +101,9 @@ if i-1 > 0 && numel(structure) > i-1
 hpage(2) = uicontrol(f{i},'style','pushbutton','string','previous',...
     'position',prev_pos,'Callback',{@(x,y)prevbutton_Callback(x,y,f)});
 end
+
+% set closerequestfcn to donebutton_Callback
+set(f{i},'CloseRequestFcn',@(x,y)donebutton_Callback(x,y,f));
 
 % set other properties from structure
 hprop=[]; lprop=[]; rprop=[]; flds=fieldnames(structure{i}); flds(strcmpi(flds,'name'))=[];
@@ -181,7 +183,13 @@ if isfield(opt,'data'), guidata(f{1},opt.data); end;
 set(f{1},'visible','on');
 
 % wait until done
-if ~isfield(opt,'nowait'), uiwait(f{1}); end;
+if ~isfield(opt,'nowait'), 
+    uiwait(f{1}); 
+    % get guidata from timer
+    t = timerfind('Tag','make_gui_timer');
+    d = get(t,'UserData');
+    stop(t); delete(t);
+end;
 
 % reset defaults
 set(0,'defaultUicontrolFontSize',defUfont); set(0,'defaultAxesFontSize',defAfont);
@@ -210,9 +218,13 @@ set(gcf,'visible','off');
 set(f{i},'visible','on'); 
 return;
 
-function d = donebutton_Callback(source,eventdata,f)
-% get data from guidata
-d = guidata(gcf); 
+function donebutton_Callback(source,eventdata,f)
+% get guidata
+d = guidata(gcf);
+% create timer
+t = timer('Tag','make_gui_timer','TimerFcn',@(x,y)[],'ExecutionMode','fixedSpacing',...
+    'TasksToExecute',inf,'UserData',d); 
+start(t);
 % close f
-for i = 1:numel(f), close(f{i}); end;
+for i = 1:numel(f), delete(f{i}); end;
 return;
