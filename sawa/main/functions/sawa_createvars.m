@@ -142,9 +142,21 @@ case 'Structure' % struct
         end
     end
 case 'Choose File' % choose file
-    vars = cellstr(spm_select(Inf,'any',['Select file for ' varnam],vars));
+    if exist('spm_select','file'),
+        vars = cellstr(spm_select(Inf,'any',['Select file for ' varnam],vars));
+    else % no spm_select
+        try vars = cellstr(uigetfile('*.*',['Select file for ' varnam],'MultiSelect','on')); end;
+    end
 case 'Choose Directory' % choose dir
-    vars = cellstr(spm_select(Inf,'dir',['Select directory for ' varnam],vars));
+    if exist('spm_select','file'),
+        vars = cellstr(spm_select(Inf,'dir',['Select directory for ' varnam],vars));
+    else % no spm_select
+        done = 0; vars = {};
+        while ~done
+            vars{end+1} = uigetdir(cd,['Select directory for ' varnam]);
+            if ~ischar(vars{end}), vars(end) = []; done = 1; break; end;
+        end
+    end 
 case 'Function' % function
     fp = funpass(struct,'sa'); fp.idx = 1; 
     fp = auto_function([],fp); 
