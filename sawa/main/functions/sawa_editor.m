@@ -477,7 +477,7 @@ vars = fp.vars;
 fp = rmfield(fp,{'output','vars'});
 
 % print separator
-printres(repmat('-',1,75),hres); 
+printres(repmat('-',1,60),hres); 
 
 % display time left
 settimeleft(i,funrun,wb);

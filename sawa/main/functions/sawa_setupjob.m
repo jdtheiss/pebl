@@ -74,8 +74,11 @@ if ~isempty(matlabbatch) % if matlabbatch isn't empty, open job
 evalc('cfg_util(''initjob'',matlabbatch)'); cfg_ui('local_showjob',h);
 end;
 
+% get modlist/module
+modlist = handles.modlist; module = handles.module;
+
 % set modlist value
-set(handles.modlist,'value',m); 
+set(modlist,'value',m); 
 clear m;
 
 % init om and ostr
@@ -87,13 +90,13 @@ while strcmp(get(h,'visible'),'on')
 pause(.1);
 
 % get new str, m and item index
-nstr = get(handles.module,'string'); m = get(handles.modlist,'value'); 
-nmods = cell2mat(handles.modlist.UserData.id); i = get(handles.module,'value');
+nstr = get(module,'string'); m = get(modlist,'value'); 
+nmods = cell2mat(get(get(modlist,'UserData'),'id')); i = get(module,'value');
 
 % refresh module/get ostr if module change (or first)
 if om~=m
-cfg_ui('local_showmod',handles.modlist); ostr = get(handles.module,'string');
-om = get(handles.modlist,'value'); omods = cell2mat(handles.modlist.UserData.id);
+cfg_ui('local_showmod',modlist); ostr = get(module,'string');
+om = get(modlist,'value'); omods = cell2mat(get(get(modlist,'UserData'),'id'));
 end
 
 % if new module, set str to empty
@@ -146,8 +149,8 @@ if isfield(handles,'kp')
     % reset kp in guidata
     guidata(h,rmfield(handles,'kp'));
     % refresh module
-    cfg_ui('local_showmod',handles.modlist); 
-    nstr = get(handles.module,'string');
+    cfg_ui('local_showmod',modlist); 
+    nstr = get(module,'string');
 end
 
 % set itemidx
@@ -155,11 +158,11 @@ str{m} = nstr;
 str{m}(itemidx{m}) = {imsg};
 
 % set str to handles
-set(handles.module,'string',str{m});
+set(module,'string',str{m});
 end
 
 % get matlabbatch for current job as is
-[~,matlabbatch] = cfg_util('harvest',subidx(get(handles.modlist,'userdata'),'.cjob')); 
+[~,matlabbatch] = cfg_util('harvest',subidx(get(modlist,'userdata'),'.cjob')); 
 
 % delete cfg_ui
 if any(ishandle(h)), delete(h); end;
