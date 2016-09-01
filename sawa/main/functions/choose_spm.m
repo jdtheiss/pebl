@@ -17,14 +17,17 @@ function spmver = choose_spm(spmver)
 warning('off');
 if ~exist('spmver','var'), spmver = ''; end;
 % choose spm version
-if exist('spm','file') 
+if ~isempty(which('spm'))
     % get current path, and search for other spm's
     spmpath = fileparts(which('spm'));
     d = dir(fullfile(fileparts(spmpath),'spm*'));
     if numel(d) > 1&&isempty(spmver) % if multiple spm's
     chc = listdlg('PromptString','Choose spm to use:','ListString',{d.name},'SelectionMode','single');
-    if ~isempty(chc), spmver = d(chc).name; end; % get spmver
+    else % otherwise set to 1
+    chc = 1;
     end
+    % set spmver
+    if ~isempty(chc)&&isempty(spmver), spmver = d(chc).name; end;
     % switch versions
     if ~isempty(spmver) && ~strcmpi(spm('ver'),spmver) 
     spm_rmpath; % remove path
