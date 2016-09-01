@@ -76,7 +76,7 @@ end;
 
 % get modlist/module
 modlist = handles.modlist; module = handles.module;
-userdata = modlist.UserData;
+userdata = get(modlist,'UserData');
 
 % set modlist value
 set(modlist,'value',m); 
@@ -142,7 +142,7 @@ handles = guidata(h);
 
 % get modlist/module
 modlist = handles.modlist; module = handles.module;
-userdata = modlist.UserData;
+userdata = get(modlist,'UserData');
 
 % if keypress
 if isfield(handles,'kp')
