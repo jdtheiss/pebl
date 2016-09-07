@@ -302,7 +302,9 @@ vars{f(m),x} = varnam.name;
 % set output
 if sts(m) && nargin > 2, 
 vals = cfg_util('getalloutputs',cjob); 
+if numel(vals)>=m && numel(vals{m})>=x,
 output{f(m),x}{n,1} = subsref(vals{m}(x),sout{m}(x).src_output); 
+end
 end
 end
 end
