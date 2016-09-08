@@ -464,11 +464,12 @@ if ~isempty(subrun)&&all(funrun==subrun), printres(sa(i).subj,hres); end;
 % set output to pass to auto program
 fp.output = cell(numel(funcs),1); fp.vars = {};
 
+[uprog,ufiter] = collapse_array(program);
 % for each unique program
-for f = 1:numel(program),
+for f = 1:numel(uprog),
 % auto_run program
-fp.i = i; fp.fiter = f; 
-fp = feval(program{f},'auto_run',fp);
+fp.i = i; fp.fiter = ufiter{f}; 
+fp = feval(uprog{f},'auto_run',fp);
 end
 
 % set output

@@ -51,7 +51,10 @@ tgtouts = sawa_getfield([C{:}],'str','.src_output(end).subs','func',@ischar);
 if sum(ismember(srcouts,tgtouts))==numel(tgtouts), continue; end;
 
 else % otherwise get true outputs
-for x = 1:numel(cjob), outputs(x) = cfg_util('getalloutputs',cjob(x)); end;
+for x = 1:numel(cjob), 
+    outputs{x} = cfg_util('getalloutputs',cjob(x)); 
+    if iscell(outputs{x}), outputs{x} = [outputs{x}{:}]; end;
+end;
 end
 
 % for each value
@@ -102,7 +105,7 @@ for z = 1:numel(outputs{y}),
     elseif isnumeric(z) % set to true output iteratively
         cfg_util('setval',cjob2,m,id{i(z)},subsref(outputs{y}(z),C{x}(min(numel(C{x}),z)).src_output));
     else % set to true output all at once
-        tmpout = arrayfun(@(y){subsref(outputs{y}(y),C{x}(min(numel(C{x}),y)).src_output)},1:numel(outputs{y}));
+        tmpout = arrayfun(@(a){subsref(outputs{y}(a),C{x}(min(numel(C{x}),a)).src_output)},1:numel(outputs{y}));
         cfg_util('setval',cjob2,m,id{i(z)},tmpout{:});
     end
     
