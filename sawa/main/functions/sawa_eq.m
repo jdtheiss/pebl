@@ -23,7 +23,7 @@ function C =  sawa_eq(A,B)
 % Created by Justin Theiss
 
 % first test eq
-try C = all(eq(A,B)); return; catch, C = false; end;
+try C = all(eq(A(:),B(:))); return; catch, C = false; end;
 
 % get all values
 [Avals,~,Areps] = sawa_getfield(A,'rep','');
@@ -47,6 +47,6 @@ if ~all(cellfun(@(x,y)numel(size(x))==numel(size(y))&&all(size(x)==size(y)),Aval
     return;
 end
 
-% return for all ismember Avals, Bvals 
-C = all(cellfun(@(x,y)all(ismember(reshape(x,1,numel(x)),reshape(y,1,numel(y)))),Avals,Bvals));
+% return for all eq Avals, Bvals 
+C = all(cellfun(@(x,y)all(eq(x(:),y(:))),Avals,Bvals));
 
