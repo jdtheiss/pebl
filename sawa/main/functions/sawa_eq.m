@@ -24,6 +24,9 @@ function [C, reps] =  sawa_eq(A,B)
 % 
 %     '.field1'   
 %
+% Note: if a non-struct or non-cell object is input, the returned rep will
+% be ''.
+%
 % requires: sawa_getfield
 % Created by Justin Theiss
 
@@ -36,9 +39,9 @@ if nargout==1, try C = all(eq(A(:),B(:))); return; end; end;
 
 % get all values
 [Avals,~,Areps] = sawa_getfield(A,'rep','');
-if ~iscell(Avals) && isempty(Avals), Avals = {A}; Areps = {inputname(1)}; end;
+if ~iscell(Avals) && isempty(Avals), Avals = {A}; Areps = {''}; end;
 [Bvals,~,Breps] = sawa_getfield(B,'rep','');
-if ~iscell(Bvals) && isempty(Bvals), Bvals = {B}; Breps = {inputname(2)}; end;
+if ~iscell(Bvals) && isempty(Bvals), Bvals = {B}; Breps = {''}; end;
 
 % check for same number of values
 if nargout==1,
@@ -54,7 +57,12 @@ reps = unique(reps);
 [Avals,Bvals,Areps,Breps] = update_vals_reps(Avals,Bvals,Areps,Breps,reps,nargout);
 
 % check for same reps
-if nargout==1 && ~all(strcmp(Areps,Breps)), return; end;
+C = strcmp(Areps,Breps);
+if nargout==1 && ~all(C),
+    C = false; return;
+else
+    reps = unique([reps,Areps(~C),Breps(~C)]);
+end;
     
 % get classes
 Aclass = cellfun(@(x){class(x)}, Avals);
@@ -65,7 +73,7 @@ C = strcmp(Aclass,Bclass);
 if nargout==1 && ~all(C), 
     C = false; return;
 else
-    reps = unique([reps,Areps(~C)]);
+    reps = unique([reps,Areps(~C),Breps(~C)]);
 end
 
 % remove reps
@@ -76,7 +84,7 @@ C = cellfun(@(x,y)numel(size(x))==numel(size(y))&&all(size(x)==size(y)),Avals,Bv
 if nargout==1 && ~all(C),
     C = false; return;
 else
-    reps = unique([reps,Areps(~C)]);
+    reps = unique([reps,Areps(~C),Breps(~C)]);
 end
 
 % remove reps
@@ -87,7 +95,7 @@ C = cellfun(@(x,y)all(eq(x(:),y(:))),Avals,Bvals);
 if nargout==1, 
     C = all(C);
 else % retun reps
-    reps = unique([reps,Areps(~C)]);
+    reps = unique([reps,Areps(~C),Breps(~C)]);
     C = isempty(reps);
 end
 
