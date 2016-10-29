@@ -31,7 +31,7 @@ function [C, reps] =  sawa_eq(A,B)
 % Created by Justin Theiss
 
 % set reps
-C = false;
+C = true;
 reps = {};
 
 % first test eq
@@ -43,70 +43,54 @@ if ~iscell(Avals) && isempty(Avals), Avals = {A}; Areps = {''}; end;
 [Bvals,~,Breps] = sawa_getfield(B,'rep','');
 if ~iscell(Bvals) && isempty(Bvals), Bvals = {B}; Breps = {''}; end;
 
-% check for same number of values
-if nargout==1,
-    if numel(Avals)~=numel(Bvals), return; end;
-elseif numel(Avals) > numel(Bvals),
-    reps = [reps,Areps(~ismember(Areps,Breps))];
-elseif numel(Bvals) > numel(Avals),
-    reps = [reps,Breps(~ismember(Breps,Areps))];
+% comparison functions
+cmp_funs = {@(v1,v2,r1,r2)ismember(r1,r2),... % compare reps unsorted
+            @(v1,v2,r1,r2)ismember(r2,r1),... % compare reps unsorted (opposite comparison)
+            @(v1,v2,r1,r2)strcmp(r1,r2),... % compare reps in order
+            @(v1,v2,r1,r2)cellfun(@(x,y)strcmp(class(x),class(y)),v1,v2),... % compare classes
+            @(v1,v2,r1,r2)cellfun(@(x,y)numel(size(x))==numel(size(y))&&all(size(x)==size(y)),v1,v2),... % compare size
+            @(v1,v2,r1,r2)cellfun(@(x,y)all(eq(x(:),y(:))),v1,v2)}; % compare all items
+        
+% compare number of vals, reps, classes, size, items
+for f = 1:numel(cmp_funs),
+    % get comparison
+    ck = cmp_funs{f}(Avals, Bvals, Areps, Breps);
+    if isempty(ck), ck = false; end;
+    % set C
+    C = C && all(ck);
+    % return if not C and only one output
+    if nargout==1 && ~C, 
+        return; 
+    else
+        % get reps with differences
+        reps = local_unique(reps, Areps, Breps, ck);
+        % update values
+        [Avals,Bvals,Areps,Breps] = update_vals_reps(Avals,Bvals,Areps,Breps,reps);
+        % if no Areps/Breps, return
+        if isempty(Areps) || isempty(Breps), reps = unique([reps,Areps,Breps]); return; end;
+    end;
 end
-reps = unique(reps);
-
-% remove reps
-[Avals,Bvals,Areps,Breps] = update_vals_reps(Avals,Bvals,Areps,Breps,reps,nargout);
-
-% check for same reps
-C = strcmp(Areps,Breps);
-if nargout==1 && ~all(C),
-    C = false; return;
-else
-    reps = unique([reps,Areps(~C),Breps(~C)]);
-end;
-    
-% get classes
-Aclass = cellfun(@(x){class(x)}, Avals);
-Bclass = cellfun(@(x){class(x)}, Bvals);
-
-% check for same classes
-C = strcmp(Aclass,Bclass);
-if nargout==1 && ~all(C), 
-    C = false; return;
-else
-    reps = unique([reps,Areps(~C),Breps(~C)]);
-end
-
-% remove reps
-[Avals,Bvals,Areps,Breps] = update_vals_reps(Avals,Bvals,Areps,Breps,reps,nargout);
-
-% check for all same size
-C = cellfun(@(x,y)numel(size(x))==numel(size(y))&&all(size(x)==size(y)),Avals,Bvals);
-if nargout==1 && ~all(C),
-    C = false; return;
-else
-    reps = unique([reps,Areps(~C),Breps(~C)]);
-end
-
-% remove reps
-[Avals,Bvals,Areps,Breps] = update_vals_reps(Avals,Bvals,Areps,Breps,reps,nargout);
-
-% return for all eq Avals, Bvals 
-C = cellfun(@(x,y)all(eq(x(:),y(:))),Avals,Bvals);
-if nargout==1, 
-    C = all(C);
-else % retun reps
-    reps = unique([reps,Areps(~C),Breps(~C)]);
-    C = isempty(reps);
-end
-
-function [Avals,Bvals,Areps,Breps] = update_vals_reps(Avals,Bvals,Areps,Breps,reps,n)
-% if only returning C, return
-if n==1, return; end;
+        
+function [Avals,Bvals,Areps,Breps] = update_vals_reps(Avals,Bvals,Areps,Breps,reps)
 % remove vals and reps
+if ~isempty(Areps),
 Avals(ismember(Areps,reps)) = [];
-Bvals(ismember(Breps,reps)) = [];
 Areps(ismember(Areps,reps)) = [];
+% else % ensure [] for strcmp
+% Areps = [];
+end;
+if ~isempty(Breps),
+Bvals(ismember(Breps,reps)) = [];
 Breps(ismember(Breps,reps)) = [];
+% else % ensure [] for strcmp
+% Breps = [];
+end;
 return;
 
-
+function reps = local_unique(reps,Areps,Breps,ck)
+% get unique reps, ensuring ck is same size as Areps or Breps
+if all(size(ck) == size(Areps)), reps = unique([reps,Areps(~ck)]); end;
+if all(size(ck) == size(Breps)), reps = unique([reps,Breps(~ck)]); end;
+return;
+    
+    
