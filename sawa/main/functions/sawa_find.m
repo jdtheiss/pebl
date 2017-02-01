@@ -60,8 +60,7 @@ if ~iscell(fun), fun = {fun}; end;
 if ~iscell(search), search = {search}; end;
 if any(strncmp(fun,'~',1)), n = true; else n = false; end;
 fun(cellfun('isclass',fun,'char')) = strrep(fun(cellfun('isclass',fun,'char')),'~',''); 
-if isempty(varargin), varargin{1} = findobj; end;
-if numel(varargin) < 3, varargin{2} = 'expr'; varargin{3} = '.$'; end;
+if isempty(varargin), varargin = {findobj, 'r', 2}; end;
 
 % getfield
 [C,S,reps] = sawa_getfield(varargin{:});
@@ -80,6 +79,7 @@ end
 % output
 fnd = cellfun(@(x)any(x),fnd); 
 C = C(fnd); S = S(fnd); reps = reps(fnd); 
+end
 
 function fnd = local_find(vals,fun,search,n)
     try % eval fun, search
@@ -99,4 +99,4 @@ function fnd = local_find(vals,fun,search,n)
     
     % return if any 
     fnd = any(fnd); 
-return;
+end

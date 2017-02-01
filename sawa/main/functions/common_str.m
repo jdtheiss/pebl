@@ -4,18 +4,20 @@ function str = common_str(strs)
 % array of strings (strs)
 %
 % Inputs: 
-% - strs - cell or character array of strings 
+% strs - cell or character array of strings 
 %
 % Outputs:
-% - str - longest common string among strs
+% str - longest common string among strs
 %
 % Example:
 % strs = {'TestingString123','ThisString2','DifferentStrings'}
 % str = common_str(strs)
-% str = 'String';
+% 
+% str =
+% 
+% String
 %
 % Created by Justin Theiss
-
 
 % initvars
 str = ''; if ischar(strs), strs = cellstr(strs); end; 

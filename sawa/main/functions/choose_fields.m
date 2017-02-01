@@ -1,4 +1,4 @@
-function flds = choose_fields(sa,subrun,msg)
+function flds = choose_fields(sa,subjs,msg)
 % flds = choose_fields(sa, subrun, msg)
 % Choose string represntations of fields from subject array
 % 
@@ -18,18 +18,21 @@ function flds = choose_fields(sa,subrun,msg)
 % flds = choose_fields(sa,subrun,msg);
 % [chose 'age' field]
 % [chose indices '1' and '2']
+% 
 % flds = 
-%   'age{1}'   'age{2}'
+% 
+%     'age{1}'
+%     'age{2}'
 %
-% requires: sawa_subrun
+% requires: sawa_subjs
 %
 % Created by Justin Theiss
 
 
 % init vars
 flds = {}; 
-if ~exist('sa','var')||isempty(sa), [subrun,sa]=sawa_subrun; end;
-if ~exist('subrun','var')||isempty(subrun), subrun = 1:numel(sa); end;
+if ~exist('sa','var')||isempty(sa), [subjs,sa]=sawa_subjs; end;
+if ~exist('subjs','var')||isempty(subjs), subjs = 1:numel(sa); end;
 if ~exist('msg','var'), msg = 'Choose fields:'; end;
 if ~iscell(msg), msg = {msg}; end;
 
@@ -37,42 +40,39 @@ if ~iscell(msg), msg = {msg}; end;
 flds = fieldnames(sa);
 
 % choose fields
-chc =  listdlg('PromptString',{msg{:},''},'ListString',flds);
+chc =  listdlg('PromptString',[msg,{''}],'ListString',flds);
 flds = flds(chc);
 
 % choose subfields
 for f = 1:numel(flds)
-
-% if cell, choose cells
-if all(cellfun('isclass',{sa(subrun).(flds{f})},'cell')) 
-r = listdlg('PromptString',{['Choose subcells to include from '...
-    flds{f} ':'],'',''},'ListString',{num2str([1:min(cellfun('size',{sa(subrun).(flds{f})},2))]')});
-
-% if chosen
-if ~isempty(r)
-flds{f} = strcat(flds{f},arrayfun(@(x){['{' num2str(x) '}']},r));
-end
-
-% if struct, choose fields
-elseif all(cellfun('isclass',{sa(subrun).(flds{f})},'struct'))
-    % get subflds
-    clear subflds subsa tmp;
-    subflds = cellfun(@(x){fieldnames(x)},{sa(subrun).(flds{f})});
-    subflds = unique(vertcat(subflds{:}));
-    % set subsa
-    subsa = struct; tmp = {sa(subrun).(flds{f})};
-    for x = 1:numel(tmp), % for each subrun
-        for xx = 1:numel(subflds), % for each subflds
-            if isfield(tmp{x},subflds{xx}), % set 
-                subsa(x).(subflds{xx}) = tmp{x}.(subflds{xx});
-            else % set empty
-                subsa(x).(subflds{xx}) = [];
+    % if cell, choose cells
+    if all(cellfun('isclass',{sa(subjs).(flds{f})},'cell')),
+        r = listdlg('PromptString',{['Choose subcells from ' flds{f} ':'],'',''},...
+            'ListString',{num2str([1:min(cellfun('size',{sa(subjs).(flds{f})},2))]')});
+        % if chosen
+        if ~isempty(r)
+            flds{f} = strcat(flds{f},arrayfun(@(x){['{' num2str(x) '}']},r));
+        end
+    % if struct, choose fields
+    elseif all(cellfun('isclass',{sa(subjs).(flds{f})},'struct'))
+        % get subflds
+        clear subflds subsa tmp;
+        subflds = cellfun(@(x){fieldnames(x)},{sa(subjs).(flds{f})});
+        subflds = unique(vertcat(subflds{:}));
+        % set subsa
+        subsa = struct; tmp = {sa(subjs).(flds{f})};
+        for x = 1:numel(tmp), % for each subrun
+            for xx = 1:numel(subflds), % for each subflds
+                if isfield(tmp{x},subflds{xx}), % set 
+                    subsa(x).(subflds{xx}) = tmp{x}.(subflds{xx});
+                else % set empty
+                    subsa(x).(subflds{xx}) = [];
+                end
             end
         end
+        % run choose_fields with subsa
+        flds{f} = strcat(flds{f},'.',choose_fields(subsa,[],msg));
     end
-    % run choose_fields with subsa
-    flds{f} = strcat(flds{f},'.',choose_fields(subsa,[],msg));
-end
 end
 
 % output as horzcat

@@ -1,15 +1,14 @@
-function vals = sawa_createvars(varnam,msg,subrun,sa,varargin)
-% vars = sawa_createvars(varnam,msg,subrun,sa,varargin)
+function vals = sawa_createvars(varnam,msg,subjs,sa,varargin)
+% vars = sawa_createvars(varnam,msg,subjs,sa,varargin)
 % Creates variables for specific use in auto_batch, auto_cmd, auto_function.
 % 
 % Inputs:
 % varnam - variable name 
 % msg - optional string message to display in listdlg
-% subrun - numeric array of subjects to use (optional)
+% subjs - numeric array of subjects to use (optional)
 % sa - subject array (optional)
 % varargin - can be default value or previous functions to use output (must
 % be string and begin with '@')
-% Note: if subrun/sa are not entered, user will choose
 %
 % Outputs:
 % vars - variable returned
@@ -17,22 +16,22 @@ function vals = sawa_createvars(varnam,msg,subrun,sa,varargin)
 % Example:
 % varnam = 'Resting State Files';
 % msg = '';
-% subrun = 1:33;
+% subjs = 1:33;
 % sa = ocd;
-% vars = sawa_createvars(varnam,msg,subrun,sa)
+% vars = sawa_createvars(varnam,msg,subjs,sa)
 % [choose "Subject Array"]
 % [choose "subjFolders 1"]
 % [enter "/RestingState/Resting*.nii"]
 % vars = 'sa(i).subjFolders{1}';
 %
-% requires: choose_fields getargs sawa_subrun
+% requires: choose_fields getargs sawa_getfield sawa_subjs
 %
 % Created by Justin Theiss
 
 % init vars
 if ~exist('varnam','var')||isempty(varnam), varnam = 'Variable'; end;
 if ~exist('msg','var'), msg = ''; end;
-if ~exist('subrun','var'), subrun = []; end;
+if ~exist('subjs','var'), subjs = []; end;
 if ~exist('sa','var'), sa = {}; end;
 if ~exist('ival','var')||isempty(ival), ival = []; end;
 if ~exist('vars','var')||isempty(vars), vars = {''}; end;
@@ -99,14 +98,14 @@ case {'String','Number','Evaluate'} % input
         vars(cellfun(@(x)ischar(x),vars)) = cellfun(@(x){eval(['[' x ']'])},vars(cellfun(@(x)ischar(x),vars)));
     end
 case 'Index' % index
-    if ival==4, [~,~,tmpr]=sawa_getfield(vars,'rep','','r',2); end; ind = '{1}'; 
+    if ival==4, [~,~,tmpr]=sawa_getfield(vars,'r',1); end; ind = '{1}'; 
     while ~isempty(ind), % set index
     if ival==4&&~isempty(tmpr), ind = tmpr{1}; tmpr(1)=[]; end; % get input index
     ind = cell2mat(inputdlg(['Enter index to set for ' varnam ' (e.g., {1,1} or (2)). Cancel when done.'],'Index',1,{ind}));
     if isempty(ind), break; end;
     s = substruct(ind([1,end]),eval(ind)); % create s var for subsasgn
     if ival==4, try varargin{1} = subsref(vars,s); end; end; % set varargin
-    vals = subsasgn(vals,s,sawa_createvars([varnam ind],msg,subrun,sa,varargin{:}));
+    vals = subsasgn(vals,s,sawa_createvars([varnam ind],msg,subjs,sa,varargin{:}));
     end
     continue; % done, vals already set
 case 'Structure' % struct
@@ -136,7 +135,7 @@ case 'Structure' % struct
             % run sawa_createvars
             if ~isempty(fld), 
                 if isfield(vars(n),fld), varargin{1} = vars(n).(fld); else varargin{1} = {}; end;
-                vars(n).(fld) = sawa_createvars(fld,'',subrun,sa,varargin{:}); 
+                vars(n).(fld) = sawa_createvars(fld,'',subjs,sa,varargin{:}); 
                 substr = vertcat(fieldnames(vars),'Add'); 
             end;
         end
@@ -158,7 +157,7 @@ case 'Choose Directory' % choose dir
         end
     end 
 case 'Function' % function
-    fp = funpass(struct,'sa'); fp.idx = 1; 
+    fp = struct2var(struct,'sa'); fp.idx = 1; 
     fp = auto_function([],fp); 
     if strcmp(fp.vars{1},'varargout'), 
         fp.outchc{1} = str2double(cell2mat(inputdlg('Enter index of varargout:','Index',1,{'1'})));
@@ -175,38 +174,34 @@ case 'Workspace Variable' % workspace variable
     end
 case 'Subject Array' % subject array
     % choose group
-    if ~isempty(subrun),
-    grp = questdlg(['Choose group or individual for ' varnam '?'],varnam,'Group','Individual','Individual');
+    if ~isempty(subjs),
+        grp = questdlg(['Choose group or individual for ' varnam '?'],varnam,'Group','Individual','Individual');
     else % set to group if empty
-    grp = 'Group';
+        grp = 'Group';
     end
-    % get subrun
+    % get subjs
     if strcmp(grp,'Group'), 
-    subrun = sawa_subrun(sa,[],subrun);
+        subjs = sawa_subjs(sa,subjs);
     end
     % choose fields
-    vars = choose_fields(sa,subrun,['Choose field(s) for ' varnam]);
+    vars = choose_fields(sa,subjs,['Choose field(s) for ' varnam]);
     subvars = cell2mat(inputdlg('Enter subfolder, files, etc.'));
     % strcat
     if strcmp(grp,'Individual')
-    vars = strcat('sa(i).',vars,subvars);
+        vars = strcat('sa(i).',vars,subvars);
     else % group (only one field can be returned)
-    for v = 1:numel(vars)
-        vars{v} = strcat('sa(', arrayfun(@(x){num2str(x)},subrun),').',vars{v},subvars)'; 
-    end
+        for v = 1:numel(vars)
+            vars{v} = strcat('sa(', arrayfun(@(x){num2str(x)},subjs),').',vars{v},subvars)'; 
+        end
     end
 case funcs % functions 
-    % find choice relative to functions
-    r = c - (numel(choices)-numel(funcs));
-    % get outargs from vars
-    outargs = varargin{end}(r,:);
-    outargs(cellfun('isempty',outargs)) = []; 
-    if isempty(outargs), return; end;
     % choose outargs
-    v = listdlg('PromptString',{['Choose output from ' choices{c}],''},'ListString',outargs);
-    if isempty(v), return; end;
-    % strcat
-    vars = strcat('evalin(''caller'',','''output{',num2str(r),',',arrayfun(@(x){num2str(x)},v),'}{end}'');');
+    v = cell2mat(inputdlg(['Enter output to return from ' choices{c}],'',1,{'end'}));
+    if isempty(v), v = 'end'; end;
+    % find choice relative to functions
+    r = c - (numel(choices)-numel(funcs)); 
+    % output function
+    vars = str2func(['@(~)''output{',num2str(r),'}{',v,'}''']);
 end
 if iscell(vars)&&size(vars,2) > size(vars,1), vars = vars'; end; % if horizontal
 % vertcat
