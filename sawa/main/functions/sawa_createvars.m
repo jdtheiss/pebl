@@ -157,14 +157,10 @@ case 'Choose Directory' % choose dir
         end
     end 
 case 'Function' % function
-    fp = struct2var(struct,'sa'); fp.idx = 1; 
-    fp = auto_function([],fp); 
-    if strcmp(fp.vars{1},'varargout'), 
-        fp.outchc{1} = str2double(cell2mat(inputdlg('Enter index of varargout:','Index',1,{'1'})));
-    end
-    vars = arrayfun(@(x)fp.output(x,fp.outchc{1}),1:numel(fp.output));
-    vars = cat(1,vars{:});
-    clear fp; 
+    params = sawa({'add_function','set_options','run_params'},...
+        struct('sa',sa,'subjs',subjs,'verbose_arg',false));
+    vars = params.outputs{1};
+    clear params;
 case 'Workspace Variable' % workspace variable
     varnam = cell2mat(inputdlg('Enter variable name from base workspace:'));
     if evalin('base',['exist(''' varnam ''',''var'')']), % check for varnam

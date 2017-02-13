@@ -68,6 +68,7 @@ if ~exist('verbose','var')||isempty(verbose), verbose = false; end;
 S = struct2sub(A, r);
 % get R from S
 R = cellfun(@(x){sub2str(x)}, S);
+if ~iscellstr(R), R = repmat({''}, size(S)); end;
 % find R using regexp
 if exist('expr','var'),
     R = regexp(R, expr, 'match');
