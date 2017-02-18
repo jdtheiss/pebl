@@ -71,8 +71,8 @@ R = cellfun(@(x){sub2str(x)}, S);
 if ~iscellstr(R), R = repmat({''}, size(S)); end;
 % find R using regexp
 if exist('expr','var'),
-    R = regexp(R, expr, 'match');
-    R = [R{:}];
+    R = regexp(R, expr, 'match', 'once');
+    R(cellfun('isempty',R)) = [];
     S = cellfun(@(x){sub2str(x)}, R);
 end
 % use subsref to get values of subsref(A, S)

@@ -7,7 +7,7 @@ function figurefun(func, A, varargin)
 % FUN - cell array of functions to call (default is empty, callback of props object)
 % A - cell array of type, value pairs in order to find figure and 
 % object (such as a button) as used with findobj. Alternatively, A can be a
-% string (default is 'gcf').
+% string (default is {'type','figure'}).
 % options - timer options to be used as pairs of parameter name and value
 % (defualts are 'tag', mfilename, 'ExecutionMode', 'fixedSpacing', 
 % 'TimerFcn', @(x,y)wait_fig(x, A, FUN), 'TasksToExecute', 10000). 
@@ -54,9 +54,9 @@ function figurefun(func, A, varargin)
 % Created by Justin Theiss
 
 % init vars
-if ~exist('func','var')||isempty(func), func = []; end;
-if ~exist('A','var')||isempty(A), A = 'gcf'; end;
-if ~isempty(func)&&~iscell(func), func = {func}; end;
+if ~exist('func','var') || isempty(func), func = []; end;
+if ~exist('A','var') || isempty(A), A = {'type','figure'}; end;
+if ~isempty(func) && ~iscell(func), func = {func}; end;
 
 % setup timer
 t = timer('tag',mfilename); 
@@ -69,7 +69,7 @@ start(t);
 % wait function
 function wait_fig(t, props, func)
     % get h and hh
-    [h, hh] = find_fig(props);
+    [h, hh] = find_fig(props); 
     % h and hh are found
     if ~isempty(h) && ~isempty(hh),
         % evaluate function
@@ -89,7 +89,7 @@ function [h, hh] = find_fig(props)
     set(0,'ShowHiddenHandles','on');
     % init h and hh
     h = []; hh = [];
-    if ischar(props), % evaluate eg 'gcf'
+    if ischar(props), % evaluate eg 'gcbf'
         hh = eval(props); 
         h = hh(strcmp(get(hh,'type'),'figure'));
     else % use findobj

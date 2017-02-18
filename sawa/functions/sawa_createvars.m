@@ -197,7 +197,7 @@ case funcs % functions
     % find choice relative to functions
     r = c - (numel(choices)-numel(funcs)); 
     % output function
-    vars = str2func(['@(~)''output{',num2str(r),'}{',v,'}''']);
+    vars = str2func(['@()''output{',num2str(r),'}{',v,'}''']);
 end
 if iscell(vars)&&size(vars,2) > size(vars,1), vars = vars'; end; % if horizontal
 % vertcat
