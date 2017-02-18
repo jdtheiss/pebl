@@ -12,7 +12,6 @@ function params = sawa(cmd, varargin)
 % params - parameter structure containing following fields:
 %   funcs - cell array of functions to use
 %   options - cell array of options corresponding to each function
-%   itemidx - cell array of item indices for matlabbatch functions
 %   outputs - cell array of outputs from functions
 %
 % Example 1: add a function, set the options, and run the function
@@ -28,7 +27,6 @@ function params = sawa(cmd, varargin)
 % 
 %           funcs: {@disp}
 %         options: {'test'}
-%         itemidx: {[]}
 %     verbose_arg: []
 %         outputs: {{1x1 cell}}
 % 
@@ -48,7 +46,6 @@ function params = sawa(cmd, varargin)
 % 
 %           funcs: {@disp}
 %         options: {'test'}
-%         itemidx: {[]}
 %     verbose_arg: 1
 %         outputs: {{1x1 cell}}
 %      print_type: 'diary'
@@ -207,7 +204,7 @@ function opts = local_getoptions(func, options, type)
                 opts = [opts0, 'new parameter'];
             else % current options
                 opts = options;
-                opts(~cellfun('size',opts,1)==1) = {'parameter'};
+                opts(~cellfun('isclass',opts,'char')) = {'parameter'};
                 opts(~ismember(opts,opts0)) = {'parameter'};
             end
         case {'cell','struct'} % matlabbatch
@@ -216,8 +213,8 @@ function opts = local_getoptions(func, options, type)
             opts(2:2:end) = {'parameter'};
             for y = 1:2:numel(opts), 
                 opts{y} = options{y}; 
-                if isstruct(opts{y}), % set to last subs
-                    opts{y} = opts{y}(end-1).subs; 
+                if isstruct(opts{y}), % set to last 3 subs
+                    opts{y} = sub2str(opts{y}(max(end-2,1):end)); 
                 elseif iscell(opts{y}),
                     opts{y} = opts{y}(cellfun('isclass',opts{y},'char'));
                     opts{y} = sprintf('%s ', opts{y}{:});
@@ -251,12 +248,10 @@ function params = listbox_callback(params, fig, x)
             case 1 % copy
                 params.funcs(end+1) = params.funcs(idx);
                 params.options(end+1) = params.options(idx);
-                params.itemidx(end+1) = params.itemidx(idx);
                 idx = numel(params.funcs);
             case 2 % delete
                 params.funcs(idx) = [];
                 params.options(idx) = [];
-                params.itemidx(idx) = [];
                 idx = numel(params.funcs);
             case 3 % edit
                 params = add_function(params, idx);
@@ -264,8 +259,8 @@ function params = listbox_callback(params, fig, x)
                 docstr = get_docstr(params.funcs, idx);
                 disp(docstr{idx});
             case 5 % insert
-                params.funcs = sawa_insert(params.funcs, -idx, {[]});
-                params.options = sawa_insert(params.options, -idx, {[]});
+                params.funcs = sawa_insert(params.funcs, idx, {[]});
+                params.options = sawa_insert(params.options, idx, {[]});
                 params = add_function(params, idx);
         end
     end
@@ -347,7 +342,7 @@ function params = add_function(params, idx)
 % params = add_function(params, idx)
 % Add a function to use at the index position idx.
 % Function will be entered using @inputdlg. If matlabbatch is entered,
-% @sawa_setupbatch will be called.
+% @sawa_setbatch will be called.
 % If no idx, idx = numel(funcs) + 1.
 
     % load params
@@ -358,8 +353,6 @@ function params = add_function(params, idx)
     % init options
     if ~exist('options','var') || isempty(options), options = {}; end;
     if ~iscell(options), options = {options}; end;
-    % init itemidx
-    if ~exist('itemidx','var') || isempty(itemidx), itemidx = {}; end;
     % init idx
     if ~exist('idx','var') || isempty(idx), idx = numel(funcs) + 1; end;
     % for each idx, set function
@@ -370,19 +363,18 @@ function params = add_function(params, idx)
         % init funcs/options
         if idx > numel(funcs), funcs{idx} = []; end;
         if idx > numel(options), options{idx} = []; end;
-        if idx > numel(itemidx), itemidx{idx} = []; end;
         % switch type
         if strncmp(str_func,'@',1), % matlab function
             funcs{idx} = eval(str_func);
         elseif strcmp(str_func,'matlabbatch'), % matlabbatch
             % load matlabbatch
-            [funcs{idx}, options{idx}, itemidx{idx}] = sawa_setupbatch(funcs{idx},options{idx},itemidx{idx});
+            [funcs{idx}, options{idx}] = sawa_setbatch(funcs{idx}, options{idx});
         else % command
             funcs{idx} = str_func;
         end
     end
-    % load funcs, options, and itemidx to params
-    params = struct2var(params,{'funcs','options','itemidx'}); 
+    % load funcs and options to params
+    params = struct2var(params,{'funcs','options'}); 
     % update editor
     params = update_editor(params);
 end
@@ -411,7 +403,7 @@ function params = set_options(params, idx)
             opts = local_getoptions(funcs{x},options{x},'current');
             % choose args to edit
             chc = listdlg('PromptString','Choose options to edit:',...
-                'ListString',[opts,'add','remove']);
+                'ListString',[opts(:);'add';'remove']);
             if isempty(chc), % cancel
                 return; 
             elseif any(chc==numel(opts)+1), % add

@@ -209,8 +209,8 @@ function test_sawa_getfield
 end
 
 function test_sawa_insert
-    outputs1 = 'te_t';
-    outputs2 = sawa_insert('test',3,'_');
+    outputs1 = 'te_st';
+    outputs2 = sawa_insert([],'test',3,'_');
     assert(strcmp(outputs1,outputs2));
 end
 
@@ -232,18 +232,13 @@ function test_sawa_setfield
     assert(sawa_eq(outputs1,outputs2));
 end
 
-function test_sawa_setupbatch
+function test_sawa_setbatch
     matlabbatch1{1}.spm.util.disp.data = '<UNDEFINED>';
     options1 = {};
-    itemidx1 = {[]};
-    str1{1}{1} = 'Help on: Display Image';
-    str1{1}{2} = 'Image to Display';
-    figurefun(@(x,y)close(x),'gcf','StartDelay',25);
-    [matlabbatch2, options2, itemidx2, str2] = sawa_setupbatch(matlabbatch1);
+    figurefun(@(x,y)close(x),{'type','figure'},'StartDelay',25);
+    [matlabbatch2, options2] = sawa_setbatch(matlabbatch1);
     assert(sawa_eq(matlabbatch1,matlabbatch2));
     assert(sawa_eq(options1,options2));
-    assert(sawa_eq(itemidx1,itemidx2));
-    assert(all(strncmp(str1{1}(:),str2{1}(:),10)));
 end
 
 function test_sawa_strjoin
