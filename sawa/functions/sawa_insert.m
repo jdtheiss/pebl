@@ -34,6 +34,7 @@ function C = sawa_insert(dim, A, index, B)
 
 % init vars
 if isempty(dim), dim = find(size(A) > 1, 1); end;
+if isempty(dim), dim = 1; end;
 if isempty(index), index = 1; end;
 
 % for each index, set D
