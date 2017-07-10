@@ -116,7 +116,7 @@ function S = local_setdefaults(S)
         S.position(4) - (spacing(2) + default_size(2)) * x(2)];
     % get fields without position and set to 0s
     [~, sub_pos] = sawa_getfield(S, 'expr', '^\.[^\.]+', 'fun',...
-        @(x)~isfield(x,'position')||isempty(x.position));
+        @(x)isstruct(x)&&~isfield(x,'position')||isempty(x.position));
     S = sawa_setfield(S, 'S', sub_pos, 'append', '.position', 'C', zeros(1,4)); 
     % init default order
     default_order = cat(2,sort(repmat([1:c]',r,1)),repmat([1:r]',c,1));
@@ -144,13 +144,14 @@ function S = local_setdefaults(S)
     [~, sub_size] = sawa_getfield(S, 'expr', '.*\.position$', 'fun', @(x)all(x(3:4)==0));
     S = sawa_setfield(S, 'S', sub_size, 'append', '(3:4)', 'C', default_size);
     % set tags as style_number
-    [~, sub_tag] = sawa_getfield(S, 'expr', '^\.[^\.]+', 'fun', @(x)~isfield(x,'tag')||isempty(x.tag));
+    [~, sub_tag] = sawa_getfield(S, 'expr', '^\.[^\.]+', 'fun',... 
+        @(x)isstruct(x)&&~isfield(x,'tag')||isempty(x.tag));
     S = sawa_setfield(S, 'S', sub_tag, 'append', '.tag', 'C',...
         cellfun(@(x){regexprep(sub2str(x),'[\.\(\)\{\}]','')}, sub_tag));
     % set get(x) as callback
     callback = @(x,y)guidata(gcf, setfield(guidata(gcf), regexprep(get(x,'tag'),'\W',''), get(x)));
     [~, sub_cb] = sawa_getfield(S, 'expr', '^\.[^\.]+', 'fun',...
-        @(x)~isfield(x, 'callback')||isempty(x.callback));
+        @(x)isstruct(x)&&~isfield(x, 'callback')||isempty(x.callback));
     S = sawa_setfield(S, 'S', sub_cb, 'append', '.callback', 'C', callback);
 end
 

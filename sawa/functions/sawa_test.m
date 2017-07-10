@@ -26,7 +26,7 @@ if ~exist('verbose','var')||isempty(verbose), verbose = true; end;
 
 % set random seed generator
 S = rng;
-rng(1234);
+rng('default');
 
 % remove mfilename from functions
 nfunc = {'sawa_xlsread', 'subjectarray', mfilename};
