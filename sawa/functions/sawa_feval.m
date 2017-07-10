@@ -62,7 +62,7 @@ function varargout = sawa_feval(i,varargin)
 % matlabbatch{1}.spm.util.disp.data = '<UNDEFINED>';
 % output = sawa_feval([], {@fullfile, matlabbatch}, ...
 %          {fileparts(which('spm')), 'canonical', 'avg152T1.nii'},...
-%          {'\.data$', @()'output{1}(1)'})
+%          {'.*\.data$', @()'output{1}(1)'})
 % 
 % ------------------------------------------------------------------------
 % Running job #1
@@ -232,7 +232,7 @@ for f = 1:numel(iter),
     n = find(find(iter==i)==f);
     % set program
     program = local_setprog(funcs{i}); 
-    try % run program with funcs and options
+%     try % run program with funcs and options
         % set options (for varargout)
         tmpopts = local_eval(varargout, options{i}, n); 
         % feval
@@ -243,22 +243,22 @@ for f = 1:numel(iter),
             disp(cell2strtable(any2str(output{1:o}),' ')); 
             fprintf('\n'); 
         end;
-    catch err % display error
-        % if not string, set to string
-        if isa(funcs{i},'function_handle'),
-            func = func2str(funcs{i});
-        elseif ~ischar(funcs{i}),
-            func = 'matlabbatch';
-        else % set to funcs{i}
-            func = funcs{i};
-        end
-        % display error
-        if isempty(verbose) || verbose, 
-            fprintf('%s %s %s\n',func,'error:',err.message); 
-        end;
-        % set output to empty
-        output(1:o) = {[]};
-    end
+%     catch err % display error
+%         % if not string, set to string
+%         if isa(funcs{i},'function_handle'),
+%             func = func2str(funcs{i});
+%         elseif ~ischar(funcs{i}),
+%             func = 'matlabbatch';
+%         else % set to funcs{i}
+%             func = funcs{i};
+%         end
+%         % display error
+%         if isempty(verbose) || verbose, 
+%             fprintf('%s %s %s\n',func,'error:',err.message); 
+%         end;
+%         % set output to empty
+%         output(1:o) = {[]};
+%     end
     % concatenate results to varargout
     varargout = cellfun(@(x,y){cat(1,x,{y})}, varargout, output); 
     % wait_bar
@@ -460,8 +460,10 @@ function varargout = local_batch(matlabbatch, options, verbose)
     for x = 1:numel(vals),
         % if empty, skip
         if isempty(vals{x}) || isempty(sout{x}), continue; end;
-        % set output from vals
-        output{x} = subsref(vals{x},sout{x}.src_output); 
+        for y = 1:numel(sout{x}), 
+            % set output from vals
+            output{x}{y} = subsref(vals{x},sout{x}(y).src_output); 
+        end
     end
 
     % set to varargout

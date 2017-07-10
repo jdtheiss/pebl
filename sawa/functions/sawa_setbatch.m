@@ -1,7 +1,8 @@
 function [matlabbatch, options] = sawa_setbatch(matlabbatch, options, m)
-
+%
 
 % init vars
+disp('Please wait...');
 if ~exist('cfg_ui','file'), error('Must have cfg_ui.m in matlab path.'); end;
 if ~exist('matlabbatch','var'), matlabbatch = {}; end;
 if ~iscell(matlabbatch), matlabbatch = {matlabbatch}; end;
@@ -32,7 +33,7 @@ set(findobj(h,'tag','module'), 'ToolTipString',...
 if isfield(handles,'kp'), guidata(h,rmfield(handles,'kp')); end;
 
 % load batch 
-if ~isempty(matlabbatch),
+if ~isempty(matlabbatch)&&~all(cellfun('isempty', matlabbatch)),
     cfg_util('initjob',matlabbatch); 
     set(handles.modlist, 'value', m);
     cfg_ui('local_showjob',h);
