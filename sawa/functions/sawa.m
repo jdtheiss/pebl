@@ -82,6 +82,8 @@ function params = setup(params)
     if ~any(strfind(path, P)),
         path(path, P);
     end
+    % msgbox regarding tests
+    uiwait(msgbox('Running tests. Please ignore windows that display.', 'Running Tests'));
     % run tests
     sawa_test;
 end
