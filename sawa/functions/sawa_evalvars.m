@@ -151,7 +151,8 @@ if ischar(val),
         elseif any(strfind(val,'*'))||any(strfind(val,',')) % spm_select
             % get frames
             frames = regexprep(e,'\.\w+,?',''); e = regexprep(e,',.*$','');
-
+            % deal with frames 1:inf as inf
+            if any(strfind(frames, 'inf')), frames = 'inf'; end;
             if isempty(frames) % if no frames, get single files
                 val = spm_select('FPList',p,['^' regexptranslate('wildcard',[f,e])]);
             else % if frames, get frames
