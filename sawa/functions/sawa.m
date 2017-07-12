@@ -273,25 +273,43 @@ function params = listbox_callback(params, fig, x)
 end
 
 % set iterations
-function params = set_iter(params, iter)
-% params = set_iter(params, iter)
-% Set the number of iterations for @sawa_feval via evaluating @inputdlg.
-% If no iter, @inputdlg will be used.
+function params = set_iter(params, iter_args)
+% params = set_iter(params, iter_args)
+% Set the number of iterations for @sawa_feval
+% If no iter_args, 
 
     % load iter if not input
     if nargin == 1,
-        struct2var(params, 'iter');
-        % set to 1
-        if ~exist('iter','var'), 
-            tmpiter = {'1'}; 
-        else % set to iter
-            tmpiter = any2str(iter);
+        % load iter_args
+        struct2var(params, 'iter_args');
+        if ~exist('iter_args','var'), iter_args = {}; end;
+        % set default fields, values
+        fields = {'loop', 'seq', 'iter'};
+        values = {1, [], 0};
+        % set values if in iter_args
+        for x = 1:numel(fields),
+            f = find(strcmp(iter_args, fields{x}), 1);
+            if f < numel(iter_args),
+                values{x} = iter_args{f+1};
+            end
         end
-        iter = eval(['[',cell2mat(inputdlg('Set number of iterations:',...
-            'Iterations',1,tmpiter)),']']);
+        % choose fields
+        chc = listdlg('PromptString','Choose @sawa_feval field(s) to set',...
+                      'ListString',fields);
+        % set fields
+        for x = chc,
+            % find place in iter_args
+            f = find(strcmp(iter_args, fields{x}), 1);
+            if isempty(f), f = numel(iter_args)+1; end;
+            % set field
+            iter_args{f} = fields{x};
+            % set value
+            iter_args{f+1} = eval(cell2mat(inputdlg(['Input value for ' fields{x}],...
+                             fields{x}, 1, any2str(values{x}))));
+        end
     end
     % set iter to params
-    params = struct2var(params,'iter');
+    params = struct2var(params, 'iter_args');
 end
 
 % set environments
@@ -340,9 +358,10 @@ function params = init_env(params, env_func, P)
 end
 
 % add function
-function params = add_function(params, idx)
-% params = add_function(params, idx)
+function params = add_function(params, idx, func)
+% params = add_function(params, idx, func)
 % Add a function to use at the index position idx.
+% func - function to add (e.g., @function, command, or ''matlabbatch'')
 % Function will be entered using @inputdlg. If matlabbatch is entered,
 % @sawa_setbatch will be called.
 % If no idx, idx = numel(funcs) + 1.
@@ -360,19 +379,21 @@ function params = add_function(params, idx)
     % for each idx, set function
     for x = idx,
         % input function
-        str_func = cell2mat(inputdlg('Enter @function, command, or ''matlabbatch'':'));
-        if isempty(str_func), return; end;
+        if nargin < 3,
+            func = cell2mat(inputdlg('Enter @function, command, or ''matlabbatch'':'));
+        end
+        if isempty(func), return; end;
         % init funcs/options
         if idx > numel(funcs), funcs{idx} = []; end;
-        if idx > numel(options), options{idx} = []; end;
+        if idx > numel(options), options{idx} = {}; end;
         % switch type
-        if strncmp(str_func,'@',1), % matlab function
-            funcs{idx} = eval(str_func);
-        elseif strcmp(str_func,'matlabbatch'), % matlabbatch
+        if strncmp(func,'@',1), % matlab function
+            funcs{idx} = eval(func);
+        elseif strcmp(func,'matlabbatch'), % matlabbatch
             % load matlabbatch
             [funcs{idx}, options{idx}] = sawa_setbatch(funcs{idx}, options{idx});
         else % command
-            funcs{idx} = str_func;
+            funcs{idx} = func;
         end
     end
     % load funcs and options to params
@@ -382,8 +403,8 @@ function params = add_function(params, idx)
 end
 
 % set options
-function params = set_options(params, idx)
-% params = set_options(params, idx)
+function params = set_options(params, idx, option)
+% params = set_options(params, idx, option)
 % Set the options for function at index idx.
 % Options will be set using @sawa_createvars.
 
@@ -399,36 +420,38 @@ function params = set_options(params, idx)
     strfuncs = strcat('@', strfuncs);
     % for each idx, set options
     for x = idx,
+        % if option input, set options{x}
+        if nargin==3, options{x} = option; continue; end;
         done = false;
         while ~done,
             % get current options
-            opts = local_getoptions(funcs{x},options{x},'current');
+            option = local_getoptions(funcs{x},options{x},'current');
             % choose args to edit
             chc = listdlg('PromptString','Choose options to edit:',...
-                'ListString',[opts(:);'add';'remove']);
+                'ListString',[option(:);'add';'remove']);
             if isempty(chc), % cancel
                 return; 
-            elseif any(chc==numel(opts)+1), % add
-                opts = local_getoptions(funcs{x},options{x},'add');
-                chc = listdlg('PromptString','Choose options to add:','ListString',opts);
+            elseif any(chc==numel(option)+1), % add
+                option = local_getoptions(funcs{x},options{x},'add');
+                chc = listdlg('PromptString','Choose options to add:','ListString',option);
                 prechc = chc;
                 if isa(funcs{x},'function_handle'), % matlab function
                     chc = numel(options{x})+chc;
                 else % cmd or matlabbatch
                     chc = numel(options{x})+(1:numel(chc));
                 end
-                opts(chc) = opts(prechc);
-            elseif any(chc==numel(opts)+2), % remove
-                chc = listdlg('PromptString','Choose options to remove:','ListString',opts);
+                option(chc) = option(prechc);
+            elseif any(chc==numel(option)+2), % remove
+                chc = listdlg('PromptString','Choose options to remove:','ListString',option);
                 options{x}(chc) = [];
                 chc = []; % skip adding options
             end
             % for each choice, create vars
             for y = chc,
                 if y > numel(options{x}), 
-                    options{x}{y} = opts{y};
+                    options{x}{y} = option{y};
                 end
-                options{x}{y} = sawa_createvars(opts{y},'',subjs,sa,options{x}{y},strfuncs{1:x-1}); 
+                options{x}{y} = sawa_createvars(option{y},'',subjs,sa,options{x}{y},strfuncs{1:x-1}); 
             end
             % if one option and iscell, set to inner cell
             if numel(options{x})==1 && iscell(options{x}{1}), 
@@ -568,9 +591,9 @@ function params = run_params(params)
 % @print_options.
 
     % load iter, funcs, options, nout
-    struct2var(params,{'iter','funcs','options','nout','wait_bar','sa'});
+    struct2var(params,{'iter_args','funcs','options','nout','wait_bar','sa'});
     % init iter, funcs, options if not exist
-    if ~exist('iter','var'), iter = []; end;
+    if ~exist('iter_args','var'), iter_args = {}; end;
     if ~exist('funcs','var'), funcs = {}; end;
     if ~exist('options','var'), options = {}; end;
     if ~exist('nout','var'), nout = 1; end;
@@ -584,7 +607,8 @@ function params = run_params(params)
     struct2var(params,'verbose_arg'); 
     if isempty(funcs), return; end;
     % run sawa_feval
-    [outputs{1:nout}] = sawa_feval(iter,funcs,options{:},'verbose',verbose_arg,'waitbar',wait_bar);
+    [outputs{1:nout}] = sawa_feval(iter_args{:},'verbose',verbose_arg,...
+                        'wait_bar',wait_bar,funcs,options{:});
     % set outputs to params
     params = struct2var(params,'outputs');
     % finish printing outputs
