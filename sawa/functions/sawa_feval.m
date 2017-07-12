@@ -20,11 +20,13 @@ function varargout = sawa_feval(varargin)
 %   alternatively, each function's stop function can be provided in a cell
 %   array (e.g., {@()'output{1}{end}==0', @()'output{2}{end}==1'}).
 %   [default is [], which is no while loop]
-% 'verbose' - optional input pair with true or false. true displays all 
-%   inputs/outputs; false displays nothing in the command prompt; 
+% 'verbose' - optional boolean. true displays all inputs/outputs; false 
+%   displays nothing in the command prompt; 
 %   [default is [], displays normal command behavior]
-% 'wait_bar' - optional input pair with true or false. true displays a
-%   waitbar; false does not
+% 'throw_error' - optional boolean. true throws error when one occurs; 
+%   false displays error message without throwing error
+%   [default is false]
+% 'wait_bar' - optional boolean. true displays a waitbar; false does not
 %   [default is false] 
 % funcs - cellstr, function(s) to run  
 %   [no default]
@@ -149,8 +151,8 @@ varargout = cell(1,o);
 if nargin==0, return; end; 
 
 % init varargin parameters
-params = {'loop', 'seq', 'iter', 'stop_fcn', 'verbose', 'wait_bar'};
-values = {1, [], 0, [], [], false};
+params = {'loop', 'seq', 'iter', 'stop_fcn', 'verbose', 'throw_error', 'wait_bar'};
+values = {1, [], 0, [], [], false, false};
 x = 1;
 while x < numel(varargin),
     if ischar(varargin{x}) && any(strcmp(params, varargin{x})),
@@ -165,6 +167,8 @@ while x < numel(varargin),
                 stop_fcn = varargin{x+1};
             case 'verbose'
                 verbose = varargin{x+1};
+            case 'throw_error'
+                throw_error = varargin{x+1};
             case 'wait_bar'
                 wait_bar = varargin{x+1};
             otherwise % advance
@@ -238,6 +242,10 @@ for f = seq,
                     fprintf('\n'); 
                 end
             catch err % display error
+                % if throw_error is true, rethrow
+                if throw_error,
+                    rethrow(err);
+                end
                 % if not string, set to string
                 if isa(funcs{f},'function_handle'),
                     func = func2str(funcs{f});
