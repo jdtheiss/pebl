@@ -94,7 +94,7 @@ idx = idx2options(h, matlabbatch, idx, options, 'idx');
 m = get(handles.modlist, 'value');
 i = get(handles.module, 'value');
 str = get(handles.module, 'string');
-str_ids = get_ids_tags(h, m);
+str_ids = get_ids_fields(h, m);
 % init params.m as 0 to force update on first load
 params = struct('m', 0, 'i', i, 'str', {str}, 'str_ids', {str_ids});
 set(h, 'userdata', params);
@@ -152,10 +152,10 @@ if isfield(handles, 'kp'),
     end
 % if new module, update str_ids
 elseif params.m ~= m,
-    params.str_ids = get_ids_tags(h, m); params.str = str;
+    params.str_ids = get_ids_fields(h, m); params.str = str;
 % if updated module, update str_ids and indices
 elseif numel(params.str) ~= numel(str) || ~all(strcmp(params.str, str)),
-    str_ids = get_ids_tags(h, m);
+    str_ids = get_ids_fields(h, m);
     idx{m} = cell2mat(cellfun(@(x){find(strcmp(str_ids,x))}, params.str_ids(idx{m})));
     params.str_ids = str_ids; params.str = str;
 else % otherwise do not update string
@@ -170,20 +170,21 @@ idx{m} = unique(idx{m});
 update_str(h, idx{m});
 end
 
-function [str_ids, tags] = get_ids_tags(h, m)
+function [str_ids, output] = get_ids_fields(h, m, fields)
 
+% if fields not cell, set cell
+if ~exist('fields', 'var'), fields = ''; end;
+if ~iscell(fields), fields = {fields}; end;
 % get modlist userdata
 handles = guidata(h);
 userdata = get(handles.modlist, 'userdata');
 % init str_ids and tags
-str_ids = {}; tags = {};
+str_ids = {}; output = {};
 if isempty(userdata.cmod), return; end;
 % get ids from module
-[ids, ~, vals] = cfg_util('listmod', userdata.cjob, userdata.id{m}, [],...
+[ids, ~, output] = cfg_util('listmod', userdata.cjob, userdata.id{m}, [],...
     cfg_findspec({{'hidden',false}}),...
-    cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'tag'});
-% set tags
-tags = vals{1};
+    cfg_tropts({{'hidden',true}},1,inf,1,inf,false), fields);
 % set str_ids
 str_ids = cellfun(@(x){sub2str(x)}, ids);
 end
@@ -211,8 +212,12 @@ output = {};
 idx(end+1:numel(matlabbatch)) = {[]};
 
 for m = 1:numel(matlabbatch),
-    % get tags for module
-    [~, tags] = get_ids_tags(h, m);
+    % get tags, class, and num for module
+    tags = {}; classes = {}; nums = {};
+    [~, contents] = get_ids_fields(h, m, {'tag','class','num'});
+    if ~isempty(contents),
+        [tags, classes, nums] = deal(contents{:});
+    end
     % if output to idx
     if strcmp(output_type, 'idx'),
         output{m} = [];
@@ -236,9 +241,15 @@ for m = 1:numel(matlabbatch),
         for x = idx{m}, 
             [~, S] = sawa_getfield(matlabbatch{m}, 'expr', ['.*\.', tags{x}, '(\{\d+\})$']);
             if isempty(S),
-                [~, S] = sawa_getfield(matlabbatch{m}, 'expr', ['.*\.', tags{x}, '(\{\d+\})?']);
+                [~, S] = sawa_getfield(matlabbatch{m}, 'expr', ['.*\.', tags{x}]);
             end
-            output{end+1} = [sub2str(['{',num2str(m),'}']), S{find(strcmp(tags, tags{x}))==x}];
+            % set substruct to correct index
+            S = S{find(strcmp(tags, tags{x}))==x};
+            % if cfg_files class with [1,1] num, append {1}
+            if strcmp(classes{x}, 'cfg_files') && all(nums{x}==1),
+                S = [S, sub2str('{1}')];
+            end
+            output{end+1} = [sub2str(['{',num2str(m),'}']), S];
         end
     end
 end

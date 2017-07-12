@@ -99,21 +99,20 @@ function varargout = sawa_feval(varargin)
 % 
 % Example 4: use @() to evaluate inputs
 % output = sawa_feval('loop', 2, 'iter', {1:2,0}, {'echo',@minus},...
-%          {'-n', @()'randi(10)';'2'}, {@()'str2double(output{1}{end})', 2})
+%          {'-n', {@()'randi(10)';'2'}}, {@()'str2double(output{1}{end})', 2})
 %
-% 7
-% 
+% 10
 % 2
 % 
 % output = 
 % 
-%     '7'
-%     [  5]
+%     '10'
+%     [ 8]
 %     '2'
-%     [  0]
+%     [ 0]
 % 
-% Example 5: run while loop until last two number are same
-% output = sawa_feval('iter', 1:2, 'stop_fcn', @()'output{1}{end}==output{1}{end-1}',
+% Example 5: run while loop until last two numbers are same
+% output = sawa_feval('iter',1:2,'stop_fcn',@()'output{1}{end}==output{1}{end-1}',...
 %          @randi, {10;10})
 % 
 % output = 

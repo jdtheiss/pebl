@@ -142,7 +142,7 @@ case 'Structure' % struct
     end
 case 'Choose File' % choose file
     if exist('spm_select','file'),
-        vars = cellstr(spm_select(Inf,'any',['Select file for ' varnam],vars));
+        vars = cellstr(spm_select(Inf,'any',['Select file for ' varnam],vars)); 
     else % no spm_select
         try vars = cellstr(uigetfile('*.*',['Select file for ' varnam],'MultiSelect','on')); end;
     end
