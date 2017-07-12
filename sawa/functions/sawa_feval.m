@@ -1,38 +1,46 @@
-function varargout = sawa_feval(i,varargin)
-% varargout = sawa_feval(i, funcs, options, ['verbose',true/false,'waitbar',true/false])
-% Run wrapper of multiple functions/system commands/matlabbatch.
+function varargout = sawa_feval(varargin)
+% outputs = sawa_feval('Param1', Value1, 'Param2', Value2, funcs, options1, options2, ...)
+% Run wrapper of multiple scripts/functions/system commands/matlabbatch.
 %
 % Inputs:
-% i - numeric array or function, iterations of for loop or stop function
-% of while loop:
-%       if i is empty, all functions will be run in order until there are no
-%       iterations left (e.g., [] runs func{1} followed by func{2})
-%       if i is a single integer, all functions will be run that many times
-%       (e.g., 2, runs two loops of func{1} followed by func{2})
-%       if i is an array with size equal to number of functions, each
-%       function will be run for the number of times at its index in the
-%       array (e.g, [2, 1] runs func{1} 2 times followed by func{2} once)
-%       if i is an array unequal to number of functions, each function will
-%       be run in the order of i (e.g., [2, 1, 2] runs func{2}, func{1},
-%       then func{2})
-%       if i is a function, i will be set to [] and the functions will be
-%       looped until the evaluation of the function is true
-%
-% funcs - cellstr, function(s) to run  
-% options - cell array, inputs for functions as variable inputs with rows per function
+% 'loop' - number of times to loop through functions (e.g., 3 to run all
+%   functions in sequence 3 times). can be combined with 'iter' to use
+%   different parameters on each loop (e.g., 'loop', 3, 'iter', 1:3).
+%   [default is 1]
+% 'seq' - sequence of functions to run (e.g., [1,2,2,3] to run the first
+%   function followed by the second function twice then the third function).
+%   [default is 1:numel(funcs)]
+% 'iter' - sequence of iterations to run (e.g., [1:2] to run the first two
+%   options for each function). alternatively, each function's sequence of
+%   iterations can be provied as a cell of sequences coresponding to the 
+%   number of functions (e.g., {1:2,1,1:3}).
+%   [default is 0, which assumes there is no sequence to iterate]
+% 'stop_fcn' - stop function to use as part of a "while loop" (e.g.,
+%   @()'output{1}{end}==0' to run until the first output is 0).
+%   alternatively, each function's stop function can be provided in a cell
+%   array (e.g., {@()'output{1}{end}==0', @()'output{2}{end}==1'}).
+%   [default is [], which is no while loop]
 % 'verbose' - optional input pair with true or false. true displays all 
-% inputs/outputs; false displays nothing in the command prompt; 
-% [] (default) displays normal command behavior
-% 'waitbar' - optional input pair with true or false. true displays a
-% waitbar; false does not (default)
+%   inputs/outputs; false displays nothing in the command prompt; 
+%   [default is [], displays normal command behavior]
+% 'wait_bar' - optional input pair with true or false. true displays a
+%   waitbar; false does not
+%   [default is false] 
+% funcs - cellstr, function(s) to run  
+%   [no default]
+% options - cell array, inputs for functions as variable inputs with rows 
+%   per function. the options for each function should be entered as a
+%   separate argument
+%   [default is {} per function, which is not input to the function/script]
 % 
 % Outputs:
 % output - variable number of outputs with columns per output and rows per 
-% function. outputs can be used as inputs as @()'output{col}{row}'.
+%   function. outputs can be used as inputs as @()'output{col}{row}'.
 %
 % Example 1: system echo 'this' and compare output with 'that' using
 % strcmp, then repeat with system echo 'that'
-% output = sawa_feval(2, {'echo',@strcmp}, {'-n',{'this'; 'that'}}, {@()'output{1}{end}', 'that'})
+% output = sawa_feval('loop', 2, 'iter', {1:2,0}, {'echo',@strcmp},...
+%                    {'-n',{'this'; 'that'}}, {@()'output{1}{end}', 'that'})
 % this
 % that
 % 
@@ -44,23 +52,31 @@ function varargout = sawa_feval(i,varargin)
 %     [   1]
 %     
 % Example 2: subtract 1 from each previous output
-% output = sawa_feval([1,2], {@randi, @minus}, 10, {@()'output{1}{end}', 1}, 'verbose', true)
-% @randi 10 []
-% 7
-% @minus 7 1
-% 6
-% @minus 6 1
-% 5
+% output = sawa_feval('seq', [1,2,2], 'verbose', true, {@randi, @minus}, 10, {@()'output{1}{end}', 1})
+% randi 10
+% 
+% Output:
+% 10
+% 
+% minus 10 1
+% 
+% Output:
+% 9
+% 
+% minus 9 1
+% 
+% Output:
+% 8
 % 
 % output = 
 % 
-%     [7]
-%     [6]
-%     [5]
+%     [10]
+%     [ 9]
+%     [ 8]
 %
 % Example 3: get fullfile path of template image, then display image using matlabbatch
 % matlabbatch{1}.spm.util.disp.data = '<UNDEFINED>';
-% output = sawa_feval([], {@fullfile, matlabbatch}, ...
+% output = sawa_feval({@fullfile, matlabbatch}, ...
 %          {fileparts(which('spm')), 'canonical', 'avg152T1.nii'},...
 %          {'.*\.data$', @()'output{1}(1)'})
 % 
@@ -75,75 +91,54 @@ function varargout = sawa_feval(i,varargin)
 % Done    'Display Image'
 % Done
 % 
-% 
 % output = 
 % 
 %     '/Applications/spm12/canonical/avg152T1.nii'
 %     []
 %
-% Example 4: out of order, create a random int, create eye, and find
-% [out1, out2] = sawa_feval([3,1,2,2],{@eye, @find, @randi},...
-%                @()'output{1}{end}',...
-%                {@()'output{1}{end}'; @()'output{1}{end} > 1'}, 10)
-%
-% out1{:} =        out2{:} =
-%
-%      2                []
-% 
-%      1     0          [] 
-%      0     1
-% 
-%      1                1
-%      2                2
-% 
-%      2                1
 % 
 % Example 4: use @() to evaluate inputs
-% sawa_feval(2,{'echo',@minus}, {@()'randi(10)';'2'}, {@()'str2double(output{1}{end})', 2}, 'verbose', true)
+% output = sawa_feval('loop', 2, 'iter', {1:2,0}, {'echo',@minus},...
+%          {'-n', @()'randi(10)';'2'}, {@()'str2double(output{1}{end})', 2})
 %
-% echo 3
-% 3
-% @minus 3 2
-% 1
-% echo 2
+% 7
+% 
 % 2
-% @minus 2 2
-% 0
 % 
-% ans = 
-% 
-%     '3'
-%     [1]
-%     '2'
-%     [0]
-% 
-% Example 5: run while loop until last two number are same
-% output = sawa_feval(@()'output{1}{end}==output{1}{end-1}', @randi, {10;10})
-%
 % output = 
 % 
-%     [ 9]
-%     [ 7]
-%     [ 6]
-%     [ 3]
-%     [ 3]
-%     [ 9]
-%     [ 3]
-%     [10]
-%     [ 9]
-%     [ 3]
+%     '7'
+%     [  5]
+%     '2'
+%     [  0]
+% 
+% Example 5: run while loop until last two number are same
+% output = sawa_feval('iter', 1:2, 'stop_fcn', @()'output{1}{end}==output{1}{end-1}',
+%          @randi, {10;10})
+% 
+% output = 
+% 
 %     [ 1]
+%     [ 8]
 %     [10]
-%     [ 9]
-%     [ 6]
 %     [ 4]
+%     [10]
+%     [ 4]
+%     [ 9]
 %     [ 5]
-%     [ 7]
-%     [ 7]
+%     [ 5]
+%     [ 3]
+%     [ 2]
+%     [ 4]
+%     [ 8]
+%     [ 8]
 %     
 % Note: in order to avoid overlap between system commands and matlab 
-% built-in functions, matlab functions should be input as function_handles
-% (i.e. @func instead of 'func').
+% built-in functions, matlab functions/scripts should be input as 
+% function_handles (i.e. @func instead of 'func'). also, in order to avoid
+% function inputs being incorrectly assigned as parameters, put any 
+% inputs sharing parameter names in cell brackets 
+% (e.g., sawa_feval('verbose', true, @disp, {'verbose'})).
 %
 % Created by Justin Theiss
 
@@ -154,131 +149,139 @@ o = max([1,nargout]);
 varargout = cell(1,o);
 if nargin==0, return; end; 
 
-% init verbose
-verbose = []; wait_bar = false;
-for x = numel(varargin):-1:1,
-    if x < numel(varargin) && ischar(varargin{x}),
+% init varargin parameters
+params = {'loop', 'seq', 'iter', 'stop_fcn', 'verbose', 'wait_bar'};
+values = {1, [], 0, [], [], false};
+x = 1;
+while x < numel(varargin),
+    if ischar(varargin{x}) && any(strcmp(params, varargin{x})),
         switch varargin{x}
+            case 'loop'
+                loop = varargin{x+1};
+            case 'seq'
+                seq = varargin{x+1};
+            case 'iter'
+                iter = varargin{x+1};
+            case 'stop_fcn'
+                stop_fcn = varargin{x+1};
             case 'verbose'
                 verbose = varargin{x+1};
-                varargin(x:x+1) = [];
-            case 'waitbar'
+            case 'wait_bar'
                 wait_bar = varargin{x+1};
-                varargin(x:x+1) = [];
+            otherwise % advance
+                x = x + 1;
+                continue;
         end
+        % remove from params/values/varargin
+        values(strcmp(params, varargin{x})) = [];
+        params(strcmp(params, varargin{x})) = [];
+        varargin(x:x+1) = [];
+    else % advance
+        x = x + 1;
     end
 end
 
-% set functions
-funcs = varargin{1}; 
+% set defaults
+for x = 1:numel(params),
+    eval([params{x} '= values{x};']);
+end
+
+% get funcs
+funcs = varargin{1};
 if ~iscell(funcs), funcs = {funcs}; end;
 funcs = funcs(:);
 
 % set options and ensure cell
-if numel(varargin) == numel(funcs)+1,
+if numel(varargin) >= numel(funcs)+1,
     options = varargin(2:numel(funcs)+1);
 else % set options empty
-    options = {{}};
+    options = repmat({{}}, 1, numel(funcs));
 end
-for x = 1:numel(options), if ~iscell(options{x}), options{x} = options(x); end; end;
 
-% if i is a function, set as while loop
-if isa(i, 'function_handle'), 
-    stop_func = i; i = []; 
-else % default is numel(output) > 0
-    stop_func = @()'numel(output) > 0';
-end;
+% if seq is empty, set to 1:numel(funcs)
+if isempty(seq), seq = 1:numel(funcs); end;
 
-% set iter to 1:number of funcs replicated to i
-if numel(i)==1, 
-    iter = repmat(1:numel(funcs),1,i); 
-elseif numel(i) == numel(funcs), % set iter to iterations per function
-    iter = arrayfun(@(x,y){repmat(x,1,y)},1:numel(funcs),i);
-    iter = [iter{:}];
-elseif isempty(i), % set to 
-    % get rows per function
-    i = nan(size(options));
-    for x = 1:numel(options),
-        if size(options{x},2) > 1,
-            i(x) = max(cellfun(@(x)size(x,1), options{x}));
-        elseif iscell(options{x}),
-            i(x) = max(1, size(options{x},1));
+% if iter is not cell, repmat
+if ~iscell(iter), 
+    iter = repmat({iter}, 1, numel(funcs));
+end
+    
+% if stop_fcn is not cell, repmat
+if ~iscell(stop_fcn),
+    stop_fcn = repmat({stop_fcn}, 1, numel(funcs));
+end
+
+% for loop/sequence order
+for l = 1:loop,
+for f = seq,
+    % if while loop
+    done = false; 
+    while ~done, 
+        % wait_bar
+        if wait_bar,
+            h = settimeleft;
+        end
+        % for specified loops/iterations
+        for n = iter{f}, 
+            % if looping with iterations, skip unless n == l
+            if loop > 1 && n > 0 && n ~= l, continue; end;
+            % set program
+            program = local_setprog(funcs{f}); 
+            try % run program with funcs and options
+                % set options (for varargout)
+                tmpopts = local_eval(varargout, options{f}, n); 
+                % feval
+                [output{1:o}] = feval(program, funcs{f}, tmpopts, verbose); 
+                % display outputs
+                if verbose, 
+                    fprintf('\nOutput:\n');
+                    disp(cell2strtable(any2str(output{1:o}),' ')); 
+                    fprintf('\n'); 
+                end
+            catch err % display error
+                % if not string, set to string
+                if isa(funcs{f},'function_handle'),
+                    func = func2str(funcs{f});
+                elseif ~ischar(funcs{f}),
+                    func = 'matlabbatch';
+                else % set to funcs{f}
+                    func = funcs{f};
+                end
+                % display error
+                if isempty(verbose) || verbose, 
+                    fprintf('%s %s %s\n',func,'error:',err.message); 
+                end;
+                % set output to empty
+                output(1:o) = {[]};
+            end
+            % concatenate results to varargout
+            varargout = cellfun(@(x,y){cat(1,x,{y})}, varargout, output); 
+            % wait_bar
+            if wait_bar,
+                settimeleft(f, 1:numel(iter), h);
+            end
+        end
+        % check stop_func
+        if isempty(stop_fcn{f}),
+            done = true;
+        else
+            done = cell2mat(local_eval(varargout, stop_fcn{f}, 0));
         end
     end
-    % set iter using max number of rows
-    iter = repmat(1:numel(funcs),1,max(i));
-    % get indices of iter to keep
-    m = [];
-    for x = 1:numel(i),
-        m = cat(2, m, find(iter==x, i(x)));
-    end
-    % remove iterations beyond a function's number of rows
-    iter = iter(sort(m));
-elseif isnumeric(i) % set to i
-    iter = i;
 end
-
-% if while loop, set
-done = false; 
-while ~done, 
-% wait_bar
-if wait_bar,
-    h = settimeleft;
-end
-for f = 1:numel(iter),
-    % set i for functions iteration
-    i = iter(f);
-    % set n for options iteration
-    n = find(find(iter==i)==f);
-    % set program
-    program = local_setprog(funcs{i}); 
-%     try % run program with funcs and options
-        % set options (for varargout)
-        tmpopts = local_eval(varargout, options{i}, n); 
-        % feval
-        [output{1:o}] = feval(program, funcs{i}, tmpopts, verbose); 
-        % display outputs
-        if verbose, 
-            fprintf('\nOutput:\n');
-            disp(cell2strtable(any2str(output{1:o}),' ')); 
-            fprintf('\n'); 
-        end;
-%     catch err % display error
-%         % if not string, set to string
-%         if isa(funcs{i},'function_handle'),
-%             func = func2str(funcs{i});
-%         elseif ~ischar(funcs{i}),
-%             func = 'matlabbatch';
-%         else % set to funcs{i}
-%             func = funcs{i};
-%         end
-%         % display error
-%         if isempty(verbose) || verbose, 
-%             fprintf('%s %s %s\n',func,'error:',err.message); 
-%         end;
-%         % set output to empty
-%         output(1:o) = {[]};
-%     end
-    % concatenate results to varargout
-    varargout = cellfun(@(x,y){cat(1,x,{y})}, varargout, output); 
-    % wait_bar
-    if wait_bar,
-        settimeleft(f, 1:numel(iter), h);
-    end
-end
-% check stop_func
-done = cell2mat(local_eval(varargout, stop_func, 1));
 end
 end
 
 % evaluate @() inputs
 function options = local_eval(output, options, n)
     % get row from options
-    if size(options, 2) > 1, % for each column, set to row
+    if ~all(n==0) && any(cellfun('isclass', options, 'cell')) && size(options, 2) > 1,
+        % for each column, set to row
         for x = find(cellfun('isclass',options,'cell')),
             options{x} = options{x}{min(end,n)};
         end
-    elseif iscell(options) && ~isempty(options), % if cell, set to row
+    elseif ~all(n==0) && iscell(options) && ~isempty(options), 
+        % if cell, set to row
         options = options{min(end,n)};
     end
     if ~iscell(options), options = {options}; end;
@@ -331,7 +334,8 @@ function varargout = local_feval(func, options, verbose)
     if ~iscell(options), options = {options}; end;
     
     % get number of outputs
-    o = nargout(func); if o < 0, o = nargout; elseif o > 0, o = min(nargout, o); end;
+    try o = nargout(func); catch, o = 0; end;
+    if o < 0, o = nargout; elseif o > 0, o = min(nargout, o); end;
     
     % display function and options
     if verbose, disp(cell2strtable(any2str(func,options{:}),' ')); end;
@@ -357,7 +361,7 @@ function varargout = local_system(func, options, verbose)
     % ensure all options are strings
     if ~iscell(options), options = {options}; end;
     options = cellfun(@(x){num2str(x)}, options);
-    
+
     % concatenate func and options with spacing
     stropts = sprintf('%s ', func, options{:});
     
