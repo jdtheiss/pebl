@@ -1,5 +1,52 @@
 function [matlabbatch, options] = sawa_setbatch(matlabbatch, options, m)
+% [matlabbatch, options] = sawa_setbatch(matlabbatch, options, m)
+% Set batch parameters for sawa using cfg_ui
 %
+% Inputs:
+% matlabbatch (optional) - cell array of matlabbatch module components (can
+%   be saved from cfg_ui)
+% options (optional) - cell array of options corresponding to matlabbatch
+%   modules
+% m (optional) - number corresponding to the module index to load
+%
+% Outputs:
+% matlabbatch - cell array of matlabbatch module components
+% options - cell array of substructs of module components for each
+%   parameter chosen
+%
+% Example:
+% matlabbatch{1}.spm.util.disp.data = '<UNDEFINED>';
+% [matlabbatch, options] = sawa_setbatch(matlabbatch);
+% [replicate module]
+% [press right arrow on "Image to Display" for both modules]
+% [close gui]
+%
+% matlabbatch = 
+% 
+%     [1x1 struct]    [1x1 struct]
+% 
+% 
+% options = 
+% 
+%     [1x5 struct]    []    [1x5 struct]    []
+%
+% sub2str(options{1})
+% 
+% ans =
+% 
+% {1}.spm.util.disp.data
+%
+% sub2str(options{3})
+% 
+% ans =
+% 
+% {2}.spm.util.disp.data
+%
+% Note: to add a sawa parameter, press the right arrow while selecting the
+% item; to remove the item, press the left arrow while selecting the item.
+% once all modules/items have been added, close the gui to return outputs.
+%
+% Created by Justin Theiss
 
 % init vars
 disp('Please wait...');
@@ -132,9 +179,9 @@ userdata = get(handles.modlist, 'userdata');
 str_ids = {}; tags = {};
 if isempty(userdata.cmod), return; end;
 % get ids from module
-[ids, ~, vals] = cfg_util('listmod', userdata.cjob, m, [],...
-cfg_findspec({{'hidden',false}}),...
-cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'tag'});
+[ids, ~, vals] = cfg_util('listmod', userdata.cjob, userdata.id{m}, [],...
+    cfg_findspec({{'hidden',false}}),...
+    cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'tag'});
 % set tags
 tags = vals{1};
 % set str_ids
@@ -144,7 +191,7 @@ end
 function update_str(h, idx)
 
 % msg to display in string
-msg = '----sawa variable----';
+msg = '----sawa parameter----';
 handles = guidata(h);
 % reload gui
 cfg_ui('local_showmod', handles.modlist);
@@ -187,7 +234,10 @@ for m = 1:numel(matlabbatch),
     elseif strcmp(output_type, 'options') && ~isempty(idx{m}),
         % get substruct and representations
         for x = idx{m}, 
-            [~, S] = sawa_getfield(matlabbatch{m}, 'expr', ['.*\.', tags{x}, '(\{\d+\})?']);
+            [~, S] = sawa_getfield(matlabbatch{m}, 'expr', ['.*\.', tags{x}, '(\{\d+\})$']);
+            if isempty(S),
+                [~, S] = sawa_getfield(matlabbatch{m}, 'expr', ['.*\.', tags{x}, '(\{\d+\})?']);
+            end
             output{end+1} = [sub2str(['{',num2str(m),'}']), S{find(strcmp(tags, tags{x}))==x}];
         end
     end
