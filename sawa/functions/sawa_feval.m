@@ -282,12 +282,16 @@ end
 % evaluate @() inputs
 function options = local_eval(output, options, n)
     % get row from options
-    if ~all(n==0) && any(cellfun('isclass', options, 'cell')) && size(options, 2) > 1,
+    if ~iscell(options) || any(n==0),
+        options = {options};
+    elseif any(cellfun('isclass', options, 'cell')) && size(options, 2) > 1,
         % for each column, set to row
         for x = find(cellfun('isclass',options,'cell')),
-            options{x} = options{x}{min(end,n)};
+            if size(options{x}, 1) > 1,
+                options{x} = options{x}{min(end,n)};
+            end
         end
-    elseif ~all(n==0) && iscell(options) && ~isempty(options), 
+    elseif iscell(options) && ~isempty(options) && size(options, 1) > 1, 
         % if cell, set to row
         options = options{min(end,n)};
     end
@@ -306,12 +310,12 @@ function options = local_eval(output, options, n)
 
     % if no C, return
     if isempty(C), return; end; 
-
-    % remove '' from @()'output{#}'
-    C = regexprep(C, '^(@\(\))''(.*)''$', '$1$2');
     
     % set options
-    for x = 1:numel(C), options = subsasgn(options,S{x},feval(eval(C{x}))); end;
+    for x = 1:numel(C),
+        C{x} = subsref(options, S{x});
+        options = subsasgn(options,S{x},eval(feval(C{x}))); 
+    end;
 end
 
 % set program types
