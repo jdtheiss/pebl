@@ -121,8 +121,8 @@ function test_sawa
     outputs6 = sawa('local_getoptions',@strcmp,{'test'},'add');
     assert(all(strcmp(outputs3,outputs4)));
     assert(all(strcmp(outputs5,outputs6)));
-    outputs7 = struct('iter',2);
-    outputs8 = sawa('set_iter',[],2);
+    outputs7 = struct('iter_args', {{'loop', 2, 'seq', [], 'iter', 1:2}});
+    outputs8 = sawa('set_iter',[],{'loop', 2, 'seq', [], 'iter', 1:2});
     assert(sawa_eq(outputs7,outputs8));
     tmp = getenv('test');
     outputs9 = struct('env',{{{'setenv','test','test'}}});
@@ -131,7 +131,13 @@ function test_sawa
     assert(sawa_eq(outputs9,outputs10));
     outputs11 = {cmd_help('echo'),help('strcmp'),[]};
     outputs12 = sawa('get_docstr',{'echo',@strcmp,tmp});
-    %%%%%
+    params = sawa('add_function',[],1,@minus);
+    params = sawa('set_options',params,1,{10,5});
+    params.verbose_arg = false; params.wait_bar = false;
+    params = sawa('run_params', params);
+    outputs13 = minus(10, 5);
+    outputs14 = params.outputs{1}{1};
+    assert(outputs13==outputs14);
 end
 
 function test_sawa_cat
@@ -181,7 +187,7 @@ end
 
 function test_sawa_feval
     outputs1 = {1;2;};
-    outputs2 = sawa_feval(2,@str2double,{'1';'2'});
+    outputs2 = sawa_feval('iter', 1:2, @str2double, {'1';'2'});
     assert(all(cellfun(@(x,y)x==y,outputs1,outputs2)));
 end
 
@@ -205,7 +211,6 @@ function test_sawa_getfield
     assert(all(cellfun(@(x,y)x==y,C1,C2)));
     assert(sawa_eq(S1,S2));
     assert(all(strcmp(reps1,reps2)));
-    %%%%
 end
 
 function test_sawa_insert
