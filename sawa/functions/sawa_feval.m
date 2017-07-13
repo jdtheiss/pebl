@@ -282,18 +282,18 @@ end
 % evaluate @() inputs
 function options = local_eval(output, options, n)
     % get row from options
-    if ~iscell(options) || any(n==0),
-        options = {options};
-    elseif any(cellfun('isclass', options, 'cell')) && size(options, 2) > 1,
+    if ~any(n==0),
+        if any(cellfun('isclass', options, 'cell')) && size(options, 2) > 1,
         % for each column, set to row
         for x = find(cellfun('isclass',options,'cell')),
             if size(options{x}, 1) > 1,
                 options{x} = options{x}{min(end,n)};
             end
         end
-    elseif iscell(options) && ~isempty(options) && size(options, 1) > 1, 
-        % if cell, set to row
-        options = options{min(end,n)};
+        elseif iscell(options) && ~isempty(options) && size(options, 1) > 1, 
+            % if cell, set to row
+            options = options{min(end,n)};
+        end
     end
     if ~iscell(options), options = {options}; end;
     
