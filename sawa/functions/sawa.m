@@ -621,9 +621,13 @@ function params = run_params(params)
     params = print_options(params); 
     struct2var(params,'verbose_arg'); 
     if isempty(funcs), return; end;
-    % run sawa_feval
-    [outputs{1:nout}] = sawa_feval(iter_args{:},'verbose',verbose_arg,...
-                        'wait_bar',wait_bar,funcs,options{:});
+    try
+        % run sawa_feval
+        [outputs{1:nout}] = sawa_feval(iter_args{:},'verbose',verbose_arg,...
+                            'wait_bar',wait_bar,funcs,options{:});
+    catch err
+        disp(['Fatal Error:', err.message]);
+    end
     % set outputs to params
     params = struct2var(params,'outputs');
     % finish printing outputs
