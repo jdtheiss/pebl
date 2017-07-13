@@ -460,10 +460,6 @@ function params = set_options(params, idx, option)
                 end
                 options{x}{y} = sawa_createvars(option{y},'',subjs,sa,options{x}{y},strfuncs{1:x-1}); 
             end
-            % if one option and iscell, set to inner cell
-            if numel(options{x})==1 && iscell(options{x}{1}), 
-                options{x} = options{x}{1}; 
-            end
             % if gui, done
             if ~isempty(findobj('type','figure','name','sawa')),
                 done = true;
