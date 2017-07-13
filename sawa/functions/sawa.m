@@ -268,8 +268,8 @@ function params = listbox_callback(params, fig, x)
                 docstr = get_docstr(params.funcs, idx);
                 disp(docstr{idx});
             case 5 % insert
-                params.funcs = sawa_insert(params.funcs, idx, {[]});
-                params.options = sawa_insert(params.options, idx, {[]});
+                params.funcs = sawa_insert(2, params.funcs, idx, {[]});
+                params.options = sawa_insert(2, params.options, idx, {[]});
                 params = add_function(params, idx);
         end
     end
