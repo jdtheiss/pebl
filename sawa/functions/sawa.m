@@ -120,15 +120,22 @@ function params = load_editor(params)
         @(x,y)guidata(gcf,set_iter(guidata(gcf))),...
         @(x,y)guidata(gcf,add_function(guidata(gcf))),...
         @(x,y)guidata(gcf,set_options(guidata(gcf))));
-    s.popupmenu.string = {'load','save','run'};
-    s.popupmenu.callback = @(x,y)switchcase(get(x,'value'),...
+    s.popupmenu(1).string = {'verbose output','quiet output','save output'};
+    s.popupmenu(2).string = {'load','save','run'};
+    s.popupmenu(1).callback = @(x,y)switchcase(get(x,'value'),...
+        1, @()guidata(gcf,print_options(guidata(gcf),'print_type','on')),...
+        2, @()guidata(gcf,print_options(guidata(gcf),'print_type','off')),...
+        3, @()guidata(gcf,print_options(guidata(gcf),'print_type','diary')),...
+        'nargout_n', 0);
+    s.popupmenu(2).callback = @(x,y)switchcase(get(x,'value'),...
         1, @()guidata(gcf,load_params(guidata(gcf))),...
         2, @()guidata(gcf,save_params(guidata(gcf))),...
         3, @()guidata(gcf,run_params(guidata(gcf))), 'nargout_n', 0);
-    s.popupmenu.order = [1,7];
+    s.popupmenu(1).order = [1,7];
+    s.popupmenu(2).order = [2,7];
     btn_callback = @(x,y)guidata(gcf,listbox_callback(guidata(gcf),gcf,x));
-    s.listbox = struct('order',[2,7],'tag','function_list',...
-        'size',[165,185],'callback',btn_callback,...
+    s.listbox = struct('order',[2,6],'tag','function_list',...
+        'size',[150,150],'callback',btn_callback,...
         'buttondownfcn',btn_callback);
     % make funcs as str
     s.listbox.string = local_getfunctions(params.funcs); 
@@ -294,7 +301,7 @@ function params = set_iter(params, iter_args)
             end
         end
         % choose fields
-        chc = listdlg('PromptString','Choose @sawa_feval field(s) to set',...
+        chc = listdlg('PromptString',{'Choose @sawa_feval field(s) to set',''},...
                       'ListString',fields);
         % set fields
         for x = chc,
@@ -334,7 +341,7 @@ function params = init_env(params, env_func, P)
     if ~exist('env_func','var')||isempty(env_func), 
         % choose function to use
         liststr = {'addpath','setenv','rmpath','other'};
-        chc = listdlg('PromptString','Choose function to add/remove path:',...
+        chc = listdlg('PromptString',{'Choose function to add/remove path:',''},...
             'ListString',liststr,'SelectionMode','single');
         if isempty(chc), return; else env_func = liststr{chc}; end;
         % set other function
@@ -549,30 +556,42 @@ end
 
 % print outputs
 function params = print_options(params, varargin)
-% params = print_options(params)
+% params = print_options(params, 'option1', 'value1', ...)
 % Set verbose_arg or use diary to record subsequent command window text to
 % a filename. If print_type = 'diary' and no print_file, print_file will be
 % set to 'sawa_diary.txt'.
+%
+% options:
+% 'print_type' - 'diary' (save all outputs), 'off' (no outputs)
+% 'print_file' - if 'diary' print_type, set file to save output 
+% 'verbose_arg' - directly set verbose_arg to true (verbose) or false (off)
 
     % load print_type
     if isempty(varargin),
         struct2var(params,{'print_type','print_file'});
-        % init verbose_arg and print_type
-        verbose_arg = true;
+        % init verbose_arg
+        verbose_arg = [];
     else % set from varargin
         arrayfun(@(x)assignin('caller',varargin{x},varargin{x+1}),1:2:numel(varargin)-1);
     end
+    % init print_type
     if ~exist('print_type','var'), print_type = ''; end;
     % switch print_type
     switch print_type
         case 'diary' % use diary
-            if nargout > 0, % set diary on with filename
-                if ~exist('print_file','var'), print_file = 'sawa_diary.txt'; end;
-                disp(['Output will be saved in: ' print_file]);
+            if nargout > 0 || ~exist('print_file','var'), 
+                % set diary on with filename
+                if ~exist('print_file','var'), 
+                    print_file = sprintf('%s_%d_%d_output.txt', date,...
+                        subsref(clock, substruct('()',{4:5}))); 
+                end
                 diary(print_file);
             else % turn diary off
                 diary('off');
+                disp(['Outputs saved in: ' print_file]);
             end
+            verbose_arg = true;
+        case 'on' % set verbose to true
             verbose_arg = true;
         case 'off' % set verbose to false
             verbose_arg = false;
@@ -580,7 +599,7 @@ function params = print_options(params, varargin)
             struct2var(params,'verbose_arg');
     end 
     % set verbose_arg to params
-    params = struct2var(params,'verbose_arg');
+    params = struct2var(params,{'verbose_arg','print_type','print_file'});
 end
 
 % run functions
@@ -597,7 +616,7 @@ function params = run_params(params)
     if ~exist('funcs','var'), funcs = {}; end;
     if ~exist('options','var'), options = {}; end;
     if ~exist('nout','var'), nout = 1; end;
-    if ~exist('wait_bar','var'), wait_bar = true; end;
+    if ~exist('wait_bar','var'), wait_bar = false; end;
     % eval options
     cmd_idx = cellfun(@(x)ischar(x),funcs);
     options(cmd_idx) = sawa_evalvars(options(cmd_idx),'cmd');
