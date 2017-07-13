@@ -36,11 +36,7 @@ function valf = sawa_evalvars(val,opt)
 % 
 % Note: In order to create a new directory, the path should have a backslash
 % at the end (e.g., '/User/Test\' or 'C:\Test\').
-% 
-% Note2: If the 'cmd' option is used, file paths should have "" around them. Furthermore,
-% if the 'cmd' options is used and a wildcard is used for files multiple files, 
-% the inital wildcard search will be retained with "" around it i.e. "/Volumes/Folder/*.img". 
-%
+%  
 % requires: sawa_getfield 
 %
 % Created by Justin Theiss
@@ -143,12 +139,12 @@ if ischar(val),
     % if no path, skip
     if ~isempty(p),   
         % if no ext and doesn't contain wildcard, mkdir
-        if isempty(e) && ~any(strfind(val,'*')) && ~any(strfind(val,',')),
+        if isempty(e) && ~any(strfind(val,',')),
             if strcmp(val(end), '\'), 
                 val = val(1:end-1); % remove backslash
                 if ~isdir(val), mkdir(val); end; % make new directory
             end
-        elseif any(strfind(val,'*'))||any(strfind(val,',')) % spm_select
+        elseif any(strfind(val,',')) % spm_select
             % get frames
             frames = regexprep(e,'\.\w+,?',''); e = regexprep(e,',.*$','');
             % deal with frames 1:inf as inf
