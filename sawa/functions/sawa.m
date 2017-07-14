@@ -432,6 +432,7 @@ function params = set_options(params, idx, option)
         done = false;
         while ~done,
             % get current options
+            if ~iscell(options{x}), options{x} = options(x); end;
             option = local_getoptions(funcs{x},options{x},'current');
             % choose args to edit
             chc = listdlg('PromptString','Choose options to edit:',...
