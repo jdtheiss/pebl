@@ -191,7 +191,7 @@ case 'Subject Array' % subject array
         end
     end
 case funcs % functions 
-    vars = str2func(['@()''', cell2mat(inputdlg('Enter output:','',1,{'output{1}{n}'})), '''']);
+    vars = str2func(['@()''', cell2mat(inputdlg('Enter output:','',1,{'output{1}{end}'})), '''']);
 end
 if iscell(vars)&&size(vars,2) > size(vars,1), vars = vars'; end; % if horizontal
 % vertcat
