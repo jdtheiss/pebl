@@ -312,7 +312,7 @@ function params = set_iter(params, iter_args)
             iter_args{f} = fields{x};
             % set value
             iter_args{f+1} = eval(cell2mat(inputdlg(['Input value for ' fields{x}],...
-                             fields{x}, 1, any2str(values{x}))));
+                             fields{x}, 1, {genstr(values{x})})));
         end
     end
     % set iter to params
@@ -583,7 +583,7 @@ function params = print_options(params, varargin)
             if nargout > 0 || ~exist('print_file','var'), 
                 % set diary on with filename
                 if ~exist('print_file','var'), 
-                    print_file = sprintf('%s_%d_%d_output.txt', date,...
+                    print_file = sprintf('%s_%.2d_%.2d_output.txt', date,...
                         subsref(clock, substruct('()',{4:5}))); 
                 end
                 diary(print_file);
