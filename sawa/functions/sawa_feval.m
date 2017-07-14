@@ -147,7 +147,7 @@ function varargout = sawa_feval(varargin)
 o = max([1,nargout]);
 
 % init varargout
-varargout = cell(1,o);
+varargout = cell(1, o);
 if nargin==0, return; end; 
 
 % init varargin parameters
@@ -217,6 +217,7 @@ end
 % for loop/sequence order
 for l = 1:loop,
 for f = seq,
+    if f > numel(iter), iter{f} = 0; end;
     % if while loop
     done = false; 
     while ~done, 
@@ -226,19 +227,20 @@ for f = seq,
         end
         % for specified loops/iterations
         for n = iter{f}, 
-            % if looping with iterations, skip unless n == l
+            % if looping with iterations, skip unless n == l 
             if loop > 1 && n > 0 && n ~= l, continue; end;
             % set program
             program = local_setprog(funcs{f}); 
             try % run program with funcs and options
                 % set options (for varargout)
-                tmpopts = local_eval(varargout, options{f}, n); 
+                evaled_opts = local_eval(varargout, options{f}, n); 
                 % feval
-                [output{1:o}] = feval(program, funcs{f}, tmpopts, verbose); 
+                try o0 = abs(nargout(funcs{f})); o0 = max(o, o0); catch, o0 = o; end;
+                [output{1:o0}] = feval(program, funcs{f}, evaled_opts, verbose); 
                 % display outputs
                 if verbose, 
                     fprintf('\nOutput:\n');
-                    disp(cell2strtable(any2str(output{1:o}),' ')); 
+                    disp(cell2strtable(any2str(output{1:o0}),' ')); 
                     fprintf('\n'); 
                 end
             catch err % display error
@@ -259,9 +261,10 @@ for f = seq,
                     fprintf('%s %s %s\n',func,'error:',err.message); 
                 end;
                 % set output to empty
-                output(1:o) = {[]};
+                output(1:o0) = {[]};
             end
             % concatenate results to varargout
+            if o0 > size(varargout, 1), varargout(end+1:o0) = {[]}; end;
             varargout = cellfun(@(x,y){cat(1,x,{y})}, varargout, output); 
             % wait_bar
             if wait_bar,
@@ -282,7 +285,7 @@ end
 % evaluate @() inputs
 function options = local_eval(output, options, n)
     % get row from options
-    if ~any(n==0),
+    if ~any(n==0) && iscell(options),
         if any(cellfun('isclass', options, 'cell')) && size(options, 2) > 1,
         % for each column, set to row
         for x = find(cellfun('isclass',options,'cell')),
@@ -290,7 +293,7 @@ function options = local_eval(output, options, n)
                 options{x} = options{x}{min(end,n)};
             end
         end
-        elseif iscell(options) && ~isempty(options) && size(options, 1) > 1, 
+        elseif ~isempty(options) && size(options, 1) > 1, 
             % if cell, set to row
             options = options{min(end,n)};
         end
