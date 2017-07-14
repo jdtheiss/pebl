@@ -1,5 +1,5 @@
-function varargout = sawa_feval(varargin)
-% outputs = sawa_feval('Param1', Value1, 'Param2', Value2, funcs, options1, options2, ...)
+function output = sawa_feval(varargin)
+% output = sawa_feval('Param1', Value1, 'Param2', Value2, funcs, options1, options2, ...)
 % Run wrapper of multiple scripts/functions/system commands/matlabbatch.
 %
 % Inputs:
@@ -20,6 +20,8 @@ function varargout = sawa_feval(varargin)
 %   alternatively, each function's stop function can be provided in a cell
 %   array (e.g., {@()'output{1}{end}==0', @()'output{2}{end}==1'}).
 %   [default is [], which is no while loop]
+% 'n_out' - number of outputs expected (max) from functions
+%   [default is 1]
 % 'verbose' - optional boolean. true displays all inputs/outputs; false 
 %   displays nothing in the command prompt; 
 %   [default is [], displays normal command behavior]
@@ -36,8 +38,9 @@ function varargout = sawa_feval(varargin)
 %   [default is {} per function, which is not input to the function/script]
 % 
 % Outputs:
-% output - variable number of outputs with columns per output and rows per 
-%   function. outputs can be used as inputs as @()'output{col}{row}'.
+% output - outputs organized as cells per function with inner cells of rows 
+%   per iteration and/or loop and columns based on number of outputs. 
+%   outputs can be used as inputs: @()'output{func}{iter, n_out}'.
 %
 % Example 1: system echo 'this' and compare output with 'that' using
 % strcmp, then repeat with system echo 'that'
@@ -46,15 +49,19 @@ function varargout = sawa_feval(varargin)
 % this
 % that
 % 
-% output = 
+% output{1} = 
 % 
 %     'this'
-%     [   0]
 %     'that'
-%     [   1]
+% 
+% output{2} = 
+% 
+%     [0]
+%     [1]
 %     
 % Example 2: subtract 1 from each previous output
-% output = sawa_feval('seq', [1,2,2], 'verbose', true, {@randi, @minus}, 10, {@()'output{1}{end}', 1})
+% output = sawa_feval('seq', [1,2,2], 'verbose', true, {@randi, @minus},...
+%                    10, {@()'output{1}{end}', 1})
 % randi 10
 % 
 % Output:
@@ -70,9 +77,12 @@ function varargout = sawa_feval(varargin)
 % Output:
 % 8
 % 
-% output = 
+% output{1} = 
 % 
 %     [10]
+%
+% output{2} = 
+%
 %     [ 9]
 %     [ 8]
 %
@@ -93,31 +103,37 @@ function varargout = sawa_feval(varargin)
 % Done    'Display Image'
 % Done
 % 
-% output = 
+% output{1} = 
 % 
 %     '/Applications/spm12/canonical/avg152T1.nii'
-%     []
+% 
+% output{2} = 
+% 
+%     {[]}
 %
 % 
 % Example 4: use @() to evaluate inputs
 % output = sawa_feval('loop', 2, 'iter', {1:2,0}, {'echo',@minus},...
 %          {'-n', {@()'randi(10)';'2'}}, {@()'str2double(output{1}{end})', 2})
 %
-% 10
+% 5
 % 2
 % 
-% output = 
+% output{1} = 
 % 
-%     '10'
-%     [ 8]
+%     '5'
 %     '2'
-%     [ 0]
+% 
+% output{2} = 
+% 
+%     [3]
+%     [0]
 % 
 % Example 5: run while loop until last two numbers are same
 % output = sawa_feval('iter',1:2,'stop_fcn',@()'output{1}{end}==output{1}{end-1}',...
 %          @randi, {10;10})
 % 
-% output = 
+% output{1} = 
 % 
 %     [ 1]
 %     [ 8]
@@ -143,16 +159,13 @@ function varargout = sawa_feval(varargin)
 %
 % Created by Justin Theiss
 
-% if no outputs, set o to 1
-o = max([1,nargout]);
-
-% init varargout
-varargout = cell(1, o);
+% init output if no nargin
+output = cell(1, 1);
 if nargin==0, return; end; 
 
 % init varargin parameters
-params = {'loop', 'seq', 'iter', 'stop_fcn', 'verbose', 'throw_error', 'wait_bar'};
-values = {1, [], 0, [], [], false, false};
+params = {'loop', 'seq', 'iter', 'stop_fcn', 'verbose', 'throw_error', 'wait_bar', 'n_out'};
+values = {1, [], 0, [], [], false, false, 1};
 x = 1;
 while x < numel(varargin),
     if ischar(varargin{x}) && any(strcmp(params, varargin{x})),
@@ -171,6 +184,8 @@ while x < numel(varargin),
                 throw_error = varargin{x+1};
             case 'wait_bar'
                 wait_bar = varargin{x+1};
+            case 'n_out'
+                n_out = varargin{x+1};
             otherwise % advance
                 x = x + 1;
                 continue;
@@ -214,6 +229,9 @@ if ~iscell(stop_fcn),
     stop_fcn = repmat({stop_fcn}, 1, numel(funcs));
 end
 
+% init output
+output = repmat({{}}, numel(funcs), 1);
+
 % for loop/sequence order
 for l = 1:loop,
 for f = seq,
@@ -232,15 +250,15 @@ for f = seq,
             % set program
             program = local_setprog(funcs{f}); 
             try % run program with funcs and options
-                % set options (for varargout)
-                evaled_opts = local_eval(varargout, options{f}, n); 
+                try o = abs(nargout(funcs{f})); o = max(o, n_out); catch, o = n_out; end;
+                % set options (for output)
+                evaled_opts = local_eval(output, options{f}, n); 
                 % feval
-                try o0 = abs(nargout(funcs{f})); o0 = max(o, o0); catch, o0 = o; end;
-                [output{1:o0}] = feval(program, funcs{f}, evaled_opts, verbose); 
+                [results{1:o}] = feval(program, funcs{f}, evaled_opts, verbose); 
                 % display outputs
                 if verbose, 
                     fprintf('\nOutput:\n');
-                    disp(cell2strtable(any2str(output{1:o0}),' ')); 
+                    disp(cell2strtable(any2str(results{1:o}),' ')); 
                     fprintf('\n'); 
                 end
             catch err % display error
@@ -261,11 +279,10 @@ for f = seq,
                     fprintf('%s %s %s\n',func,'error:',err.message); 
                 end;
                 % set output to empty
-                output(1:o0) = {[]};
+                results(1:o) = {[]};
             end
-            % concatenate results to varargout
-            if o0 > size(varargout, 1), varargout(end+1:o0) = {[]}; end;
-            varargout = cellfun(@(x,y){cat(1,x,{y})}, varargout, output); 
+            % concatenate results to output
+            output{f} = sawa_cat(1, output{f}, results); 
             % wait_bar
             if wait_bar,
                 settimeleft(f, 1:numel(iter), h);
@@ -275,7 +292,7 @@ for f = seq,
         if isempty(stop_fcn{f}),
             done = true;
         else
-            done = cell2mat(local_eval(varargout, stop_fcn{f}, 0));
+            done = cell2mat(local_eval(output, stop_fcn{f}, 0));
         end
     end
 end

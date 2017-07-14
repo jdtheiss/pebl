@@ -191,7 +191,13 @@ case 'Subject Array' % subject array
         end
     end
 case funcs % functions 
-    vars = str2func(['@()''', cell2mat(inputdlg('Enter output:','',1,{'output{1}{end}'})), '''']);
+    % get relative function position
+    v = num2str(c - (numel(choices)-numel(funcs))); 
+    % inputdlg for output{f}{r, c}
+    out_fn = cell2mat(inputdlg('Enter output:','',1,{['output{',v,'}{end,1}']}));
+    if isempty(out_fn), return; end;
+    % str2func for use in sawa_feval
+    vars = str2func(['@()''', out_fn, '''']);
 end
 if iscell(vars)&&size(vars,2) > size(vars,1), vars = vars'; end; % if horizontal
 % vertcat
