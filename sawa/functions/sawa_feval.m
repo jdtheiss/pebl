@@ -302,22 +302,22 @@ end
 % evaluate @() inputs
 function options = local_eval(output, options, n)
     % get row from options
-    if ~any(n==0) && iscell(options),
-        if any(cellfun('isclass', options, 'cell')) && size(options, 2) > 1,
-        % for each column, set to row
-        for x = find(cellfun('isclass',options,'cell')),
-            if size(options{x}, 1) > 1,
-                options{x} = options{x}{min(end,n)};
+    if ~any(n==0) && iscell(options), 
+        if any(cellfun('isclass', options, 'cell')),
+            % for each column, set to row
+            for x = find(cellfun('isclass',options,'cell')),
+                if size(options{x}, 1) > 1,
+                    options{x} = options{x}{min(end,n)};
+                end
             end
-        end
         elseif ~isempty(options) && size(options, 1) > 1, 
             % if cell, set to row
             options = options{min(end,n)};
         end
     end
-    if ~iscell(options), options = {options}; end;
     
     % find functions in options
+    if ~iscell(options), options = {options}; end;
     [C,S] = sawa_getfield(options,'fun',@(x)isa(x,'function_handle')); 
     if isempty(C), return; end;
     
@@ -335,7 +335,7 @@ function options = local_eval(output, options, n)
     for x = 1:numel(C),
         C{x} = subsref(options, S{x});
         options = subsasgn(options,S{x},eval(feval(C{x}))); 
-    end;
+    end
 end
 
 % set program types
