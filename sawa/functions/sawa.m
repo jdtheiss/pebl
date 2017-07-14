@@ -609,14 +609,32 @@ function params = run_params(params)
 % Run parameters using @sawa_feval after evaluating any subject array
 % variables in options using @sawa_evalvars and setting print options with
 % @print_options.
+%
+% Available options (fields of params):
+% iter_args - cell array of arguments related to iter/loop/seq for
+%   sawa_feval (e.g., {'iter', 1:2, 'loop', 2})
+%   [default {}]
+% funcs - cell array of functions to be run 
+%   [default {}]
+% options - cell array of options corresponding to functions (e.g.,
+%   options{1} for funcs{1}) 
+%   [default {}]
+% n_out - number of outputs expected (max) for all functions 
+%   [default 1]
+% wait_bar - boolean for displaying waitbar of time left
+%   [default false]
+%
+% Outputs (field of params):
+% outputs - cell array of outputs from each function call organized as
+%   output{func}{iter/loop, n_out}
 
     % load iter, funcs, options, nout
-    struct2var(params,{'iter_args','funcs','options','nout','wait_bar','sa'});
+    struct2var(params,{'iter_args','funcs','options','n_out','wait_bar','sa'});
     % init iter, funcs, options if not exist
     if ~exist('iter_args','var'), iter_args = {}; end;
     if ~exist('funcs','var'), funcs = {}; end;
     if ~exist('options','var'), options = {}; end;
-    if ~exist('nout','var'), nout = 1; end;
+    if ~exist('n_out','var'), n_out = 1; end;
     if ~exist('wait_bar','var'), wait_bar = false; end;
     % eval options
     cmd_idx = cellfun(@(x)ischar(x),funcs);
@@ -628,10 +646,10 @@ function params = run_params(params)
     if isempty(funcs), return; end;
     try
         % run sawa_feval
-        [outputs{1:nout}] = sawa_feval(iter_args{:},'verbose',verbose_arg,...
+        outputs = sawa_feval(iter_args{:},'n_out',n_out,'verbose',verbose_arg,...
                             'wait_bar',wait_bar,funcs,options{:});
     catch err
-        disp(['Fatal Error:', err.message]);
+        disp(['fatal error:', err.message]);
     end
     % set outputs to params
     params = struct2var(params,'outputs');
