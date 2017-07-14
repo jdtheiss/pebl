@@ -527,6 +527,8 @@ function params = load_params(params, file)
     % load params
     load(file, 'params');
     if ~exist('params','var'), params = []; end;
+    % set environments
+    if isfield(params,'env'), init_env(params, params.env); end;
     % update editor
     params = update_editor(params);
 end
