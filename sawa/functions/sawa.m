@@ -467,6 +467,10 @@ function params = set_options(params, idx, option)
                 done = strcmp(questdlg('Add new variable?','New variable','Yes','No','No'),'No');
             end
         end
+        % if cell and only one options, get inner cell
+        if iscell(options{x}) && numel(options{x}) == 1,
+            options{x} = options{x}{1};
+        end
     end
     % set options to params
     params = struct2var(params,'options');
