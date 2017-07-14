@@ -191,13 +191,7 @@ case 'Subject Array' % subject array
         end
     end
 case funcs % functions 
-    % choose outargs
-    v = cell2mat(inputdlg(['Enter output to return from ' choices{c}],'',1,{'end'}));
-    if isempty(v), v = 'end'; end;
-    % find choice relative to functions
-    r = c - (numel(choices)-numel(funcs)); 
-    % output function
-    vars = str2func(['@()''output{',num2str(r),'}{',v,'}''']);
+    vars = str2func(['@()''', cell2mat(inputdlg('Enter output:','',1,{'output{1}{n}'})), '''']);
 end
 if iscell(vars)&&size(vars,2) > size(vars,1), vars = vars'; end; % if horizontal
 % vertcat
