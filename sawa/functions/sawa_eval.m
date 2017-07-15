@@ -1,6 +1,6 @@
 function valf = sawa_eval(val,opt)
 % valf = sawa_eval(val,opt)
-% Evaluate variables created from sawa_createvars
+% Evaluate variables created from sawa_input
 % 
 % Inputs:
 % val - string, cell array, structure to evaluate/mkdir/spm_select

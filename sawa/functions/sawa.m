@@ -325,7 +325,7 @@ function params = init_env(params, env_func, P)
 % Add a path or set environmental variable as feval(env_func, P{:}).
 % If no env_func, choose from @addpath, @setenv, @rmpath, or enter with
 % @inputdlg. 
-% If no P, set using @sawa_createvars.
+% If no P, set using @sawa_input.
 % A new field, 'env', will be set to params as a cell containing the
 % function and path/etc. as {env_func, P{:}}, which will be used the next
 % time params is loaded using @load_editor.
@@ -351,9 +351,9 @@ function params = init_env(params, env_func, P)
     % setenv input
     if strcmp(env_func, 'setenv') && ~exist('P','var'),
         P{1} = cell2mat(inputdlg('Enter environment name to set','Name',1,{'PATH'}));
-        P{2} = sawa_createvars([env_func ' input']);
+        P{2} = sawa_input([env_func ' input']);
     elseif ~exist('P','var')||isempty(P), % normal input
-        P{1} = sawa_createvars([env_func ' input']);
+        P{1} = sawa_input([env_func ' input']);
     end
     % feval env_func, P
     feval(env_func, P{:});
@@ -413,7 +413,7 @@ end
 function params = set_options(params, idx, option)
 % params = set_options(params, idx, option)
 % Set the options for function at index idx.
-% Options will be set using @sawa_createvars.
+% Options will be set using @sawa_input.
 
     % load params
     struct2var(params,{'funcs','options','idx','subjs','sa'});
@@ -459,7 +459,7 @@ function params = set_options(params, idx, option)
                 if y > numel(options{x}), 
                     options{x}{y} = option{y};
                 end
-                options{x}{y} = sawa_createvars(option{y},'',subjs,sa,options{x}{y},strfuncs{1:x-1}); 
+                options{x}{y} = sawa_input(option{y},'',subjs,sa,options{x}{y},strfuncs{1:x-1}); 
             end
             % if gui, done
             if ~isempty(findobj('type','figure','name','sawa')),

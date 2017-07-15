@@ -1,5 +1,5 @@
-function vals = sawa_createvars(varnam,msg,subjs,sa,varargin)
-% vars = sawa_createvars(varnam,msg,subjs,sa,varargin)
+function vals = sawa_input(varnam,msg,subjs,sa,varargin)
+% vars = sawa_input(varnam,msg,subjs,sa,varargin)
 % Creates variables for specific use in auto_batch, auto_cmd, auto_function.
 % 
 % Inputs:
@@ -18,7 +18,7 @@ function vals = sawa_createvars(varnam,msg,subjs,sa,varargin)
 % msg = '';
 % subjs = 1:33;
 % sa = ocd;
-% vars = sawa_createvars(varnam,msg,subjs,sa)
+% vars = sawa_input(varnam,msg,subjs,sa)
 % [choose "Subject Array"]
 % [choose "subjFolders 1"]
 % [enter "/RestingState/Resting*.nii"]
@@ -105,7 +105,7 @@ case 'Index' % index
     if isempty(ind), break; end;
     s = substruct(ind([1,end]),eval(ind)); % create s var for subsasgn
     if ival==4, try varargin{1} = subsref(vars,s); end; end; % set varargin
-    vals = subsasgn(vals,s,sawa_createvars([varnam ind],msg,subjs,sa,varargin{:}));
+    vals = subsasgn(vals,s,sawa_input([varnam ind],msg,subjs,sa,varargin{:}));
     end
     continue; % done, vals already set
 case 'Structure' % struct
@@ -132,10 +132,10 @@ case 'Structure' % struct
             % set field
             fld = cell2mat(inputdlg('Enter field name to add to structure (cancel to delete):','Field Name',1,{tmpfld}));
             if isempty(fld)&&~isempty(tmpfld), vars = rmfield(vars,substr{subchc}); substr(subchc) = []; continue; end; % if no fld, remove
-            % run sawa_createvars
+            % run sawa_input
             if ~isempty(fld), 
                 if isfield(vars(n),fld), varargin{1} = vars(n).(fld); else varargin{1} = {}; end;
-                vars(n).(fld) = sawa_createvars(fld,'',subjs,sa,varargin{:}); 
+                vars(n).(fld) = sawa_input(fld,'',subjs,sa,varargin{:}); 
                 substr = vertcat(fieldnames(vars),'Add'); 
             end;
         end

@@ -146,13 +146,13 @@ function test_sawa_cat
     assert(sawa_eq(outputs1,outputs2));
 end
 
-function test_sawa_createvars
+function test_sawa_input
     outputs1 = 'test1';
     figurefun({@(x,y)setappdata(0,'ListDialogAppData__',struct('value',1,'selection',1)),...
         @(x,y)delete(x)}, {'style','listbox'},'StartDelay',1);
     figurefun({@(x,y)set(y,'string','test1'),@(x,y)set(x,'UserData','OK'),...
         @(x,y)uiresume(x)},{'style','edit'},'StartDelay',3);
-    outputs2 = sawa_createvars;
+    outputs2 = sawa_input;
     assert(strcmp(outputs1,outputs2));
 end
 

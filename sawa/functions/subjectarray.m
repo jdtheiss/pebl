@@ -47,7 +47,7 @@ function params = subjectarray(cmd,varargin)
 %   2   3
 %
 % requires: make_gui cell2strtable choose_SubjectArray choose_fields struct2var
-% printres savesubjfile sawa sawa_createvars sawa_dlmread sawa_getfield 
+% printres savesubjfile sawa sawa_input sawa_dlmread sawa_getfield 
 % sawa_setfield sawa_strjoin sawa_subjs sawa_xlsread update_array
 % 
 % Created by Justin Theiss
@@ -118,7 +118,7 @@ end
 
 % create vars
 if ~exist('vals','var')
-    vals = sawa_createvars(field,'', subjs, sa);
+    vals = sawa_input(field,'', subjs, sa);
     if isempty(vals), return; end;
 end
 
