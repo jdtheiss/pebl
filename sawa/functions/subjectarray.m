@@ -118,7 +118,7 @@ end
 
 % create vars
 if ~exist('vals','var')
-    vals = sawa_input(field,'', subjs, sa);
+    vals = sawa_input('variable', field, 'iter', subjs, 'array', sa);
     if isempty(vals), return; end;
 end
 

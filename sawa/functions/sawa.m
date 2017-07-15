@@ -351,9 +351,9 @@ function params = init_env(params, env_func, P)
     % setenv input
     if strcmp(env_func, 'setenv') && ~exist('P','var'),
         P{1} = cell2mat(inputdlg('Enter environment name to set','Name',1,{'PATH'}));
-        P{2} = sawa_input([env_func ' input']);
+        P{2} = sawa_input('variable',[env_func ' input']);
     elseif ~exist('P','var')||isempty(P), % normal input
-        P{1} = sawa_input([env_func ' input']);
+        P{1} = sawa_input('variable',[env_func ' input']);
     end
     % feval env_func, P
     feval(env_func, P{:});
@@ -459,7 +459,9 @@ function params = set_options(params, idx, option)
                 if y > numel(options{x}), 
                     options{x}{y} = option{y};
                 end
-                options{x}{y} = sawa_input(option{y},'',subjs,sa,options{x}{y},strfuncs{1:x-1}); 
+                options{x}{y} = sawa_input('variable',option{y},'iter',subjs,...
+                                           'array',sa,'value',options{x}{y},...
+                                           'func',strfuncs{1:x-1}); 
             end
             % if gui, done
             if ~isempty(findobj('type','figure','name','sawa')),
