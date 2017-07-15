@@ -605,7 +605,7 @@ end
 function params = run_params(params)
 % params = run_params(params)
 % Run parameters using @sawa_feval after evaluating any subject array
-% variables in options using @sawa_evalvars and setting print options with
+% variables in options using @sawa_eval and setting print options with
 % @print_options.
 %
 % Available options (fields of params):
@@ -636,8 +636,8 @@ function params = run_params(params)
     if ~exist('wait_bar','var'), wait_bar = false; end;
     % eval options
     cmd_idx = cellfun(@(x)ischar(x),funcs);
-    options(cmd_idx) = sawa_evalvars(options(cmd_idx),'cmd');
-    options(~cmd_idx) = sawa_evalvars(options(~cmd_idx));
+    options(cmd_idx) = sawa_eval(options(cmd_idx),'cmd');
+    options(~cmd_idx) = sawa_eval(options(~cmd_idx));
     % print outputs as selected, return verbose
     params = print_options(params); 
     struct2var(params,'verbose_arg'); 

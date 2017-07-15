@@ -1,5 +1,5 @@
-function valf = sawa_evalvars(val,opt)
-% valf = sawa_evalvars(val,opt)
+function valf = sawa_eval(val,opt)
+% valf = sawa_eval(val,opt)
 % Evaluate variables created from sawa_createvars
 % 
 % Inputs:
@@ -19,7 +19,7 @@ function valf = sawa_evalvars(val,opt)
 % for i = 1:2
 % s = i;
 % output{1,1}{s} = sa(i).subj;
-% valf = sawa_evalvars(batch)
+% valf = sawa_eval(batch)
 % end
 % 
 % valf = 

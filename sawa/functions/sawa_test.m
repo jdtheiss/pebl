@@ -178,10 +178,10 @@ function test_sawa_eq
     assert(all(strcmp(reps1,reps2)));
 end
 
-function test_sawa_evalvars
+function test_sawa_eval
     outputs1 = 1;
     sa = struct('test',{1,2});
-    outputs2 = sawa_evalvars('sa(1).test');
+    outputs2 = sawa_eval('sa(1).test');
     assert(outputs1==outputs2);
 end
 
