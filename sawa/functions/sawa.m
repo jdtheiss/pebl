@@ -461,7 +461,7 @@ function params = set_options(params, idx, option)
                 end
                 options{x}{y} = sawa_input('variable',option{y},'iter',subjs,...
                                            'array',sa,'value',options{x}{y},...
-                                           'func',strfuncs{1:x-1}); 
+                                           'func',strfuncs(1:x-1)); 
             end
             % if gui, done
             if ~isempty(findobj('type','figure','name','sawa')),

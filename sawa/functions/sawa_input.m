@@ -210,7 +210,7 @@ for c = chc
         case 'Function' % function
             params = sawa({'add_function','set_options','run_params'},...
                 struct('array',array,'iter',iter,'verbose_arg',false));
-            value = params.values{1};
+            value = params.outputs{1};
             clear params;
         case 'Workspace Variable' % workspace variable
             variable = cell2mat(inputdlg('Enter variable name from base workspace:'));
