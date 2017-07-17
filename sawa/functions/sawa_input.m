@@ -90,10 +90,15 @@ try
                 ival = find(strcmpi(options,'number'),1);
             end
             value = {num2str(value)};
+        case 'function_handle' % function handle should go to number
+            ival = find(strcmpi(options,'number'),1);
         case 'struct' % if struct
             ival = find(strcmpi(options,'structure'),1);
+        otherwise % default to string
+            ival = find(strcmpi(options,'string'),1);
     end
-catch err
+catch err % if error, set ival to string
+    ival = find(strcmpi(options,'string'),1);
     disp(['error:', err.message]);
 end
 
