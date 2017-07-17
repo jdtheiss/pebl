@@ -224,8 +224,13 @@ for m = 1:numel(matlabbatch),
         % get substruct options
         S = options(1:2:end);
         for x = 1:numel(S),
+            % if char S, get substruct
+            if ischar(S{x}),
+                [~,tmpS] = sawa_getfield(matlabbatch, 'expr', S{x});
+                S{x} = tmpS{1};
+            end
             % find position of last char substruct field in tags
-            if S{x}(1).subs{1} == m,
+            if isstruct(S{x})&&S{x}(1).subs{1} == m,
                 fld = {S{x}.subs};
                 fld = fld(cellfun('isclass',fld,'char'));
                 if iscell(S{x}(end).subs), i = S{x}(end).subs{1}; else i = 1; end;
@@ -257,7 +262,7 @@ end
 if strcmp(output_type, 'options') && ~isempty(output),
     output = sawa_insert(2, output, 2:numel(output)+1, []);
     % set matching options inputs to output
-    if ~isempty(options),
+    if ~isempty(options)&&all(cellfun('isclass',options(1:2:end),'struct')),
         % find common items between options and output
         S0 = cellfun(@(x){sub2str(x)}, options(1:2:end));
         S1 = cellfun(@(x){sub2str(x)}, output(1:2:end));
