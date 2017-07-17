@@ -185,8 +185,8 @@ for c = chc
                     end
                     % run sawa_input
                     if ~isempty(fld), 
-                        if isfield(value(n),fld), value = value(n).(fld); else value = {}; end;
-                        value(n).(fld) = sawa_input(varargin{:}); 
+                        if isfield(value(n),fld), tmpvalue = value(n).(fld); else tmpvalue = {}; end;
+                        value(n).(fld) = sawa_input(varargin{:},'value',tmpvalue); 
                         substr = vertcat(fieldnames(value),'Add'); 
                     end
                 end
