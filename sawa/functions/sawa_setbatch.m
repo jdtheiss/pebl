@@ -49,12 +49,14 @@ function [matlabbatch, options] = sawa_setbatch(matlabbatch, options, m)
 % Created by Justin Theiss
 
 % init vars
-disp('Please wait...');
 if ~exist('cfg_ui','file'), error('Must have cfg_ui.m in matlab path.'); end;
 if ~exist('matlabbatch','var'), matlabbatch = {}; end;
 if ~iscell(matlabbatch), matlabbatch = {matlabbatch}; end;
 if ~exist('options','var')||isempty(options), options = {}; end;
 if ~exist('m','var')||isempty(m), m = 1; end;
+
+% please wait message box to be deleted when ready
+wait_h = msgbox('Please wait...');
 
 % prevent matlab from giving warnings when a text entered matches a function
 warning('off','MATLAB:dispatcher:InexactCaseMatch');
@@ -64,6 +66,9 @@ spm_jobman('initcfg'); cfg_util('initcfg');
 
 % open cfg_ui and get guidata
 h = cfg_ui; handles = guidata(h); 
+
+% make msgbox current
+if ishandle(wait_h), figure(wait_h); end;
 
 % set closerequestfcn to set to invisible (rather than try to save)
 set(h, 'CloseRequestFcn', @(x,y)set(x,'visible','off'));
@@ -86,6 +91,9 @@ if ~isempty(matlabbatch)&&~all(cellfun('isempty', matlabbatch)),
     cfg_ui('local_showjob',h);
 end
 
+% make msgbox current
+if ishandle(wait_h), figure(wait_h); end;
+
 % convert options to idx
 idx = cell(size(options));
 idx = idx2options(h, matlabbatch, idx, options, 'idx');
@@ -101,6 +109,9 @@ set(h, 'userdata', params);
 
 % update with previous options
 update_cfg(h, idx);
+
+% if msgbox still exists, delete
+if ishandle(wait_h), delete(wait_h); end;
 
 % set timer
 t = timer('TimerFcn', @(x,y)set(x, 'userdata', update_cfg(h, get(x, 'userdata'))),...
