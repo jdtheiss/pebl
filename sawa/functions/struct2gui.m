@@ -6,8 +6,13 @@ function [output, S] = struct2gui(S, varargin)
 % S: structure, fields corresponding to uicontrols to set (i.e., each field
 % could be set as uicontrol(S.(field{n})))
 % 'wait': (optional), true/false to implement wait block until gui is
-% closed
+%   closed
+%   [default true]
 % 'data': (optional), any value to initiate for figure guidata
+%   [defualt []]
+% 'done_button': (optional), true/false to include a done button in bottom
+%   right corner 
+%   [default true]
 %
 % Outputs:
 % output: guidata from figure
@@ -47,6 +52,7 @@ function [output, S] = struct2gui(S, varargin)
 arrayfun(@(x)assignin('caller',varargin{x},varargin{x+1}),1:2:numel(varargin));
 if ~exist('wait','var'), wait = true; end;
 if ~exist('data','var'), data = []; end;
+if ~exist('done_button','var'), done_button = true; end;
 
 % get/set defaults
 defUfont = get(0,'defaultUicontrolFontSize'); 
@@ -66,10 +72,12 @@ if ~isfield(S, 'position'),
 end
 
 % set done button
-btn_pos(1:2) = S.position(3:4) .* [.85, .01];
-btn_pos(3:4) = S.position(3:4) .* [.15, .1];
-done_btn = uicontrol(f, 'style', 'pushbutton', 'string', 'done',...
-    'position', btn_pos,'callback', 'set(gcf,''visible'',''off'');');
+if done_button,
+    btn_pos(1:2) = S.position(3:4) .* [.85, .01];
+    btn_pos(3:4) = S.position(3:4) .* [.15, .1];
+    done_btn = uicontrol(f, 'style', 'pushbutton', 'string', 'done',...
+        'position', btn_pos,'callback', 'set(gcf,''visible'',''off'');');
+end
 
 % get fields then set uicontrols
 S = local_setdefaults(S);
@@ -86,7 +94,9 @@ if wait,
     output = guidata(f);
     delete(f);
 else % otherwise make visible
-    set(done_btn, 'callback', 'closereq');
+    if done_button,
+        set(done_btn, 'callback', 'closereq');
+    end
     set(f, 'visible', 'on');
     output = [];
 end
