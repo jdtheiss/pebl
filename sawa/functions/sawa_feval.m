@@ -435,28 +435,20 @@ end
 function matlabbatch = local_setbatch(matlabbatch, options)
     % ensure cells
     if ~iscell(options), options = {options}; end;
-    
+    if numel(options) < 1, options{2} = []; end;
     % for each option, get subsref struct
     for x = 1:2:numel(options)
         switch class(options{x})
-            case 'struct' % set S to options
-                S{x} = options(x);
-            case 'cell' % use sawa_getfield with options
-                [~,S{x}] = sawa_getfield(matlabbatch, options{x}{:});
-            case 'char' % use sawa getfield with expr
-                [~,S{x}] = sawa_getfield(matlabbatch, 'expr', options{x}); 
-        end
-    end
-    
-    % set batch using options
-    for x = 1:2:numel(options), 
-        for y = 1:numel(S{x}), % set each subsref struct to following options
-            % if cell substruct but not cell in matlabbatch, set to {}
-            if strcmp(S{x}{y}(end).type, '{}') && ~iscell(subsref(matlabbatch, S{x}{y}(1:end-1))),
-                matlabbatch = subsasgn(matlabbatch, S{x}{y}(1:end-1), {});
-            end
-            % assign options
-            matlabbatch = subsasgn(matlabbatch, S{x}{y}, options{x+1}); 
+            case 'struct' % use sawa_setfield with S
+                % if cell substruct but not cell in matlabbatch, set to {}
+                if strcmp(options{x}(end).type,'{}')&&~iscell(subsref(matlabbatch,options{x}(1:end-1))),
+                    matlabbatch = subsasgn(matlabbatch, options{x}(1:end-1), {});
+                end
+                matlabbatch = sawa_setfield(matlabbatch, 'S', options{x}, 'C', options{x+1});
+            case 'cell' % use sawa_setfield with options
+                matlabbatch = sawa_setfield(matlabbatch, options{x}{:}, 'C', options{x+1});
+            case 'char' % use sawa_setfield with expr
+                matlabbatch = sawa_setfield(matlabbatch, 'expr', options{x}, 'C', options{x+1});
         end
     end
 end
