@@ -629,13 +629,14 @@ function params = run_params(params)
 %   output{func}{iter/loop, n_out}
 
     % load iter, funcs, options, nout
-    struct2var(params,{'iter_args','funcs','options','n_out','wait_bar','sa'});
+    struct2var(params,{'iter_args','funcs','options','n_out','wait_bar','throw_error','sa'});
     % init iter, funcs, options if not exist
     if ~exist('iter_args','var'), iter_args = {}; end;
     if ~exist('funcs','var'), funcs = {}; end;
     if ~exist('options','var'), options = {}; end;
     if ~exist('n_out','var'), n_out = 1; end;
     if ~exist('wait_bar','var'), wait_bar = false; end;
+    if ~exist('throw_error','var'), throw_error = false; end;
     % eval options
     cmd_idx = cellfun(@(x)ischar(x),funcs);
     options(cmd_idx) = sawa_eval(options(cmd_idx),'cmd');
@@ -647,7 +648,7 @@ function params = run_params(params)
     try
         % run sawa_feval
         outputs = sawa_feval(iter_args{:},'n_out',n_out,'verbose',verbose_arg,...
-                            'wait_bar',wait_bar,funcs,options{:});
+                            'throw_error',throw_error,'wait_bar',wait_bar,funcs,options{:});
     catch err
         disp(['fatal error:', err.message]);
     end
