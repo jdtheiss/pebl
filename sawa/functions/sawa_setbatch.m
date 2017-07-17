@@ -227,7 +227,7 @@ for m = 1:numel(matlabbatch),
             % if char S, get substruct
             if ischar(S{x}),
                 [~,tmpS] = sawa_getfield(matlabbatch, 'expr', S{x});
-                S{x} = tmpS{1};
+                if ~isempty(tmpS), S{x} = tmpS{1}; end;
             end
             % find position of last char substruct field in tags
             if isstruct(S{x})&&S{x}(1).subs{1} == m,
