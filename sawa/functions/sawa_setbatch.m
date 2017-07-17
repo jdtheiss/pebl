@@ -56,7 +56,12 @@ if ~exist('options','var')||isempty(options), options = {}; end;
 if ~exist('m','var')||isempty(m), m = 1; end;
 
 % please wait message box to be deleted when ready
-wait_h = msgbox('Please wait...');
+wait_h = wait_msg;
+wait_t = timer('TimerFcn', @(x,y)wait_msg(wait_h),...
+    'Period', 0.1, 'ExecutionMode', 'fixedSpacing',...
+    'StopFcn', @(x,y)wait_msg(wait_h,'delete'),...
+    'ErrorFcn', @(x,y)stop(x));
+start(wait_t);
 
 % prevent matlab from giving warnings when a text entered matches a function
 warning('off','MATLAB:dispatcher:InexactCaseMatch');
@@ -66,9 +71,6 @@ spm_jobman('initcfg'); cfg_util('initcfg');
 
 % open cfg_ui and get guidata
 h = cfg_ui; handles = guidata(h); 
-
-% make msgbox current
-if ishandle(wait_h), figure(wait_h); end;
 
 % set closerequestfcn to set to invisible (rather than try to save)
 set(h, 'CloseRequestFcn', @(x,y)set(x,'visible','off'));
@@ -91,9 +93,6 @@ if ~isempty(matlabbatch)&&~all(cellfun('isempty', matlabbatch)),
     cfg_ui('local_showjob',h);
 end
 
-% make msgbox current
-if ishandle(wait_h), figure(wait_h); end;
-
 % convert options to idx
 idx = cell(size(options));
 idx = idx2options(h, matlabbatch, idx, options, 'idx');
@@ -110,8 +109,8 @@ set(h, 'userdata', params);
 % update with previous options
 update_cfg(h, idx);
 
-% if msgbox still exists, delete
-if ishandle(wait_h), delete(wait_h); end;
+% close msgbox
+stop(wait_t); delete(wait_t);
 
 % set timer
 t = timer('TimerFcn', @(x,y)set(x, 'userdata', update_cfg(h, get(x, 'userdata'))),...
@@ -136,6 +135,19 @@ options = idx2options(h, matlabbatch, idx, options);
 
 % delete figure
 delete(h);
+end
+
+function wait_h = wait_msg(wait_h, cmd)
+
+% if no cmd, set to ''
+if ~exist('cmd','var'), cmd = ''; end;
+if nargin==0, % no nargin, create msgbox
+    wait_h = msgbox('Please wait...'); 
+elseif nargin==1 && ishandle(wait_h), 
+    figure(wait_h); % make figure current
+elseif strcmp(cmd,'delete') && ishandle(wait_h), 
+    delete(wait_h); % delete msgbox
+end
 end
 
 function idx = update_cfg(h, idx)
