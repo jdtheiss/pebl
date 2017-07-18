@@ -20,7 +20,7 @@ function output = sawa_feval(varargin)
 %   alternatively, each function's stop function can be provided in a cell
 %   array (e.g., {@()'output{1}{end}==0', @()'output{2}{end}==1'}).
 %   [default is [], which is no while loop]
-% 'n_out' - number of outputs expected (max) from functions
+% 'n_out' - range of outputs to return from each function (e.g., 2 or 1:3)
 %   [default is 1]
 % 'verbose' - optional boolean. true displays all inputs/outputs; false 
 %   displays nothing in the command prompt; 
@@ -250,7 +250,7 @@ for f = seq,
             % set program
             program = local_setprog(funcs{f}); 
             try % run program with funcs and options
-                try o = abs(nargout(funcs{f})); o = max(o, n_out); catch, o = n_out; end;
+                try o = abs(nargout(funcs{f})); o = max(o, max(n_out)); catch, o = max(n_out); end;
                 % set options (for output)
                 evaled_opts = local_eval(output, options{f}, n); 
                 % feval
@@ -282,7 +282,7 @@ for f = seq,
                 results(1:o) = {[]};
             end
             % concatenate results to output
-            output{f} = sawa_cat(1, output{f}, results); 
+            output{f} = sawa_cat(1, output{f}, results(n_out)); 
             % wait_bar
             if wait_bar,
                 settimeleft(f, 1:numel(iter), h);
