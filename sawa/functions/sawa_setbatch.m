@@ -285,14 +285,17 @@ end
 if strcmp(output_type, 'options') && ~isempty(output),
     output = sawa_insert(2, output, 2:numel(output)+1, []);
     % set matching options inputs to output
-    if ~isempty(options)&&all(cellfun('isclass',options(1:2:end),'struct')),
-        % find common items between options and output
-        S0 = cellfun(@(x){sub2str(x)}, options(1:2:end));
-        S1 = cellfun(@(x){sub2str(x)}, output(1:2:end));
-        i0 = 2 * cell2mat(cellfun(@(x){find(strcmp(S0, x))}, S1));
-        i1 = 2 * cell2mat(cellfun(@(x){find(strcmp(S1, x))}, S0));
-        % set options to preopts for found items
-        output(i1) = options(i0);
+    if ~isempty(options),
+        S1 = cellfun(@(x){sub2str(x)}, output(1:2:end)); 
+        for x = 1:2:numel(options)-1,
+            if isstruct(options{x}), % if struct, use sub2str
+                S0 = sub2str(options{x}); 
+                i1 = 2 * find(strcmp(S1, S0), 1) - 1;
+            else % otherwise use regexp
+                i1 = 2 * find(~cellfun('isempty',regexp(S1, options{x})), 1) - 1;
+            end % set output
+            if ~isempty(i1), output(i1:i1+1) = options(x:x+1); end;
+        end
     end
 end
 end
