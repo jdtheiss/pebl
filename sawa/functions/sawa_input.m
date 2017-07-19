@@ -75,7 +75,12 @@ try
     switch class(value)
         case 'cell' % if cellstr, set to 1
             if iscellstr(value)&&~isempty(value), % cellstr 
-                ival = find(strcmpi(options,'string'),1); 
+                if size(value, 1) > 1, % set to string
+                    ival = find(strcmpi(options,'string'),1); 
+                else % set to evaluate, genstr
+                    value = genstr(value);
+                    ival = find(strcmpi(options,'evaluate'),1);
+                end
             elseif all(cellfun(@(x)iscell(x)||isstruct(x),value)) % all cell/struct
                 ival = find(strcmpi(options,'index'),1); % set to index
             elseif ~isempty(value) % otherwise, set to number
