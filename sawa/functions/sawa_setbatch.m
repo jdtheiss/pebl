@@ -236,10 +236,10 @@ idx(end+1:numel(matlabbatch)) = {[]};
 
 for m = 1:numel(matlabbatch),
     % get tags, class, and num for module
-    tags = {}; classes = {}; nums = {};
-    [~, contents] = get_ids_fields(h, m, {'tag','class','num'});
+    tags = {}; classes = {};
+    [~, contents] = get_ids_fields(h, m, {'tag','class'});
     if ~isempty(contents),
-        [tags, classes, nums] = deal(contents{:});
+        [tags, classes] = deal(contents{:});
     end
     % if output to idx
     if strcmp(output_type, 'idx'),
@@ -273,8 +273,8 @@ for m = 1:numel(matlabbatch),
             end
             % set substruct to correct index
             S = S{find(strcmp(tags, tags{x}))==x};
-            % if cfg_files class with [1,1] num, append {1}
-            if strcmp(classes{x}, 'cfg_files') && all(nums{x}==1),
+            % if cfg_files class without cell at end, append {1}
+            if strcmp(classes{x}, 'cfg_files') && ~iscell(S(end).subs),
                 S = [S, sub2str('{1}')];
             end
             output{end+1} = [sub2str(['{',num2str(m),'}']), S];
