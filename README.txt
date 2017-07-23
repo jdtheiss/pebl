@@ -26,7 +26,7 @@ SOFTWARE.
 
 Introduction
 pebl allows users to create pipelines for automated analysis using different
-languages. Outputs can be passed from one command to the next using e.g. from
+languages. Outputs can be passed from one command to the next e.g. from
 a unix command to a matlab command to a python command. pebl also allows use
 of the matlabbatch modules as well.
 
