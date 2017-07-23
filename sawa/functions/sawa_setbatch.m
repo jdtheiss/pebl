@@ -1,6 +1,6 @@
-function [matlabbatch, options] = sawa_setbatch(matlabbatch, options, m)
-% [matlabbatch, options] = sawa_setbatch(matlabbatch, options, m)
-% Set batch parameters for sawa using cfg_ui
+function [matlabbatch, options] = pebl_setbatch(matlabbatch, options, m)
+% [matlabbatch, options] = pebl_setbatch(matlabbatch, options, m)
+% Set batch parameters for pebl using cfg_ui
 %
 % Inputs:
 % matlabbatch (optional) - cell array of matlabbatch module components (can
@@ -16,7 +16,7 @@ function [matlabbatch, options] = sawa_setbatch(matlabbatch, options, m)
 %
 % Example:
 % matlabbatch{1}.spm.util.disp.data = '<UNDEFINED>';
-% [matlabbatch, options] = sawa_setbatch(matlabbatch);
+% [matlabbatch, options] = pebl_setbatch(matlabbatch);
 % [replicate module]
 % [press right arrow on "Image to Display" for both modules]
 % [close gui]
@@ -42,7 +42,7 @@ function [matlabbatch, options] = sawa_setbatch(matlabbatch, options, m)
 % 
 % {2}.spm.util.disp.data
 %
-% Note: to add a sawa parameter, press the right arrow while selecting the
+% Note: to add a pebl parameter, press the right arrow while selecting the
 % item; to remove the item, press the left arrow while selecting the item.
 % once all modules/items have been added, close the gui to return outputs.
 %
@@ -81,7 +81,7 @@ set(findobj(h,'tag','module'), 'KeyPressFcn',...
 
 % set tooltipstring
 set(findobj(h,'tag','module'), 'ToolTipString',...
-    'Press right arrow to set sawa variable, left to remove.');
+    'Press right arrow to set pebl variable, left to remove.');
 
 % remove kp if already exists
 if isfield(handles,'kp'), guidata(h,rmfield(handles,'kp')); end;
@@ -215,7 +215,7 @@ end
 function update_str(h, idx)
 
 % msg to display in string
-msg = '----sawa parameter----';
+msg = '----pebl parameter----';
 handles = guidata(h);
 % reload gui
 cfg_ui('local_showmod', handles.modlist);
@@ -249,7 +249,7 @@ for m = 1:numel(matlabbatch),
         for x = 1:numel(S),
             % if char S, get substruct
             if ischar(S{x}),
-                [~,tmpS] = sawa_getfield(matlabbatch, 'expr', S{x});
+                [~,tmpS] = pebl_getfield(matlabbatch, 'expr', S{x});
                 if ~isempty(tmpS), S{x} = tmpS{1}; end;
             end
             % find position of last char substruct field in tags
@@ -267,9 +267,9 @@ for m = 1:numel(matlabbatch),
     elseif strcmp(output_type, 'options') && ~isempty(idx{m}),
         % get substruct and representations
         for x = idx{m}, 
-            [~, S] = sawa_getfield(matlabbatch{m}, 'expr', ['.*\.', tags{x}, '(\{\d+\})$']);
+            [~, S] = pebl_getfield(matlabbatch{m}, 'expr', ['.*\.', tags{x}, '(\{\d+\})$']);
             if isempty(S),
-                [~, S] = sawa_getfield(matlabbatch{m}, 'expr', ['.*\.', tags{x}]);
+                [~, S] = pebl_getfield(matlabbatch{m}, 'expr', ['.*\.', tags{x}]);
             end
             % set substruct to correct index
             S = S{find(strcmp(tags, tags{x}))==x};
@@ -283,7 +283,7 @@ for m = 1:numel(matlabbatch),
 end
 % set output as (1:2:end)
 if strcmp(output_type, 'options') && ~isempty(output),
-    output = sawa_insert(2, output, 2:numel(output)+1, []);
+    output = pebl_insert(2, output, 2:numel(output)+1, []);
     % set matching options inputs to output
     if ~isempty(options),
         S1 = cellfun(@(x){sub2str(x)}, output(1:2:end)); 

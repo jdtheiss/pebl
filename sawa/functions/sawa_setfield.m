@@ -1,5 +1,5 @@
-function [A, S, R] = sawa_setfield(varargin)
-% [A,S,R] = sawa_setfield(A,'property1','value1',...)
+function [A, S, R] = pebl_setfield(varargin)
+% [A,S,R] = pebl_setfield(A,'property1','value1',...)
 % Set field/index for object A. 
 %
 % Inputs:
@@ -12,7 +12,7 @@ function [A, S, R] = sawa_setfield(varargin)
 % 'remove' - true/false to remove fields at S/R/append (default is false)
 % 'verbose' - true/false to display errors (default is false)
 % 'C' - values to set to A(idx).field
-% For other properties, see also sawa_getfield
+% For other properties, see also pebl_getfield
 %
 % Outputs:
 % A - object A with set fields/index(es)
@@ -21,7 +21,7 @@ function [A, S, R] = sawa_setfield(varargin)
 %
 % Example:
 % A = struct('test', {1, 2}, 'test2', {3, 4});
-% A = sawa_setfield(A, 'R', {'(1).test2', '(2).test3'}, 'C', {nan, nan})
+% A = pebl_setfield(A, 'R', {'(1).test2', '(2).test3'}, 'C', {nan, nan})
 %     
 % A = 
 % 
@@ -43,7 +43,7 @@ function [A, S, R] = sawa_setfield(varargin)
 %     test2: 4
 %     test3: NaN
 %
-% requires: sawa_getfield
+% requires: pebl_getfield
 %
 % Created by Justin Theiss
 
@@ -58,9 +58,9 @@ arrayfun(@(x)assignin('caller',varargin{x},varargin{x+1}),i);
 varargin([i,i+1]) = []; 
 if ~exist('verbose','var'), verbose = false; end;
 
-% sawa_getfield
+% pebl_getfield
 if ~exist('S','var') && ~exist('R','var'),
-    [~, S] = sawa_getfield(A,varargin{:});
+    [~, S] = pebl_getfield(A,varargin{:});
 end
 
 % init C/S/R

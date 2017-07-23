@@ -1,5 +1,5 @@
-function C = sawa_insert(dim, A, index, B)
-% C = sawa_insert(dim, A, index, B)
+function C = pebl_insert(dim, A, index, B)
+% C = pebl_insert(dim, A, index, B)
 % Insert array B into A before an index along a certain dimension.
 %
 % Inputs:
@@ -13,13 +13,13 @@ function C = sawa_insert(dim, A, index, B)
 % C - new array with inserted components
 % 
 % Example 1: insert text into character array
-% C = sawa_insert(2, 'example text', 8, ' 1')
+% C = pebl_insert(2, 'example text', 8, ' 1')
 % C = 
 %
 % example 1 text
 %
 % Example 2: insert horizontal cells into vertical array
-% C = sawa_insert([], {1;2;3;4}, 2, {0,0,0})
+% C = pebl_insert([], {1;2;3;4}, 2, {0,0,0})
 % C = 
 % 
 %     [1]     []     []
@@ -28,7 +28,7 @@ function C = sawa_insert(dim, A, index, B)
 %     [3]     []     []
 %     [4]     []     []
 %
-% requires: sawa_cat
+% requires: pebl_cat
 %
 % Created by Justin Theiss
 
@@ -46,8 +46,8 @@ for n = 2:numel(index),
 end
 D{end+1} = local_index(dim, A, index(end), size(A, dim) + 1);
 
-% concatenate along dimension with sawa_cat
-C = sawa_cat(dim, D{:});
+% concatenate along dimension with pebl_cat
+C = pebl_cat(dim, D{:});
 end
 
 function A = local_index(dim, A, i0, i1)

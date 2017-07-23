@@ -1,5 +1,5 @@
-function [C, S, R] = sawa_getfield(A, varargin)
-% [C, S, R] = sawa_getfield(A, 'property1', value1, ...)
+function [C, S, R] = pebl_getfield(A, varargin)
+% [C, S, R] = pebl_getfield(A, 'property1', value1, ...)
 % Return values, substructs, and string representations from A.
 %
 % Inputs:
@@ -21,7 +21,7 @@ function [C, S, R] = sawa_getfield(A, varargin)
 %
 % Example 1:
 % matlabbatch{1}.spm.util.disp.data = '<UNDEFINED>';
-% [C, S, R] = sawa_getfield(matlabbatch, 'expr', '.*\.disp')
+% [C, S, R] = pebl_getfield(matlabbatch, 'expr', '.*\.disp')
 % 
 % C = 
 % 
@@ -38,7 +38,7 @@ function [C, S, R] = sawa_getfield(A, varargin)
 %     '{1}.spm.util.disp'
 %
 % Example 2:
-% [C, S, R] = sawa_getfield(matlabbatch, 'fun', @(x)strcmp(x, '<UNDEFINED>'))
+% [C, S, R] = pebl_getfield(matlabbatch, 'fun', @(x)strcmp(x, '<UNDEFINED>'))
 % 
 % C = 
 % 

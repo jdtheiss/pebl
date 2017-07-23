@@ -56,4 +56,4 @@ end
 strtable = horzcat(strtable,char(celltable(:,end)));
 
 % convert from char to string
-strtable = sawa_strjoin(cellstr(strtable),'\n');
+strtable = pebl_strjoin(cellstr(strtable),'\n');

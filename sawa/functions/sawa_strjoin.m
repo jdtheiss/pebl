@@ -1,5 +1,5 @@
-function str = sawa_strjoin(C, delim)
-% str = sawa_strjoin(C, delim)
+function str = pebl_strjoin(C, delim)
+% str = pebl_strjoin(C, delim)
 % This function will concatenate any input as string with delimiter.
 % 
 % Inputs:
@@ -10,7 +10,7 @@ function str = sawa_strjoin(C, delim)
 % str - string 
 % 
 % Example:
-% str = sawa_strjoin({'test',1,struct('test',{1})}, '\n')
+% str = pebl_strjoin({'test',1,struct('test',{1})}, '\n')
 % str = 
 %   
 % test
@@ -32,7 +32,7 @@ if ~exist('delim','var'), delim = ', '; end;
 % switch class
 switch class(C)
     case 'cell' % if cell, run for each
-        str = cellfun(@(x){sawa_strjoin(x,delim)},C);
+        str = cellfun(@(x){pebl_strjoin(x,delim)},C);
         str = sprintf(['%s' delim], str{:});
     case 'char' % if char, cellstr
         clear tmp; tmp = cellstr(C);
@@ -40,7 +40,7 @@ switch class(C)
     case {'double','logical'} % if double/logical, %g
         str = sprintf(['%g' delim],C);
     otherwise % otherwise any2str
-        try str = sawa_strjoin(any2str(C),delim); return; end;
+        try str = pebl_strjoin(any2str(C),delim); return; end;
 end
 
 % remove final delim

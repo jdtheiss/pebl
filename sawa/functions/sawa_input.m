@@ -1,5 +1,5 @@
-function output = sawa_input(varargin)
-% output = sawa_input('parameter1',value1,...)
+function output = pebl_input(varargin)
+% output = pebl_input('parameter1',value1,...)
 % Creates variables with user interface
 % 
 % Inputs:
@@ -25,7 +25,7 @@ function output = sawa_input(varargin)
 % output - variable returned
 %
 % Example:
-% output = sawa_input('variable','a','title','Set variable: a','func',...
+% output = pebl_input('variable','a','title','Set variable: a','func',...
 %                    {'@disp','@minus'}, 'value', 10)
 % [select @minus]
 % [select OK]
@@ -145,7 +145,7 @@ for c = chc
             end
         case 'Index' % index
             if ival==find(strcmpi(options,'index'),1), 
-                [~,~,rep]=sawa_getfield(value,'r',1); 
+                [~,~,rep]=pebl_getfield(value,'r',1); 
             end
             ind = '{1}'; 
             while ~isempty(ind), % set index
@@ -159,7 +159,7 @@ for c = chc
                 if ival==find(strcmpi(options,'index'),1), 
                     try value = subsref(value,s); end; % set value
                 end
-                value = subsasgn(value,s,sawa_input(varargin{:}));
+                value = subsasgn(value,s,pebl_input(varargin{:}));
             end
         case 'Structure' % struct
             if isstruct(value), % if exists, choose component to edit
@@ -193,10 +193,10 @@ for c = chc
                         substr(subchc) = []; 
                         continue;
                     end
-                    % run sawa_input
+                    % run pebl_input
                     if ~isempty(fld), 
                         if isfield(value(n),fld), tmpvalue = value(n).(fld); else tmpvalue = {}; end;
-                        value(n).(fld) = sawa_input(varargin{:},'value',tmpvalue); 
+                        value(n).(fld) = pebl_input(varargin{:},'value',tmpvalue); 
                         substr = vertcat(fieldnames(value),'Add'); 
                     end
                 end
@@ -218,7 +218,7 @@ for c = chc
                 end
             end 
         case 'Function' % function
-            params = sawa({'add_function','set_options','run_params'},...
+            params = pebl({'add_function','set_options','run_params'},...
                 struct('array',array,'iter',iter,'verbose_arg',false));
             value = params.outputs{1};
             clear params;
@@ -239,7 +239,7 @@ for c = chc
             end
             % get iter
             if strcmp(grp,'Group'), 
-                iter = sawa_subjs(sa,iter);
+                iter = pebl_subjs(sa,iter);
             end
             % choose fields
             vars = choose_fields(sa,iter,['Choose field(s) for ' variable]);
@@ -259,7 +259,7 @@ for c = chc
             % inputdlg for value{f}{r, c}
             out_fn = cell2mat(inputdlg('Enter output to use:','',1,{['output{',v,'}{end,1}']}));
             if isempty(out_fn), return; end;
-            % str2func for use in sawa_feval
+            % str2func for use in pebl_feval
             value = str2func(['@()''', out_fn, '''']);
     end
     % if horizontal, set vertical

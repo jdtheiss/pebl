@@ -47,8 +47,8 @@ function params = subjectarray(cmd,varargin)
 %   2   3
 %
 % requires: make_gui cell2strtable choose_SubjectArray choose_fields struct2var
-% printres savesubjfile sawa sawa_input sawa_dlmread sawa_getfield 
-% sawa_setfield sawa_strjoin sawa_subjs sawa_xlsread update_array
+% printres savesubjfile pebl pebl_input pebl_dlmread pebl_getfield 
+% pebl_setfield pebl_strjoin pebl_subjs pebl_xlsread update_array
 % 
 % Created by Justin Theiss
 
@@ -113,12 +113,12 @@ if ~exist('sa','var'), sa = struct; end;
 if strcmp(field,'subj'),
     subjs = [];
 elseif ~exist('subjs','var'),
-    subjs = sawa_subjs(sa);  
+    subjs = pebl_subjs(sa);  
 end
 
 % create vars
 if ~exist('vals','var')
-    vals = sawa_input('variable', field, 'iter', subjs, 'array', sa);
+    vals = pebl_input('variable', field, 'iter', subjs, 'array', sa);
     if isempty(vals), return; end;
 end
 
@@ -133,7 +133,7 @@ if ~isempty(subjs),
 else
     R = ['.', field];
 end
-sa = sawa_setfield(sa,'R',R,'C',vals);
+sa = pebl_setfield(sa,'R',R,'C',vals);
 
 % add to flds
 flds{end+1} = field;
@@ -170,9 +170,9 @@ end
 % switch file ext
 switch ext(1:4)
     case '.xls' % excel
-        raw = sawa_xlsread(filename);
+        raw = pebl_xlsread(filename);
     case '.txt' % txt
-        raw = sawa_dlmread(filename,'\t'); 
+        raw = pebl_dlmread(filename,'\t'); 
     case '.mat' % mat
         % choose task
         if ~exist('task','var'),
@@ -189,7 +189,7 @@ switch ext(1:4)
         flds = fieldnames(sa);
     otherwise % other
         delim = cell2mat(inputdlg(['Enter delimiter for ' filename]));
-        raw = sawa_dlmread(filename,delim); 
+        raw = pebl_dlmread(filename,delim); 
 end
 
 % if raw, set flds and vals
@@ -208,7 +208,7 @@ if ~exist('sa','var'),
     sa = struct;
     for n = 1:numel(flds),
         R = strcat('(', arrayfun(@(x){num2str(x)}, 1:numel(vals{n})), ').', flds{n});
-        sa = sawa_setfield(sa, 'R', R, 'C', vals{n});
+        sa = pebl_setfield(sa, 'R', R, 'C', vals{n});
     end
 end
 
@@ -263,7 +263,7 @@ end
 % get fields
 flds = fieldnames(sa);
 for f = 1:numel(flds),
-    vals{f} = sawa_getfield(sa,'expr',['.*\.' flds{f} '$'])'; 
+    vals{f} = pebl_getfield(sa,'expr',['.*\.' flds{f} '$'])'; 
     vals{f} = cellfun(@(x){genstr(x)}, vals{f});
     raw(:,f) = vertcat(flds{f},vals{f});
 end

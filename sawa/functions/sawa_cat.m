@@ -1,5 +1,5 @@
-function C = sawa_cat(dim, varargin)
-% C = sawa_cat(dim, A1, A2,...)
+function C = pebl_cat(dim, varargin)
+% C = pebl_cat(dim, A1, A2,...)
 % This function will force the directional concatenation of a set of
 % inputs A1, A2, etc. by padding inconsistencies with cells/nans.
 %
@@ -11,7 +11,7 @@ function C = sawa_cat(dim, varargin)
 % C - concatenated array
 % 
 % Example 1: concatenate cells with varying sizes along first dimension
-% C = sawa_cat(1,{'Cell1','Cell2'},'3',{'Cell4',5,'Cell6'})
+% C = pebl_cat(1,{'Cell1','Cell2'},'3',{'Cell4',5,'Cell6'})
 % C = 
 % 
 %     'Cell1'    'Cell2'         []
@@ -19,7 +19,7 @@ function C = sawa_cat(dim, varargin)
 %     'Cell4'    [    5]    'Cell6'
 %
 % Example 2: concatenate numbers with different dimensions
-% C = sawa_cat(4, [1;2], [3,4], 5 * ones(1,1,2))
+% C = pebl_cat(4, [1;2], [3,4], 5 * ones(1,1,2))
 % C(:,:,1,1) =
 % 
 %      1   NaN

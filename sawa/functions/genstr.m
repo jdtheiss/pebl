@@ -40,7 +40,7 @@ function str = genstr(obj, split)
 % 
 % str =
 % 
-% sawa_setfield(Simulink.NumericType, 'R', {'.DataTypeMode', '.Signedness',...
+% pebl_setfield(Simulink.NumericType, 'R', {'.DataTypeMode', '.Signedness',...
 %  '.SignednessBool', '.WordLength', '.FixedExponent', '.FractionLength',...
 %  '.Slope', '.SlopeAdjustmentFactor', '.Bias', '.DataTypeOverride',...
 %  '.IsAlias', '.Description', '.DataScope', '.HeaderFile'},...
@@ -50,7 +50,7 @@ function str = genstr(obj, split)
 %  '', 'Auto', ''})
 % 
 % Note: if the class is an object that is not readily known, genstr will
-% attempt return the string beginning with 'sawa_setfield(' in order to
+% attempt return the string beginning with 'pebl_setfield(' in order to
 % allow multiple fields to be set upon evaluation (as in Example 4). 
 % Also note, that exact number may differ due to rounding errors.
 %
@@ -137,7 +137,7 @@ else % switch class
                     vals{x} = obj.(flds{x});
                     flds{x} = ['.', flds{x}];
                 end
-                str = sprintf('sawa_setfield(%s, ''R'', %s, ''C'', %s)', ...
+                str = sprintf('pebl_setfield(%s, ''R'', %s, ''C'', %s)', ...
                     class(obj), genstr(flds), genstr(vals));
             else % get string as details(obj)
                 str = evalc('details(obj)');

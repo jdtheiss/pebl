@@ -1,6 +1,6 @@
-function params = sawa(cmd, varargin)
-% params = sawa(cmd, varargin)
-% sawa allows users create a pipeline of functions using matlab,
+function params = pebl(cmd, varargin)
+% params = pebl(cmd, varargin)
+% pebl allows users create a pipeline of functions using matlab,
 % command line, or matlabbatch functions.
 % 
 % Inputs:
@@ -15,7 +15,7 @@ function params = sawa(cmd, varargin)
 %   outputs - cell array of outputs from functions
 %
 % Example 1: add a function, set the options, and run the function
-% params = sawa({'add_function','set_options','run_params'})
+% params = pebl({'add_function','set_options','run_params'})
 % [enter @disp at prompt]
 % [choose "varargin"]
 % [choose "String"]
@@ -34,7 +34,7 @@ function params = sawa(cmd, varargin)
 % to 'output.txt' 
 % params.print_type = 'diary'; 
 % params.print_file = 'output.txt';
-% params = sawa('run_params', params)
+% params = pebl('run_params', params)
 %
 % Output will be saved in: output.txt
 % @disp test
@@ -54,7 +54,7 @@ function params = sawa(cmd, varargin)
 % Note the following commands are supported: 'setup', 'set_subjectarray',
 % 'load_editor', 'set_iter', 'init_env', 'add_function', 'set_options',
 % 'get_docstr', 'load_save_params', 'print_options', and 'run_params'. 
-% Type help sawa>subfunction to get help for desired subfunction.
+% Type help pebl>subfunction to get help for desired subfunction.
 %
 % Created by Justin Theiss
 
@@ -75,7 +75,7 @@ end
 % setup path and run tests 
 function params = setup(params)
 % param = setup(params)
-% Sets path for sawa functions directory and runs @sawa_test.
+% Sets path for pebl functions directory and runs @pebl_test.
 
     % set path to mfilename directory
     P = fileparts(mfilename('fullpath'));
@@ -85,7 +85,7 @@ function params = setup(params)
     % msgbox regarding tests
     uiwait(msgbox('Running tests. Please ignore windows that display.', 'Running Tests'));
     % run tests
-    sawa_test;
+    pebl_test;
 end
 
 % load subject array
@@ -110,7 +110,7 @@ function params = load_editor(params)
     % set environments if 'env' field
     if isfield(params,'env'), init_env(params,params.env); end;
     % setup structure for make_gui
-    s.name = 'sawa';
+    s.name = 'pebl';
     [s.push(1:5).string] = deal('add path/environment', 'subject array',...
         'iterations', 'add function', 'set options');
     [s.push.order] = deal([1,2],[1,3],[1,4],[1,5],[1,6]);
@@ -268,8 +268,8 @@ function params = listbox_callback(params, fig, x)
                 docstr = get_docstr(params.funcs, idx);
                 disp(docstr{idx});
             case 5 % insert
-                params.funcs = sawa_insert(2, params.funcs, idx, {[]});
-                params.options = sawa_insert(2, params.options, idx, {[]});
+                params.funcs = pebl_insert(2, params.funcs, idx, {[]});
+                params.options = pebl_insert(2, params.options, idx, {[]});
                 params = add_function(params, idx);
         end
     end
@@ -282,7 +282,7 @@ end
 % set iterations
 function params = set_iter(params, iter_args)
 % params = set_iter(params, iter_args)
-% Set the number of iterations for @sawa_feval
+% Set the number of iterations for @pebl_feval
 % If no iter_args, 
 
     % load iter if not input
@@ -301,7 +301,7 @@ function params = set_iter(params, iter_args)
             end
         end
         % choose fields
-        chc = listdlg('PromptString',{'Choose @sawa_feval field(s) to set',''},...
+        chc = listdlg('PromptString',{'Choose @pebl_feval field(s) to set',''},...
                       'ListString',fields);
         % set fields
         for x = chc,
@@ -325,7 +325,7 @@ function params = init_env(params, env_func, P)
 % Add a path or set environmental variable as feval(env_func, P{:}).
 % If no env_func, choose from @addpath, @setenv, @rmpath, or enter with
 % @inputdlg. 
-% If no P, set using @sawa_input.
+% If no P, set using @pebl_input.
 % A new field, 'env', will be set to params as a cell containing the
 % function and path/etc. as {env_func, P{:}}, which will be used the next
 % time params is loaded using @load_editor.
@@ -351,9 +351,9 @@ function params = init_env(params, env_func, P)
     % setenv input
     if strcmp(env_func, 'setenv') && ~exist('P','var'),
         P{1} = cell2mat(inputdlg('Enter environment name to set','Name',1,{'PATH'}));
-        P{2} = sawa_input('variable',[env_func ' input']);
+        P{2} = pebl_input('variable',[env_func ' input']);
     elseif ~exist('P','var')||isempty(P), % normal input
-        P{1} = sawa_input('variable',[env_func ' input']);
+        P{1} = pebl_input('variable',[env_func ' input']);
     end
     % feval env_func, P
     feval(env_func, P{:});
@@ -370,7 +370,7 @@ function params = add_function(params, idx, func)
 % Add a function to use at the index position idx.
 % func - function to add (e.g., @function, command, or ''matlabbatch'')
 % Function will be entered using @inputdlg. If matlabbatch is entered,
-% @sawa_setbatch will be called.
+% @pebl_setbatch will be called.
 % If no idx, idx = numel(funcs) + 1.
 
     % load params
@@ -398,7 +398,7 @@ function params = add_function(params, idx, func)
             funcs{idx} = eval(func);
         elseif strcmp(func,'matlabbatch'), % matlabbatch
             % load matlabbatch
-            [funcs{idx}, options{idx}] = sawa_setbatch(funcs{idx}, options{idx});
+            [funcs{idx}, options{idx}] = pebl_setbatch(funcs{idx}, options{idx});
         else % command
             funcs{idx} = func;
         end
@@ -413,7 +413,7 @@ end
 function params = set_options(params, idx, option)
 % params = set_options(params, idx, option)
 % Set the options for function at index idx.
-% Options will be set using @sawa_input.
+% Options will be set using @pebl_input.
 
     % load params
     struct2var(params,{'funcs','options','idx','subjs','sa'});
@@ -459,12 +459,12 @@ function params = set_options(params, idx, option)
                 if y > numel(options{x}), 
                     options{x}{y} = option{y};
                 end
-                options{x}{y} = sawa_input('variable',option{y},'iter',subjs,...
+                options{x}{y} = pebl_input('variable',option{y},'iter',subjs,...
                                            'array',sa,'value',options{x}{y},...
                                            'func',strfuncs(1:x-1)); 
             end
             % if gui, done
-            if ~isempty(findobj('type','figure','name','sawa')),
+            if ~isempty(findobj('type','figure','name','pebl')),
                 done = true;
             else % otherwise ask continue
                 done = strcmp(questdlg('Add new variable?','New variable','Yes','No','No'),'No');
@@ -505,7 +505,7 @@ function docstr = get_docstr(funcs, idx)
                 [job, mods] = cfg_util('initjob', funcs{x});
                 for n = 1:numel(mods),
                     tagstr = cfg_util('harvest', job, mods{n});
-                    [~,~,rep] = sawa_getfield(funcs{x}{n}, 'expr', ['.*', tagstr]);
+                    [~,~,rep] = pebl_getfield(funcs{x}{n}, 'expr', ['.*', tagstr]);
                     tmpstr = cfg_util('showdocwidth', 70, rep{1}(2:end));
                     docstr{x} = char(docstr{x}, tmpstr{:});
                 end
@@ -560,7 +560,7 @@ function params = print_options(params, varargin)
 % params = print_options(params, 'option1', 'value1', ...)
 % Set verbose_arg or use diary to record subsequent command window text to
 % a filename. If print_type = 'diary' and no print_file, print_file will be
-% set to 'sawa_diary.txt'.
+% set to 'pebl_diary.txt'.
 %
 % options:
 % 'print_type' - 'diary' (save all outputs), 'off' (no outputs)
@@ -606,13 +606,13 @@ end
 % run functions
 function params = run_params(params)
 % params = run_params(params)
-% Run parameters using @sawa_feval after evaluating any subject array
-% variables in options using @sawa_eval and setting print options with
+% Run parameters using @pebl_feval after evaluating any subject array
+% variables in options using @pebl_eval and setting print options with
 % @print_options.
 %
 % Available options (fields of params):
 % iter_args - cell array of arguments related to iter/loop/seq for
-%   sawa_feval (e.g., {'iter', 1:2, 'loop', 2})
+%   pebl_feval (e.g., {'iter', 1:2, 'loop', 2})
 %   [default {}]
 % funcs - cell array of functions to be run 
 %   [default {}]
@@ -639,15 +639,15 @@ function params = run_params(params)
     if ~exist('throw_error','var'), throw_error = false; end;
     % eval options
     cmd_idx = cellfun(@(x)ischar(x),funcs);
-    options(cmd_idx) = sawa_eval(options(cmd_idx),'cmd');
-    options(~cmd_idx) = sawa_eval(options(~cmd_idx));
+    options(cmd_idx) = pebl_eval(options(cmd_idx),'cmd');
+    options(~cmd_idx) = pebl_eval(options(~cmd_idx));
     % print outputs as selected, return verbose
     params = print_options(params); 
     struct2var(params,'verbose_arg'); 
     if isempty(funcs), return; end;
     try
-        % run sawa_feval
-        outputs = sawa_feval(iter_args{:},'n_out',n_out,'verbose',verbose_arg,...
+        % run pebl_feval
+        outputs = pebl_feval(iter_args{:},'n_out',n_out,'verbose',verbose_arg,...
                             'throw_error',throw_error,'wait_bar',wait_bar,funcs,options{:});
     catch err
         disp(['fatal error:', err.message]);

@@ -1,5 +1,5 @@
-function [C, reps] =  sawa_eq(A,B)
-% [C, reps] = sawa_eq(A,B)
+function [C, reps] =  pebl_eq(A,B)
+% [C, reps] = pebl_eq(A,B)
 % Checks if all components of A and B are equal.
 %
 % Inputs:
@@ -14,7 +14,7 @@ function [C, reps] =  sawa_eq(A,B)
 % A = struct('field1',{1},'field2',{2});
 % B = struct('field1',{'1'},'field2',{2});
 % 
-% [C, reps] = sawa_eq(A,B)
+% [C, reps] = pebl_eq(A,B)
 % 
 % C =
 % 
@@ -27,7 +27,7 @@ function [C, reps] =  sawa_eq(A,B)
 % Note: if a non-struct or non-cell object is input, the returned rep will
 % be ''.
 %
-% requires: sawa_getfield
+% requires: pebl_getfield
 % Created by Justin Theiss
 
 % set reps
@@ -35,29 +35,29 @@ C = true;
 reps = {};
 
 % get all values
-[Avals,~,Areps] = sawa_getfield(A);
+[Avals,~,Areps] = pebl_getfield(A);
 if ~iscell(Avals) && isempty(Avals), Avals = {A}; Areps = {''}; end; 
-[Bvals,~,Breps] = sawa_getfield(B);
+[Bvals,~,Breps] = pebl_getfield(B);
 if ~iscell(Bvals) && isempty(Bvals), Bvals = {B}; Breps = {''}; end;
 
 % check for nan
 r = randn(1);
-[f_a,s_a] = sawa_getfield(Avals,'fun',@(x)any(isnan(x(:))));
-[f_b,s_b] = sawa_getfield(Bvals,'fun',@(x)any(isnan(x(:))));
+[f_a,s_a] = pebl_getfield(Avals,'fun',@(x)any(isnan(x(:))));
+[f_b,s_b] = pebl_getfield(Bvals,'fun',@(x)any(isnan(x(:))));
 for x = 1:numel(f_a), f_a{x}(isnan(f_a{x})) = r; Avals = subsasgn(Avals,s_a{x},f_a{x}); end;
 for x = 1:numel(f_b), f_b{x}(isnan(f_b{x})) = r; Bvals = subsasgn(Bvals,s_b{x},f_b{x}); end;
 
 % check for function_handles
 r = num2str(randn(1));
-[f_a,s_a] = sawa_getfield(Avals,'fun',{@isa,'function_handle'});
-[f_b,s_b] = sawa_getfield(Bvals,'fun',{@isa,'function_handle'});
+[f_a,s_a] = pebl_getfield(Avals,'fun',{@isa,'function_handle'});
+[f_b,s_b] = pebl_getfield(Bvals,'fun',{@isa,'function_handle'});
 for x = 1:numel(f_a), Avals = subsasgn(Avals,s_a{x},[func2str(f_a{x}),r]); end;
 for x = 1:numel(f_b), Bvals = subsasgn(Bvals,s_b{x},[func2str(f_b{x}),r]); end;
 
 % check for empty cells
 r = randn(1);
-[f_a,s_a] = sawa_getfield(Avals,'fun',@(x)isempty(x) && iscell(x));
-[f_b,s_b] = sawa_getfield(Bvals,'fun',@(x)isempty(x) && iscell(x));
+[f_a,s_a] = pebl_getfield(Avals,'fun',@(x)isempty(x) && iscell(x));
+[f_b,s_b] = pebl_getfield(Bvals,'fun',@(x)isempty(x) && iscell(x));
 for x = 1:numel(f_a), Avals = subsasgn(Avals,s_a{x},r); end;
 for x = 1:numel(f_b), Bvals = subsasgn(Bvals,s_b{x},r); end;
 

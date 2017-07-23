@@ -1,5 +1,5 @@
-function files = sawa_search(folder, expr, type, varargin)
-% files = sawa_searchdir(folder, expr, type, ...)
+function files = pebl_search(folder, expr, type, varargin)
+% files = pebl_searchdir(folder, expr, type, ...)
 % Search for files, folders, or text within files.
 %
 % Inputs:
@@ -17,22 +17,22 @@ function files = sawa_search(folder, expr, type, varargin)
 % files - files matching search criteria
 %
 % Example 1: search for this file
-% folder = fileparts(which('sawa_search')); expr = 'sawa_search';
+% folder = fileparts(which('pebl_search')); expr = 'pebl_search';
 % type = 'dir';
-% files = sawa_search(folder, expr, type)
+% files = pebl_search(folder, expr, type)
 % 
 % files = 
 % 
-%     '/Applications/sawa/main/functions/sawa_search.m'
+%     '/Applications/pebl/main/functions/pebl_search.m'
 %     
 % Example 2: search for this phrase in files
-% folder = fileparts(which('sawa_search')); expr = 'search for this phrase';
+% folder = fileparts(which('pebl_search')); expr = 'search for this phrase';
 % type = '\.m$';
-% files = sawa_search(folder, expr, type)
+% files = pebl_search(folder, expr, type)
 %
 % files = 
 % 
-%     '/Applications/sawa/main/functions/sawa_search.m'
+%     '/Applications/pebl/main/functions/pebl_search.m'
 %
 % Note: when searching within files, type can be any regular expression to
 % narrow files to search within (e.g., '\.m$' or ['.*', date, '\.txt$']).
@@ -72,11 +72,11 @@ else % otherwise find type, and fileread
     end
 end
 
-% for each dir, sawa_search
+% for each dir, pebl_search
 if n_levels > 0,
     for x = find(dir_idx),
         files = horzcat(files,...
-            sawa_search(fullfile(folder, d(x).name), expr, type,...
+            pebl_search(fullfile(folder, d(x).name), expr, type,...
             'verbose', verbose, 'n_levels', n_levels-1));
     end
 end

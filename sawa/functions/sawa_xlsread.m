@@ -1,5 +1,5 @@
-function raw = sawa_xlsread(xfil,s)
-% raw = sawa_xlsread(xfil)
+function raw = pebl_xlsread(xfil,s)
+% raw = pebl_xlsread(xfil)
 % This function is mainly used since xlsread does not work consistently
 % with .xlsx files on mac. However, this will not slow down the ability the
 % functionality on pc or with .xls files. It also simplifies the usual

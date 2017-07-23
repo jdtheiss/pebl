@@ -24,14 +24,14 @@ function flds = choose_fields(sa,subjs,msg)
 %     'age{1}'
 %     'age{2}'
 %
-% requires: sawa_subjs
+% requires: pebl_subjs
 %
 % Created by Justin Theiss
 
 
 % init vars
 flds = {}; 
-if ~exist('sa','var')||isempty(sa), [subjs,sa]=sawa_subjs; end;
+if ~exist('sa','var')||isempty(sa), [subjs,sa]=pebl_subjs; end;
 if ~exist('subjs','var')||isempty(subjs), subjs = 1:numel(sa); end;
 if ~exist('msg','var'), msg = 'Choose fields:'; end;
 if ~iscell(msg), msg = {msg}; end;

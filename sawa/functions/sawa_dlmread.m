@@ -1,5 +1,5 @@
-function raw = sawa_dlmread(file,delim)
-% raw = sawa_dlmread(file, delim)
+function raw = pebl_dlmread(file,delim)
+% raw = pebl_dlmread(file, delim)
 % This function will read csv/txt files and create a cell array based on
 % delimiters. 
 %
@@ -15,7 +15,7 @@ function raw = sawa_dlmread(file,delim)
 % Test data; Column 2; Column 3;
 % Data1; Data2; Data3;
 % file = '/Test/place/file.csv'; delim = ';';
-% raw = sawa_dlmread(file,delim)
+% raw = pebl_dlmread(file,delim)
 % raw = 
 % 'Test Data'   'Column 2'  'Column 3'
 % 'Data1'       'Data2'     'Data3'  
@@ -40,5 +40,5 @@ rows(cellfun('isempty',rows)) = [];
 % split with delim
 raw = regexp(rows, delim, 'split'); 
 % concatenate vertically
-raw = sawa_cat(1, raw{:});
+raw = pebl_cat(1, raw{:});
 end

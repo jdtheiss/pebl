@@ -1,6 +1,6 @@
-function valf = sawa_eval(val,opt)
-% valf = sawa_eval(val,opt)
-% Evaluate variables created from sawa_input
+function valf = pebl_eval(val,opt)
+% valf = pebl_eval(val,opt)
+% Evaluate variables created from pebl_input
 % 
 % Inputs:
 % val - string, cell array, structure to evaluate/mkdir/spm_select
@@ -19,7 +19,7 @@ function valf = sawa_eval(val,opt)
 % for i = 1:2
 % s = i;
 % output{1,1}{s} = sa(i).subj;
-% valf = sawa_eval(batch)
+% valf = pebl_eval(batch)
 % end
 % 
 % valf = 
@@ -37,7 +37,7 @@ function valf = sawa_eval(val,opt)
 % Note: In order to create a new directory, the path should have a backslash
 % at the end (e.g., '/User/Test\' or 'C:\Test\').
 %  
-% requires: sawa_getfield 
+% requires: pebl_getfield 
 %
 % Created by Justin Theiss
 
@@ -58,7 +58,7 @@ end;
 
 % find cells with 'eval'
 clear vals S; 
-[C,S] = sawa_getfield(valf,'fun',@(x)strncmp(x,'eval',4)); 
+[C,S] = pebl_getfield(valf,'fun',@(x)strncmp(x,'eval',4)); 
 for x = 1:numel(C), 
     try C{x} = eval(C{x}); catch, return; end; % eval
     valf = local_mkdir_select(valf,C{x},S{x},opt); % mkdir/select
@@ -66,7 +66,7 @@ end
 
 % find cells with sa\([\d\w\]+\)\.
 clear vals S;
-[C,S] = sawa_getfield(valf,'fun',@(x)ischar(x)&&regexp(x,'sa\([\d\w]+\)\.')); 
+[C,S] = pebl_getfield(valf,'fun',@(x)ischar(x)&&regexp(x,'sa\([\d\w]+\)\.')); 
 for x = 1:numel(C), % evalchar
     C{x} = evalin('caller',['local_evalchar(''' C{x} ''');']); 
     valf = local_mkdir_select(valf,C{x},S{x},opt); % mkdir/select
@@ -74,7 +74,7 @@ end;
 
 % find cells with filesep
 clear vals S; 
-[C,S] = sawa_getfield(valf,'fun',@(x)ischar(x)&&any(strfind(x,filesep))); 
+[C,S] = pebl_getfield(valf,'fun',@(x)ischar(x)&&any(strfind(x,filesep))); 
 for x = 1:numel(C),
     valf = local_mkdir_select(valf,C{x},S{x},opt); % mkdir/select
 end

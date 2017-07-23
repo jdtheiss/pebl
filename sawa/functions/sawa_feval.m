@@ -1,5 +1,5 @@
-function output = sawa_feval(varargin)
-% output = sawa_feval('Param1', Value1, 'Param2', Value2, funcs, options1, options2, ...)
+function output = pebl_feval(varargin)
+% output = pebl_feval('Param1', Value1, 'Param2', Value2, funcs, options1, options2, ...)
 % Run wrapper of multiple scripts/functions/system commands/matlabbatch.
 %
 % Inputs:
@@ -44,7 +44,7 @@ function output = sawa_feval(varargin)
 %
 % Example 1: system echo 'this' and compare output with 'that' using
 % strcmp, then repeat with system echo 'that'
-% output = sawa_feval('loop', 2, 'iter', {1:2,0}, {'echo',@strcmp},...
+% output = pebl_feval('loop', 2, 'iter', {1:2,0}, {'echo',@strcmp},...
 %                    {'-n',{'this'; 'that'}}, {@()'output{1}{end}', 'that'})
 % this
 % that
@@ -60,7 +60,7 @@ function output = sawa_feval(varargin)
 %     [1]
 %     
 % Example 2: subtract 1 from each previous output
-% output = sawa_feval('seq', [1,2,2], 'verbose', true, {@randi, @minus},...
+% output = pebl_feval('seq', [1,2,2], 'verbose', true, {@randi, @minus},...
 %                    10, {@()'output{1}{end}', 1})
 % randi 10
 % 
@@ -88,7 +88,7 @@ function output = sawa_feval(varargin)
 %
 % Example 3: get fullfile path of template image, then display image using matlabbatch
 % matlabbatch{1}.spm.util.disp.data = '<UNDEFINED>';
-% output = sawa_feval({@fullfile, matlabbatch}, ...
+% output = pebl_feval({@fullfile, matlabbatch}, ...
 %          {fileparts(which('spm')), 'canonical', 'avg152T1.nii'},...
 %          {'.*\.data$', @()'output{1}(1)'})
 % 
@@ -113,7 +113,7 @@ function output = sawa_feval(varargin)
 %
 % 
 % Example 4: use @() to evaluate inputs
-% output = sawa_feval('loop', 2, 'iter', {1:2,0}, {'echo',@minus},...
+% output = pebl_feval('loop', 2, 'iter', {1:2,0}, {'echo',@minus},...
 %          {'-n', {@()'randi(10)';'2'}}, {@()'str2double(output{1}{end})', 2})
 %
 % 5
@@ -130,7 +130,7 @@ function output = sawa_feval(varargin)
 %     [0]
 % 
 % Example 5: run while loop until last two numbers are same
-% output = sawa_feval('iter',1:2,'stop_fcn',@()'output{1}{end}==output{1}{end-1}',...
+% output = pebl_feval('iter',1:2,'stop_fcn',@()'output{1}{end}==output{1}{end-1}',...
 %          @randi, {10;10})
 % 
 % output{1} = 
@@ -155,7 +155,7 @@ function output = sawa_feval(varargin)
 % function_handles (i.e. @func instead of 'func'). also, in order to avoid
 % function inputs being incorrectly assigned as parameters, put any 
 % inputs sharing parameter names in cell brackets 
-% (e.g., sawa_feval('verbose', true, @disp, {'verbose'})).
+% (e.g., pebl_feval('verbose', true, @disp, {'verbose'})).
 %
 % Created by Justin Theiss
 
@@ -282,7 +282,7 @@ for f = seq,
                 results(1:o) = {[]};
             end
             % concatenate results to output
-            output{f} = sawa_cat(1, output{f}, results(n_out)); 
+            output{f} = pebl_cat(1, output{f}, results(n_out)); 
             % wait_bar
             if wait_bar,
                 settimeleft(f, 1:numel(iter), h);
@@ -318,7 +318,7 @@ function options = local_eval(output, options, n)
     
     % find functions in options
     if ~iscell(options), options = {options}; end;
-    [C,S] = sawa_getfield(options,'fun',@(x)isa(x,'function_handle')); 
+    [C,S] = pebl_getfield(options,'fun',@(x)isa(x,'function_handle')); 
     if isempty(C), return; end;
     
     % convert to str to check
@@ -415,7 +415,7 @@ function varargout = local_system(func, options, verbose)
             tmpout = regexp(tmpout, '\n', 'split');
             tmpout(cellfun('isempty',tmpout)) = [];
             tmpout = regexp(tmpout, '\s+', 'split');
-            tmpout = sawa_cat(1, tmpout{:}); 
+            tmpout = pebl_cat(1, tmpout{:}); 
             tmpout(cellfun('isempty',tmpout)) = {''};
             tmpout = arrayfun(@(x){char(tmpout(:,x))}, 1:size(tmpout,2));
             % set to output
@@ -439,16 +439,16 @@ function matlabbatch = local_setbatch(matlabbatch, options)
     % for each option, get subsref struct
     for x = 1:2:numel(options)
         switch class(options{x})
-            case 'struct' % use sawa_setfield with S
+            case 'struct' % use pebl_setfield with S
                 % if cell substruct but not cell in matlabbatch, set to {}
                 if strcmp(options{x}(end).type,'{}')&&~iscell(subsref(matlabbatch,options{x}(1:end-1))),
                     matlabbatch = subsasgn(matlabbatch, options{x}(1:end-1), {});
                 end
-                matlabbatch = sawa_setfield(matlabbatch, 'S', options{x}, 'C', options{x+1});
-            case 'cell' % use sawa_setfield with options
-                matlabbatch = sawa_setfield(matlabbatch, options{x}{:}, 'C', options{x+1});
-            case 'char' % use sawa_setfield with expr
-                matlabbatch = sawa_setfield(matlabbatch, 'expr', options{x}, 'C', options{x+1});
+                matlabbatch = pebl_setfield(matlabbatch, 'S', options{x}, 'C', options{x+1});
+            case 'cell' % use pebl_setfield with options
+                matlabbatch = pebl_setfield(matlabbatch, options{x}{:}, 'C', options{x+1});
+            case 'char' % use pebl_setfield with expr
+                matlabbatch = pebl_setfield(matlabbatch, 'expr', options{x}, 'C', options{x+1});
         end
     end
 end
@@ -466,7 +466,7 @@ function varargout = local_batch(matlabbatch, options, verbose)
     
     % display functions of structure
     if verbose,
-        [C,~,R] = sawa_getfield(matlabbatch);
+        [C,~,R] = pebl_getfield(matlabbatch);
         cellfun(@(x,y)fprintf('%s: %s\n', x, genstr(y)), R, C);
     end;
     

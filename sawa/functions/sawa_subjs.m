@@ -1,5 +1,5 @@
-function [subjs,sa] = sawa_subjs(sa, isubjs)
-% [subjs,sa] = sawa_subjs(sa, isubjs) 
+function [subjs,sa] = pebl_subjs(sa, isubjs)
+% [subjs,sa] = pebl_subjs(sa, isubjs) 
 % Choose subjects, and refine subjects based on subject fields
 %
 % Inputs:
@@ -14,7 +14,7 @@ function [subjs,sa] = sawa_subjs(sa, isubjs)
 % 
 % Example 1:
 % sa = struct('subj',{'sub1','sub2','sub3'},'age',{12,13,14},'group',{'hc','patient','hc'});
-% subjs = sawa_subjs(sa)
+% subjs = pebl_subjs(sa)
 %
 % %Choose subjects: Select All
 % %Choose field: age
@@ -35,7 +35,7 @@ function [subjs,sa] = sawa_subjs(sa, isubjs)
 % Choosing "Refine" will return subjects that have met criteria across 
 % all function/searches.
 %
-% requires: choose_fields sawa_find
+% requires: choose_fields pebl_find
 %
 % Created by Justin Theiss
 
@@ -64,16 +64,16 @@ fun = cell2mat(inputdlg(['Enter function to refine subjects by ' fld]));
 param = cell2mat(inputdlg(['Enter parameter for ' fun ' to refine subjects']));
 if isstrprop(param,'digit'), param = str2double(param); end;
 
-% sawa_find
-fnd = sawa_find(fun,param,sa(subjs),'str',['.', fld]);
+% pebl_find
+fnd = pebl_find(fun,param,sa(subjs),'str',['.', fld]);
 if ~isempty(fnd), subjs = subjs(fnd); end;
 
 % add or refine
 type = questdlg('Add to or refine subjects','Add/Refine','add','refine','done','done');
 switch type
     case 'add' % add to subject list
-        subjs = cat(2, subjs, sawa_subjs(sa, isubjs));
+        subjs = cat(2, subjs, pebl_subjs(sa, isubjs));
     case 'refine' % refine within current subjects
-        subjs = sawa_subjs(sa, subjs);
+        subjs = pebl_subjs(sa, subjs);
 end
 end

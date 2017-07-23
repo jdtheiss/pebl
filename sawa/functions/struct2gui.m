@@ -110,7 +110,7 @@ function S = local_setdefaults(S)
         S.position = [360,500,450,300]; 
     end
     % get n of uicontrols and needed columns
-    uictrls = sawa_getfield(S,'fun', @(x)isa(x,'struct'), 'r', 1);
+    uictrls = pebl_getfield(S,'fun', @(x)isa(x,'struct'), 'r', 1);
     n = sum(cellfun(@(x)numel(x), uictrls));
     % set rows and columns;
     r = 8; c = max(2, ceil(n / r));
@@ -125,44 +125,44 @@ function S = local_setdefaults(S)
     loc_fun = @(x)[spacing(1) + (spacing(1) + default_size(1)) * (x(1)-1),...
         S.position(4) - (spacing(2) + default_size(2)) * x(2)];
     % get fields without position and set to 0s
-    [~, sub_pos] = sawa_getfield(S, 'expr', '^\.[^\.]+', 'fun',...
+    [~, sub_pos] = pebl_getfield(S, 'expr', '^\.[^\.]+', 'fun',...
         @(x)isstruct(x)&&~isfield(x,'position')||isempty(x.position));
-    S = sawa_setfield(S, 'S', sub_pos, 'append', '.position', 'C', zeros(1,4)); 
+    S = pebl_setfield(S, 'S', sub_pos, 'append', '.position', 'C', zeros(1,4)); 
     % init default order
     default_order = cat(2,sort(repmat([1:c]',r,1)),repmat([1:r]',c,1));
     % get orders
-    [orders, sub_order] = sawa_getfield(S, 'expr', '.*\.order$', 'fun', @(x)~isempty(x));
+    [orders, sub_order] = pebl_getfield(S, 'expr', '.*\.order$', 'fun', @(x)~isempty(x));
     set = cellfun(@(x)find(arrayfun(@(y)all(default_order(y,:)==x),...
         1:size(default_order,1))), orders);
     default_order = arrayfun(@(x){default_order(x,:)}, 1:size(default_order,1));
     % set locations for orders
     locs = cellfun(@(x){loc_fun(x)}, default_order);
     % set position locations
-    [S, sub_order] = sawa_setfield(S, 'S', sub_order, 'remove', true); 
-    S = sawa_setfield(S, 'S', sub_order, 'append', '.position(1:2)', 'C', locs(set));
+    [S, sub_order] = pebl_setfield(S, 'S', sub_order, 'remove', true); 
+    S = pebl_setfield(S, 'S', sub_order, 'append', '.position(1:2)', 'C', locs(set));
     locs(set) = [];  
     % set unset locations
     if ~isempty(locs), 
-        [~, sub_pos] = sawa_getfield(S, 'expr', '.*\.position$', 'fun', @(x)all(x(1:2)==0));
-        S = sawa_setfield(S, 'S', sub_pos, 'append', '(1:2)', 'C', locs(1:numel(sub_pos)));
+        [~, sub_pos] = pebl_getfield(S, 'expr', '.*\.position$', 'fun', @(x)all(x(1:2)==0));
+        S = pebl_setfield(S, 'S', sub_pos, 'append', '(1:2)', 'C', locs(1:numel(sub_pos)));
     end
     % set position sizes
-    [sizes, sub_size] = sawa_getfield(S, 'expr', '.*\.size$');
-    [S, sub_size] = sawa_setfield(S, 'S', sub_size, 'remove', true);
-    S = sawa_setfield(S, 'S', sub_size, 'append', '.position(3:4)', 'C', sizes);
+    [sizes, sub_size] = pebl_getfield(S, 'expr', '.*\.size$');
+    [S, sub_size] = pebl_setfield(S, 'S', sub_size, 'remove', true);
+    S = pebl_setfield(S, 'S', sub_size, 'append', '.position(3:4)', 'C', sizes);
     % set unset sizes
-    [~, sub_size] = sawa_getfield(S, 'expr', '.*\.position$', 'fun', @(x)all(x(3:4)==0));
-    S = sawa_setfield(S, 'S', sub_size, 'append', '(3:4)', 'C', default_size);
+    [~, sub_size] = pebl_getfield(S, 'expr', '.*\.position$', 'fun', @(x)all(x(3:4)==0));
+    S = pebl_setfield(S, 'S', sub_size, 'append', '(3:4)', 'C', default_size);
     % set tags as style_number
-    [~, sub_tag] = sawa_getfield(S, 'expr', '^\.[^\.]+', 'fun',... 
+    [~, sub_tag] = pebl_getfield(S, 'expr', '^\.[^\.]+', 'fun',... 
         @(x)isstruct(x)&&~isfield(x,'tag')||isempty(x.tag));
-    S = sawa_setfield(S, 'S', sub_tag, 'append', '.tag', 'C',...
+    S = pebl_setfield(S, 'S', sub_tag, 'append', '.tag', 'C',...
         cellfun(@(x){regexprep(sub2str(x),'[\.\(\)\{\}]','')}, sub_tag));
     % set get(x) as callback
     callback = @(x,y)guidata(gcf, setfield(guidata(gcf), regexprep(get(x,'tag'),'\W',''), get(x)));
-    [~, sub_cb] = sawa_getfield(S, 'expr', '^\.[^\.]+', 'fun',...
+    [~, sub_cb] = pebl_getfield(S, 'expr', '^\.[^\.]+', 'fun',...
         @(x)isstruct(x)&&~isfield(x, 'callback')||isempty(x.callback));
-    S = sawa_setfield(S, 'S', sub_cb, 'append', '.callback', 'C', callback);
+    S = pebl_setfield(S, 'S', sub_cb, 'append', '.callback', 'C', callback);
 end
 
 function f = local_setfields(f, S)
