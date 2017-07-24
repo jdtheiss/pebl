@@ -38,4 +38,4 @@ folder and run pebl('setup') from the command prompt. In addition to setting the
 "functions" directory to your matlab path, the 'setup' command will also run
 tests on all of the pebl functions. If any errors are thrown ensure you are
 using the most up-to-date version. Assuming all tests pass, you may begin
-using pebl using its graphical user interface (GUI) or from the command prompt.
+using pebl by its graphical user interface (GUI) or from the command prompt.
