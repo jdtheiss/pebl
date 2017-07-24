@@ -188,7 +188,7 @@ end
 function test_pebl_feval
     outputs1 = {1;2;};
     outputs2 = pebl_feval('iter', 1:2, @str2double, {'1';'2'});
-    assert(all(cellfun(@(x,y)x==y,outputs1,outputs2)));
+    assert(all(cellfun(@(x,y)x==y,outputs1,outputs2{1})));
 end
 
 function test_pebl_find
