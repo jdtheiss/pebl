@@ -1,20 +1,20 @@
 function flds = choose_fields(sa,subjs,msg)
 % flds = choose_fields(sa, subrun, msg)
-% Choose string represntations of fields from subject array
+% Choose string represntations of fields from study array
 % 
 % Inputs:
-% sa - subject array (default will have user choose subject array)
+% sa - study array (default will have user choose study array)
 % subrun - subjects to choose fields from (default is all indices of sa)
 % msg - message (default is 'Choose fields:')
 %
 % Outputs:
-% flds - cellstr of string representations of subject array field choices
+% flds - cellstr of string representations of study array field choices
 % (see example)
 %
 % Example:
 % sa = struct('age',{{10,12},{11,13},{8,10},{11,15}});
 % subrun = 1:4;
-% msg = 'Choose subject array field to use:';
+% msg = 'Choose study array field to use:';
 % flds = choose_fields(sa,subrun,msg);
 % [chose 'age' field]
 % [chose indices '1' and '2']

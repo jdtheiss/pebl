@@ -1,6 +1,8 @@
 function params = subjectarray(cmd,varargin)
 % params = subjectarray(cmd, varargin)
-% This is the first step to using the Subject Array and Study Organizer.
+% Create a structural array containing study information (e.g., subject
+% folder/file locations, demographic information, etc.) that can be used
+% with pebl_eval.
 %
 % Inputs:
 % cmd - cellstr array of subfunction(s) to run
@@ -9,28 +11,28 @@ function params = subjectarray(cmd,varargin)
 % 
 % Outputs (only returned from command prompt call):
 % params - structure array with fields:
-%   sa - subject array
+%   sa - study array
 %   task - string task name
-%   filename - name of file subject array loaded/saved
+%   filename - name of file study array loaded/saved
 %
 % Example1 (no inputs):
-% - Subject Array Name: Enter a name for the subject array (e.g., gonogo).
-% - Subjects.mat File: This is the file that will hold the subject array.
-% You may add a subject array to a previous subjects.mat file or create one.
-% - Enter Subjects: Choose subjects/add subjects to subject array.
+% - study array Name: Enter a name for the study array (e.g., gonogo).
+% - studyarray.mat File: This is the file that will hold the study array.
+% You may add a study array to a previous studyarray.mat file or create one.
+% - Enter Subjects: Choose subjects/add subjects to study array.
 % - Subject Folders: Choose the main folders for each subject (and
 % optionally create them)
-% - Create New Field: Create a field for each subject in the subject array
+% - Create New Field: Create a field for each subject in the study array
 % (e.g., age, group, gender, etc.). 
-% - Load/Save Subject Array:
-% -- Load Subject Array: Load a previous subjects.mat file or an excel, txt
+% - Load/Save study array:
+% -- Load study array: Load a previous studyarray.mat file or an excel, txt
 % or mat file. (Note: excel files should have field names as headers and
 % one header must be 'subj' with subject names. txt files should be the
 % same with tabs between columns. mat files should contain field names as
 % variables with rows corresponding to each subject.) Once loaded, subject
 % arrays may be edited.
-% -- Save Subject Array: Save the subject array to the chosen subjects.mat
-% file. Additionally, you may save the subject array as an excel, txt, or
+% -- Save study array: Save the study array to the chosen studyarray.mat
+% file. Additionally, you may save the study array as an excel, txt, or
 % mat file in the format as indicated above.
 %
 % Example2 (with inputs):
@@ -73,11 +75,11 @@ end
 % Callback functions
 function params = subjectarray_gui(params)
 % params = subjectarray_gui(params)
-% Open gui to create subject array.
+% Open gui to create study array.
 
 % setup structure for make_gui
-s.name = 'subject array';
-s.edit = struct('string','subject array name','tag','subject array name','order',[1,2]);
+s.name = 'study array';
+s.edit = struct('string','study array name','tag','study array name','order',[1,2]);
 [s.push(1:4).string] = deal('add subjects','create new field','load','save');
 [s.push.tag] = deal(s.push.string);
 [s.push.callback] = deal(@(x,y)guidata(gcf,createfield(guidata(gcf),'subj')),...
@@ -86,7 +88,7 @@ s.edit = struct('string','subject array name','tag','subject array name','order'
     @(x,y)guidata(gcf,save_sa(guidata(gcf))));
 push_order = arrayfun(@(x){[1,x]}, 3:6);
 [s.push.order] = deal(push_order{:});
-s.text = struct('string','subject array fields','size',[165,25],'order',[2,2]);
+s.text = struct('string','study array fields','size',[165,25],'order',[2,2]);
 s.listbox = struct('order',[2,6],'tag',[mfilename 'listbox'],'size',[165,120]);
 s.listbox.callback = @(x,y)guidata(gcf,createfield(guidata(gcf),get(x,'value')));
 
@@ -96,7 +98,7 @@ end
 
 function params = createfield(params, field, vals)
 % params = createfield(params, field, vals)
-% Create field to add to subject array with vals.
+% Create field to add to study array with vals.
 % If no field or vals, these will be input by user.
 
 % get vars from params
@@ -148,18 +150,18 @@ end
 
 function params = load_sa(params, filename, task)
 % params = load_sa(params, filename, task)
-% Load subject array structure from one of following files:
+% Load study array structure from one of following files:
 %   *.mat
 %   *.xls*
 %   *.txt
 %
 % If no filename, @uigetfile is called.
-% If no task, @listdlg is called to choose task (for subjects.mat file).
+% If no task, @listdlg is called to choose task (for studyarray.mat file).
 
 % choose filename
 if ~exist('filename','var')
-    disp('Choose file from which to load subject array:');
-    [lfile,lpath] = uigetfile('*.xls*;*.txt;*.mat','Choose file from which to load subject array:');
+    disp('Choose file from which to load study array:');
+    [lfile,lpath] = uigetfile('*.xls*;*.txt;*.mat','Choose file from which to load study array:');
     if ~any(lfile), return; end;
     filename = fullfile(lpath,lfile); 
 end
@@ -213,10 +215,10 @@ if ~exist('sa','var'),
 end
 
 % set filename
-set(findobj('tag','subjects.mat file'),'tooltipstring',filename);
+set(findobj('tag','studyarray.mat file'),'tooltipstring',filename);
 
 % set task
-set(findobj('tag','subject array name'),'string',task);
+set(findobj('tag','study array name'),'string',task);
 
 % set fields to listbox
 set(findobj('tag',[mfilename 'listbox']),'string',unique(flds));
@@ -227,7 +229,7 @@ end
 
 function params = save_sa(params, filename, task)
 % params = save_sa(params, filename, task)
-% Save subject array to filename with task name.
+% Save study array to filename with task name.
 % Filename can be one of following types:
 %   *.mat
 %   *.xls*
@@ -244,8 +246,8 @@ end
 
 % init vars
 if ~exist('filename','var'), 
-    disp('Choose file to save subject array:');
-    filename = uiputfile('*.xls*;*.txt;*.mat','Choose file to save subject array:');
+    disp('Choose file to save study array:');
+    filename = uiputfile('*.xls*;*.txt;*.mat','Choose file to save study array:');
 end
 
 % get extension

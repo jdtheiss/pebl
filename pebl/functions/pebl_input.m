@@ -15,10 +15,10 @@ function output = pebl_input(varargin)
 %   [default {}]
 % 'options' - options for setting output
 %   [default {'String','Number','Evaluate','Index','Structure','Choose File',...
-%     'Choose Directory','Function','Workspace Variable','Subject Array'}]
+%     'Choose Directory','Function','Workspace Variable','Study Array'}]
 % 'iter' - numeric array of subjects to use (optional)
 %   [default []]
-% 'array' - subject array (optional)
+% 'array' - study array (optional)
 %   [default {}]
 % 
 % Outputs:
@@ -58,7 +58,7 @@ for x = 1:numel(inputs),
             case 'options'
                 options = {'String','Number','Evaluate','Index','Structure',...
                            'Choose File','Choose Directory','Function',...
-                           'Workspace Variable','Subject Array'};
+                           'Workspace Variable','Study Array'};
             case 'iter'
                 iter = [];
             case 'array'
@@ -229,7 +229,7 @@ for c = chc
             else % display that it does not exist
                 disp([variable ' does not exist in the base workspace.']);
             end
-        case 'Subject Array' % subject array
+        case 'Study Array' % study array
             % choose group
             if ~isempty(iter),
                 grp = questdlg(['Choose group or individual for ' variable '?'],...

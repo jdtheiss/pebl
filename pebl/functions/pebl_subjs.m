@@ -3,14 +3,14 @@ function [subjs,sa] = pebl_subjs(sa, isubjs)
 % Choose subjects, and refine subjects based on subject fields
 %
 % Inputs:
-% - sa (optional): subject array to use 
-% (if empty, choose subject array file)
-% - isubjs (optional): indices of subjects in subject array to choose from
+% - sa (optional): study array to use 
+% (if empty, choose study array file)
+% - isubjs (optional): indices of subjects in study array to choose from
 % (defualt is all subjects)
 %
 % Outputs:
 % - subjs: numeric array of subject indices (relative to sa)
-% - sa: subject array
+% - sa: study array
 % 
 % Example 1:
 % sa = struct('subj',{'sub1','sub2','sub3'},'age',{12,13,14},'group',{'hc','patient','hc'});
@@ -41,10 +41,10 @@ function [subjs,sa] = pebl_subjs(sa, isubjs)
 
 % init vars
 if ~exist('sa','var')||isempty(sa),
-    sa_file = uigetfile('*.mat','Choose subject array file');
-    if ~any(sa_file), error('No subject array file selected.'); end;
+    sa_file = uigetfile('*.mat','Choose study array file');
+    if ~any(sa_file), error('No study array file selected.'); end;
     sas = load(sa_file); names = fieldnames(sas);
-    chc = listdlg('PromptString','Choose subject array:','ListString',names,...
+    chc = listdlg('PromptString','Choose study array:','ListString',names,...
         'SelectionMode','single');
     sa = sas.(names{chc});
 end;

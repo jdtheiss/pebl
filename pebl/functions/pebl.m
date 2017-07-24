@@ -88,10 +88,10 @@ function params = setup(params)
     pebl_test;
 end
 
-% load subject array
+% load study array
 function params = set_subjectarray(params)
 % params = set_subjectarray(params)
-% Load/create subject array (sa) using @subjectarray.
+% Load/create study array (sa) using @subjectarray.
 
     % init sa
     sa = subjectarray;
@@ -111,7 +111,7 @@ function params = load_editor(params)
     if isfield(params,'env'), init_env(params,params.env); end;
     % setup structure for make_gui
     s.name = 'pebl';
-    [s.push(1:5).string] = deal('add path/environment', 'subject array',...
+    [s.push(1:5).string] = deal('add path/environment', 'study array',...
         'iterations', 'add function', 'set options');
     [s.push.order] = deal([1,2],[1,3],[1,4],[1,5],[1,6]);
     [s.push.tag] = deal(s.push.string);
@@ -368,7 +368,7 @@ end
 function params = add_function(params, idx, func)
 % params = add_function(params, idx, func)
 % Add a function to use at the index position idx.
-% func - function to add (e.g., @function, command, or ''matlabbatch'')
+% func - function to add (e.g., @function, command, or matlabbatch)
 % Function will be entered using @inputdlg. If matlabbatch is entered,
 % @pebl_setbatch will be called.
 % If no idx, idx = numel(funcs) + 1.
@@ -387,7 +387,7 @@ function params = add_function(params, idx, func)
     for x = idx,
         % input function
         if nargin < 3,
-            func = cell2mat(inputdlg('Enter @function, command, or ''matlabbatch'':'));
+            func = cell2mat(inputdlg('Enter @function, command, or matlabbatch:'));
         end
         if isempty(func), return; end;
         % init funcs/options
@@ -606,7 +606,7 @@ end
 % run functions
 function params = run_params(params)
 % params = run_params(params)
-% Run parameters using @pebl_feval after evaluating any subject array
+% Run parameters using @pebl_feval after evaluating any study array
 % variables in options using @pebl_eval and setting print options with
 % @print_options.
 %
@@ -648,7 +648,8 @@ function params = run_params(params)
     try
         % run pebl_feval
         outputs = pebl_feval(iter_args{:},'n_out',n_out,'verbose',verbose_arg,...
-                            'throw_error',throw_error,'wait_bar',wait_bar,funcs,options{:});
+                            'throw_error',throw_error,'wait_bar',wait_bar,...
+                            funcs,options{:});
     catch err
         disp(['fatal error:', err.message]);
     end
