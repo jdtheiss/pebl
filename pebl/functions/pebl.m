@@ -80,7 +80,7 @@ function params = setup(params)
     % set path to mfilename directory
     P = fileparts(mfilename('fullpath'));
     if ~any(strfind(path, P)),
-        path(path, P);
+        path(path, P); savepath;
     end
     % msgbox regarding tests
     uiwait(msgbox('Running tests. Please ignore windows that display.', 'Running Tests'));
