@@ -29,7 +29,7 @@ S = rng;
 rng('default');
 
 % remove mfilename from functions
-nfunc = {'pebl_xlsread', 'subjectarray', mfilename};
+nfunc = {'pebl_xlsread', 'studyarray', mfilename};
 func = func(~ismember(func,nfunc));
 
 % prepend 'test_' to each function
