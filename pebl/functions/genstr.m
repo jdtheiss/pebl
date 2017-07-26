@@ -4,7 +4,7 @@ function str = genstr(obj, split)
 %
 % Inputs:
 % obj - any object (e.g., char, cell, number, etc.)
-% split (optional) - character by which to split string into a single
+% split (optional) - regexp by which to split string into a single
 % column (e.g., ',' or '[,;]')
 %
 % Outputs:
@@ -132,13 +132,16 @@ else % switch class
             end
             if f, % if fieldnames, create as struct
                 if size(flds,1) > 1, flds = flds'; end;
-                vals = cell(size(flds));
+                % get number of indices
+                n = numel(obj); R = {}; C = {}; 
                 for x = 1:numel(flds), 
-                    vals{x} = obj.(flds{x});
-                    flds{x} = ['.', flds{x}];
+                    % get values at obj field
+                    C = cat(2, C, {obj.(flds{x})});
+                    % create field with appropriate indices
+                    R = cat(2, R, strcat('(', arrayfun(@(x){num2str(x)},1:n), ').', flds{x}));
                 end
-                str = sprintf('pebl_setfield(%s, ''R'', %s, ''C'', %s)', ...
-                    class(obj), genstr(flds), genstr(vals));
+                str = sprintf('pebl_setfield(%s, ''R'', %s, ''C'', %s)',...
+                    class(obj), genstr(R), genstr(C));
             else % get string as details(obj)
                 str = evalc('details(obj)');
                 str = regexprep(str,{'^\s+','\s+$'},'');
