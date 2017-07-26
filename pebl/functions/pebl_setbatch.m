@@ -236,10 +236,10 @@ idx(end+1:numel(matlabbatch)) = {[]};
 
 for m = 1:numel(matlabbatch),
     % get tags, class, and num for module
-    tags = {}; classes = {};
-    [~, contents] = get_ids_fields(h, m, {'tag','class'});
+    tags = {}; classes = {}; vals = {};
+    [~, contents] = get_ids_fields(h, m, {'tag','class','val'});
     if ~isempty(contents),
-        [tags, classes] = deal(contents{:});
+        [tags, classes, vals] = deal(contents{:});
     end
     % if output to idx
     if strcmp(output_type, 'idx'),
@@ -277,13 +277,15 @@ for m = 1:numel(matlabbatch),
             if strcmp(classes{x}, 'cfg_files') && ~iscell(S(end).subs),
                 S = [S, sub2str('{1}')];
             end
+            % set option used for subsasgn
             output{end+1} = [sub2str(['{',num2str(m),'}']), S];
+            % set "default value"
+            output{end+1} = vals{x};
         end
     end
 end
 % set output as (1:2:end)
 if strcmp(output_type, 'options') && ~isempty(output),
-    output = pebl_insert(2, output, 2:numel(output)+1, []);
     % set matching options inputs to output
     if ~isempty(options),
         S1 = cellfun(@(x){sub2str(x)}, output(1:2:end)); 
