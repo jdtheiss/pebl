@@ -164,16 +164,20 @@ for c = chc
         case 'Structure' % struct
             if isstruct(value), % if exists, choose component to edit
                 substr = vertcat(fieldnames(value),'Add'); 
-                n = listdlg('PromptString','Choose component to edit:','ListString',...
-                [arrayfun(@(x){num2str(x)},1:numel(value)),'Add']);
+                n = listdlg('PromptString','Choose index to edit:','ListString',...
+                [arrayfun(@(x){num2str(x)},1:numel(value)),'Add','Delete']);
                 if isempty(n), return; end;
-                if any(n > numel(value)), 
+                if any(n == numel(value)+2), % delete
+                    r = listdlg('PromptString','Choose index to delete:','ListString',...
+                        arrayfun(@(x){num2str(x)},1:numel(value)));
+                    value(r) = []; n = [];
+                elseif any(n > numel(value)), % add
                     value(n(end)) = cell2struct(cell(size(fieldnames(value))),fieldnames(value)); 
                 end
             else % if new, create struct
-                n = cell2mat(inputdlg('Enter number of components to create'));
+                n = cell2mat(inputdlg('Enter number of indices to create'));
                 n = 1:str2double(n); if isnan(n), return; end;
-                value = repmat(struct,1,max(n)); substr = {'Add'};
+                value = repmat(struct,1,max(n)); substr = {'Add','Delete'};
             end;
             % for each component
             for n = n
