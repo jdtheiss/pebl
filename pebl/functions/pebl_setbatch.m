@@ -119,7 +119,11 @@ t = timer('TimerFcn', @(x,y)set(x, 'userdata', update_cfg(h, get(x, 'userdata'))
 start(t);
 
 % wait for h to close
-waitfor(h, 'visible', 'off');
+try
+    waitfor(h, 'visible', 'off'); 
+catch err
+    disp(err.message);
+end
 stop(t); 
 
 % get idx from t
