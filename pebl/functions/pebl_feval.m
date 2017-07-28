@@ -251,8 +251,14 @@ for f = seq,
             program = local_setprog(funcs{f}); 
             try % run program with funcs and options
                 try o = abs(nargout(funcs{f})); o = max(o, max(n_out)); catch, o = max(n_out); end;
-                % set options (for output)
-                evaled_opts = local_eval(output, options{f}, n); 
+                % if program is batch, get depenencies
+                if strcmp(program,'local_batch'),
+                    [~, deps] = local_setbatch(funcs{f}, options{f});
+                else % otherwise set deps to []
+                    deps = [];
+                end
+                % set options (for using outputs/deps)
+                evaled_opts = local_eval(options{f}, n, 'output', output, 'deps', deps); 
                 % feval
                 [results{1:o}] = feval(program, funcs{f}, evaled_opts, verbose); 
                 % display outputs
@@ -292,7 +298,7 @@ for f = seq,
         if isempty(stop_fcn{f}),
             done = true;
         else
-            done = cell2mat(local_eval(output, stop_fcn{f}, 0));
+            done = cell2mat(local_eval(stop_fcn{f}, 0, 'output', output, 'deps', deps));
         end
     end
 end
@@ -300,7 +306,11 @@ end
 end
 
 % evaluate @() inputs
-function options = local_eval(output, options, n)
+function options = local_eval(options, n, varargin)
+    % for each varargin, set as variable
+    for x = 1:2:numel(varargin), 
+        eval([varargin{x} '= varargin{x+1};']);
+    end
     % get row from options
     if ~any(n==0) && iscell(options), 
         if any(cellfun('isclass', options, 'cell')),
@@ -432,8 +442,9 @@ function varargout = local_system(func, options, verbose)
 end
 
 % set batch
-function matlabbatch = local_setbatch(matlabbatch, options)
+function [matlabbatch, deps] = local_setbatch(matlabbatch, options)
     % ensure cells
+    if ~iscell(matlabbatch), matlabbatch = {matlabbatch}; end;
     if ~iscell(options), options = {options}; end;
     if numel(options) < 1, options{2} = []; end;
     % for each option, get subsref struct
@@ -451,6 +462,11 @@ function matlabbatch = local_setbatch(matlabbatch, options)
                 matlabbatch = pebl_setfield(matlabbatch, 'expr', options{x}, 'C', options{x+1});
         end
     end
+    % get dependencies
+    if nargout == 2,
+        [~, cjob] = evalc('cfg_util(''initjob'',matlabbatch);'); 
+        [~,~,~,~,deps]=cfg_util('showjob',cjob); 
+    end
 end
 
 % matlabbatch commands
@@ -458,12 +474,9 @@ function varargout = local_batch(matlabbatch, options, verbose)
     % init varargout
     varargout = cell(1, nargout); 
     
-    % if matlabbatch is not cell, make cell
-    if ~iscell(matlabbatch), matlabbatch = {matlabbatch}; end;
-    
     % set batch
     matlabbatch = local_setbatch(matlabbatch, options);
-    
+   
     % display functions of structure
     if verbose,
         [C,~,R] = pebl_getfield(matlabbatch);
@@ -479,17 +492,17 @@ function varargout = local_batch(matlabbatch, options, verbose)
     end
     
     % get outputs
-    [~,~,~,~,sout]=cfg_util('showjob',cjob); 
+    [~,~,~,~,deps]=cfg_util('showjob',cjob); 
     vals = cfg_util('getalloutputs',cjob);
 
     % subsref vals
     output = cell(1, nargout);
     for x = 1:numel(vals),
         % if empty, skip
-        if isempty(vals{x}) || isempty(sout{x}), continue; end;
-        for y = 1:numel(sout{x}), 
+        if isempty(vals{x}) || isempty(deps{x}), continue; end;
+        for y = 1:numel(deps{x}), 
             % set output from vals
-            output{x}{y} = subsref(vals{x},sout{x}(y).src_output); 
+            output{x}{y} = subsref(vals{x},deps{x}(y).src_output); 
         end
     end
 
