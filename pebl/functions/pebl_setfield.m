@@ -8,10 +8,10 @@ function [A, S, R] = pebl_setfield(varargin)
 % Optional Properties:
 % 'S' - substruct(s) to set
 % 'R' - string representations to set
+% 'C' - values to set to A(idx).field
 % 'append' - string to append to each S or R (e.g., '.field' or '(2)')
 % 'remove' - true/false to remove fields at S/R/append (default is false)
 % 'verbose' - true/false to display errors (default is false)
-% 'C' - values to set to A(idx).field
 % For other properties, see also pebl_getfield
 %
 % Outputs:
@@ -72,6 +72,9 @@ if ~exist('S','var'), S = cell(size(R)); end;
 if ~iscell(S), S = {S}; end;
 if ~exist('append','var'), append = []; end;
 if ~exist('remove','var'), remove = false; end;
+
+% if only 1 S, set C to cell
+if numel(S)==1, C = {C}; end;
 
 % for each, subsasgn or evaluate
 for n = 1:numel(S),
