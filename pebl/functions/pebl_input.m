@@ -11,6 +11,9 @@ function output = pebl_input(varargin)
 %   [default sprintf('Choose method to set %s', variable)]
 % 'func' - previous functions to use output (must be string and begin with '@')
 %   [default {}]
+% 'batch' - matlabbatch cell/struct to set variable as dependency of the
+%   matlabbatch (this should only be used when setting variables within the
+%   same matlabbatch structure)
 % 'value' - default value 
 %   [default {}]
 % 'options' - options for setting output
@@ -53,6 +56,8 @@ for x = 1:numel(inputs),
                 msg = sprintf('Choose method to set %s', variable);
             case 'func'
                 func = {};
+            case 'batch'
+                batch = {};
             case 'value'
                 value = [];
             case 'options'
@@ -66,6 +71,9 @@ for x = 1:numel(inputs),
         end
     end
 end
+
+% if batch, add Matlabbatch Dependency
+if ~isempty(batch), options = cat(2, options, 'Matlabbatch Dependency'); end;
 
 % add functions
 options = cat(2, options, func);
@@ -256,6 +264,41 @@ for c = chc
                     value{v} = strcat('sa(', arrayfun(@(x){num2str(x)},iter),').',value{v},subvars)'; 
                 end
             end
+        case 'Matlabbatch Dependency' % dependencies
+            % load matlabbatch and get deps
+            [~, cjob] = evalc('cfg_util(''initjob'',batch);'); 
+            [~,~,~,~,dep]=cfg_util('showjob',cjob);
+            if isempty(dep), return; end;
+            % get module names and dep names
+            m_names = cell(size(dep)); s_names = cell(size(dep));
+            for x = 1:numel(dep),
+                s_names{x} = {dep{x}.sname};
+                m_names(x) = regexp(common_str(s_names{x}),'^[^:]+','match');
+            end
+            % choose modules
+            v0 = listdlg('PromptString',['Choose modules to set ' variable],...
+                'ListString',m_names);
+            out_fn = ''; 
+            % choose dependencies
+            for n = v0,
+                v1 = listdlg('PromptString',['Choose dependencies to set ' variable],...
+                    'ListString',s_names{n});
+                if isempty(v1),
+                    out_fn = cat(2, out_fn, ['dep{' num2str(n) '},']);
+                else
+                    out_fn = cat(2, out_fn, sprintf('dep{%d}(%s),', n, genstr(v1)));
+                end
+            end
+            % if multiple modules, set {}
+            if numel(v0) > 1, 
+                out_fn = ['{', out_fn(1:end-1), '}'];
+            else
+                out_fn = out_fn(1:end-1);
+            end
+            % edit out_fn
+            out_fn = cell2mat(inputdlg('Edit dependency:','',1,{out_fn}));
+            % str2func for use in pebl_feval
+            value = str2func(['@()''', out_fn, '''']);
         case func % functions 
             % get relative function position
             if ~iscell(func), func = {func}; end;
