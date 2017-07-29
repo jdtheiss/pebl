@@ -332,39 +332,37 @@ function options = local_eval(options, varargin)
     % find functions in options
     if ~iscell(options), options = {options}; end;
     [C,S] = pebl_getfield(options,'fun',@(x)isa(x,'function_handle')); 
-    if isempty(C), return; end;
     
-    % convert to str to check
-    C = cellfun(@(x){func2str(x)},C);
+    if ~isempty(C),
+        % convert to str to check
+        C = cellfun(@(x){func2str(x)},C);
+        % get only those beginning with @()
+        S = S(strncmp(C,'@()',3));
+        C = C(strncmp(C,'@()',3));
+    
+        % get functions with output
+        o_idx = ~cellfun('isempty', regexp(C, 'output'));
 
-    % get only those beginning with @()
-    S = S(strncmp(C,'@()',3));
-    C = C(strncmp(C,'@()',3));
+        % set options based on output
+        for x = find(o_idx),
+            C{x} = subsref(options, S{x});
+            options = subsasgn(options,S{x},eval(feval(C{x}))); 
+        end
 
-    % if no C, return
-    if isempty(C), return; end; 
-    
-    % get functions with output
-    o_idx = ~cellfun('isempty', regexp(C, 'output'));
-    
-    % set options based on output
-    for x = find(o_idx),
-        C{x} = subsref(options, S{x});
-        options = subsasgn(options,S{x},eval(feval(C{x}))); 
+        % if program is batch, get depenencies
+        if iscell(func)||isstruct(func),
+            [~, dep] = local_setbatch(func, options);
+        else % otherwise set dep to []
+            dep = [];
+        end
+
+        % set options based on dependencies
+        for x = find(~o_idx),
+            C{x} = subsref(options, S{x});
+            options = subsasgn(options,S{x},eval(feval(C{x}))); 
+        end
     end
     
-    % if program is batch, get depenencies
-    if iscell(func)||isstruct(func),
-        [~, dep] = local_setbatch(func, options);
-    else % otherwise set dep to []
-        dep = [];
-    end
-    
-    % set options based on dependencies
-    for x = find(~o_idx),
-        C{x} = subsref(options, S{x});
-        options = subsasgn(options,S{x},eval(feval(C{x}))); 
-    end
     % eval remaining options
     if ischar(func), opt = 'system'; else opt = ''; end;
     options = pebl_eval(options, opt);
