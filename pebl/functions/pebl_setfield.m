@@ -70,7 +70,7 @@ if ~exist('S','var'), S = cell(size(R)); end;
 if ~iscell(S), S = {S}; end;
 if ~exist('C','var'), C = []; end;
 if ~iscell(C)||isempty(C), C = {C}; end;
-if numel(S) < numel(C), C = {C}; end;
+if numel(S) <= numel(C), C = {C}; end;
 if ~exist('append','var'), append = []; end;
 if ~exist('remove','var'), remove = false; end;
 

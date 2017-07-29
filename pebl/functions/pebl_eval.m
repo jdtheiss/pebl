@@ -1,10 +1,10 @@
-function valf = pebl_eval(val,opt)
+function valf = pebl_eval(val, opt)
 % valf = pebl_eval(val,opt)
 % Evaluate variables created from pebl_input
 % 
 % Inputs:
 % val - string, cell array, structure to evaluate/mkdir/spm_select
-% opt - (optional) if opt = 'cmd', option to set "" around filenames (for command line)
+% opt - (optional) if opt = 'system', option to set "" around filenames (for command line)
 % 
 % Outputs:
 % valf - evaluated val
@@ -45,8 +45,8 @@ function valf = pebl_eval(val,opt)
 valf = val; 
 if ~exist('opt','var')||isempty(opt), opt = ''; end;
 
-% if char and 'cmd', split find paths/files and split by spaces
-if ischar(val)&&strcmp(opt,'cmd'), 
+% if char and 'system', split find paths/files and split by spaces
+if ischar(val)&&strcmp(opt,'system'), 
     pathvals = regexp(valf,'"[^"]+"','match'); % get paths/files
     valf = regexprep(valf,'"[^"]+"','""'); valf = regexp(valf,'\s','split'); % split by spaces
     valf(cellfun(@(x)strcmp(x,'""'),valf)) = pathvals; % add paths/files to valf
@@ -79,8 +79,8 @@ for x = 1:numel(C),
     valf = local_mkdir_select(valf,C{x},S{x},opt); % mkdir/select
 end
 
-% if ischar and 'cmd', output as string
-if ischar(val)&&strcmp(opt,'cmd')
+% if ischar and 'system', output as string
+if ischar(val)&&strcmp(opt,'system')
     valf = cellstr(valf); valf = sprintf('%s ',valf{:}); % sprintf with ' '
     valf = strtrim(valf);
 end
@@ -159,11 +159,11 @@ if ischar(val),
         % if found cellstr, otherwise set to empty
         if ~isempty(val), val = cellstr(val); else val = {}; end;
 
-        % if multiple vals and 'cmd', set val to initial val
-        if numel(val)>1&&strcmp(opt,'cmd'), val = ival; end;
+        % if multiple vals and 'system', set val to initial val
+        if numel(val)>1&&strcmp(opt,'system'), val = ival; end;
 
-        % if opt is 'cmd', put "" around val
-        if strcmp(opt,'cmd'),
+        % if opt is 'system', put "" around val
+        if strcmp(opt,'system'),
             val = regexprep(val,['.*' filesep '.*'],'"$0"'); val = regexprep(val,'""','"'); 
         end;
 

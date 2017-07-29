@@ -3,6 +3,14 @@ function output = pebl_feval(varargin)
 % Run wrapper of multiple scripts/functions/system commands/matlabbatch.
 %
 % Inputs:
+% funcs - cell array, functions to run. matlab commands should be function
+%   handles (i.e. begin with @), system command should be char, and
+%   matlabbatch commands should be struct array or cell array of structs
+%   [no default]
+% options - cell array, inputs for functions as variable inputs with rows 
+%   per function. the options for each function should be entered as a
+%   separate argument
+%   [default is {} per function, which is not input to the function/script]
 % 'loop' - number of times to loop through functions (e.g., 3 to run all
 %   functions in sequence 3 times). can be combined with 'iter' to use
 %   different parameters on each loop (e.g., 'loop', 3, 'iter', 1:3).
@@ -30,12 +38,6 @@ function output = pebl_feval(varargin)
 %   [default is false]
 % 'wait_bar' - optional boolean. true displays a waitbar; false does not
 %   [default is false] 
-% funcs - cellstr, function(s) to run  
-%   [no default]
-% options - cell array, inputs for functions as variable inputs with rows 
-%   per function. the options for each function should be entered as a
-%   separate argument
-%   [default is {} per function, which is not input to the function/script]
 % 
 % Outputs:
 % output - outputs organized as cells per function with inner cells of rows 
@@ -44,8 +46,8 @@ function output = pebl_feval(varargin)
 %
 % Example 1: system echo 'this' and compare output with 'that' using
 % strcmp, then repeat with system echo 'that'
-% output = pebl_feval('loop', 2, 'iter', {1:2,0}, {'echo',@strcmp},...
-%                    {'-n',{'this'; 'that'}}, {@()'output{1}{end}', 'that'})
+% output = pebl_feval({'echo',@strcmp}, {'-n',{'this'; 'that'}},...
+%          {@()'output{1}{end}', 'that'}, 'loop', 2, 'iter', {1:2,0})
 % this
 % that
 % 
@@ -60,8 +62,8 @@ function output = pebl_feval(varargin)
 %     [1]
 %     
 % Example 2: subtract 1 from each previous output
-% output = pebl_feval('seq', [1,2,2], 'verbose', true, {@randi, @minus},...
-%                    10, {@()'output{1}{end}', 1})
+% output = pebl_feval({@randi, @minus}, 10, {@()'output{end}{end}', 1},...
+%          'seq', [1,2,2], 'verbose', true)
 % randi 10
 % 
 % Output:
@@ -90,7 +92,7 @@ function output = pebl_feval(varargin)
 % matlabbatch{1}.spm.util.disp.data = '<UNDEFINED>';
 % output = pebl_feval({@fullfile, matlabbatch}, ...
 %          {fileparts(which('spm')), 'canonical', 'avg152T1.nii'},...
-%          {'.*\.data$', @()'output{1}(1)'})
+%          {'.*\.data$', @()'output{1}{1}'})
 % 
 % ------------------------------------------------------------------------
 % Running job #1
@@ -113,8 +115,8 @@ function output = pebl_feval(varargin)
 %
 % 
 % Example 4: use @() to evaluate inputs
-% output = pebl_feval('loop', 2, 'iter', {1:2,0}, {'echo',@minus},...
-%          {'-n', {@()'randi(10)';'2'}}, {@()'str2double(output{1}{end})', 2})
+% output = pebl_feval({'echo',@minus}, {'-n', {@()'randi(10)';'2'}},...
+%          {@()'str2double(output{1}{end})', 2}, 'loop', 2, 'iter', {1:2,0})
 %
 % 5
 % 2
@@ -130,8 +132,8 @@ function output = pebl_feval(varargin)
 %     [0]
 % 
 % Example 5: run while loop until last two numbers are same
-% output = pebl_feval('iter',1:2,'stop_fcn',@()'output{1}{end}==output{1}{end-1}',...
-%          @randi, {10;10})
+% output = pebl_feval(@randi, {10;10}, 'iter', 1:2, 'stop_fcn',...
+%          @()'output{1}{end}==output{1}{end-1}')
 % 
 % output{1} = 
 % 
@@ -212,6 +214,9 @@ funcs = funcs(:);
 % set options and ensure cell
 if numel(varargin) >= numel(funcs)+1,
     options = varargin(2:numel(funcs)+1);
+elseif all(cellfun('isclass',funcs,'struct')), % if all batch
+    funcs = {funcs};
+    options = varargin(2:numel(funcs)+1);
 else % set options empty
     options = repmat({{}}, 1, numel(funcs));
 end
@@ -223,15 +228,14 @@ if isempty(seq), seq = 1:numel(funcs); end;
 if ~iscell(iter), 
     iter = repmat({iter}, 1, numel(funcs));
 end
-    
+
 % if stop_fcn is not cell, repmat
 if ~iscell(stop_fcn),
     stop_fcn = repmat({stop_fcn}, 1, numel(funcs));
 end
 
 % init output
-output = repmat({{}}, numel(funcs), 1);
-
+output = {{}};
 % for loop/sequence order
 for l = 1:loop,
 for f = seq,
@@ -251,14 +255,8 @@ for f = seq,
             program = local_setprog(funcs{f}); 
             try % run program with funcs and options
                 try o = abs(nargout(funcs{f})); o = max(o, max(n_out)); catch, o = max(n_out); end;
-                % if program is batch, get depenencies
-                if strcmp(program,'local_batch'),
-                    [~, dep] = local_setbatch(funcs{f}, options{f});
-                else % otherwise set dep to []
-                    dep = [];
-                end
                 % set options (for using outputs/dep)
-                evaled_opts = local_eval(options{f}, n, 'output', output, 'dep', dep); 
+                evaled_opts = local_eval(options{f}, 'output', output, 'func', funcs{f}, 'n', n); 
                 % feval
                 [results{1:o}] = feval(program, funcs{f}, evaled_opts, verbose); 
                 % display outputs
@@ -288,7 +286,8 @@ for f = seq,
                 results(1:o) = {[]};
             end
             % concatenate results to output
-            output{f} = pebl_cat(1, output{f}, results(n_out)); 
+            if f > numel(output), output{f, 1} = {}; end;
+            output{f} = pebl_cat(1, output{f}, results); 
             % wait_bar
             if wait_bar,
                 settimeleft(f, 1:numel(iter), h);
@@ -298,19 +297,23 @@ for f = seq,
         if isempty(stop_fcn{f}),
             done = true;
         else
-            done = cell2mat(local_eval(stop_fcn{f}, 0, 'output', output, 'dep', dep));
+            done = cell2mat(local_eval(stop_fcn{f}, 'output', output, 'func', funcs{f}));
         end
     end
 end
 end
+% return output{f}(:, n_out)
+output = cellfun(@(x){x(:, n_out)}, output);
 end
 
 % evaluate @() inputs
-function options = local_eval(options, n, varargin)
+function options = local_eval(options, varargin)
     % for each varargin, set as variable
     for x = 1:2:numel(varargin), 
         eval([varargin{x} '= varargin{x+1};']);
     end
+    % if no n, set to 0
+    if ~exist('n', 'var'), n = 0; end;
     % get row from options
     if ~any(n==0) && iscell(options), 
         if any(cellfun('isclass', options, 'cell')),
@@ -334,18 +337,37 @@ function options = local_eval(options, n, varargin)
     % convert to str to check
     C = cellfun(@(x){func2str(x)},C);
 
-    % get only those beginning with @()'output
+    % get only those beginning with @()
     S = S(strncmp(C,'@()',3));
     C = C(strncmp(C,'@()',3));
 
     % if no C, return
     if isempty(C), return; end; 
     
-    % set options
-    for x = 1:numel(C),
+    % get functions with output
+    o_idx = ~cellfun('isempty', regexp(C, 'output'));
+    
+    % set options based on output
+    for x = find(o_idx),
         C{x} = subsref(options, S{x});
         options = subsasgn(options,S{x},eval(feval(C{x}))); 
     end
+    
+    % if program is batch, get depenencies
+    if iscell(func)||isstruct(func),
+        [~, dep] = local_setbatch(func, options);
+    else % otherwise set dep to []
+        dep = [];
+    end
+    
+    % set options based on dependencies
+    for x = find(~o_idx),
+        C{x} = subsref(options, S{x});
+        options = subsasgn(options,S{x},eval(feval(C{x}))); 
+    end
+    % eval remaining options
+    if ischar(func), opt = 'system'; else opt = ''; end;
+    options = pebl_eval(options, opt);
 end
 
 % set program types

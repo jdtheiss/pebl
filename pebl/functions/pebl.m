@@ -642,10 +642,6 @@ function params = run_params(params)
     if ~exist('n_out','var'), n_out = 1; end;
     if ~exist('wait_bar','var'), wait_bar = false; end;
     if ~exist('throw_error','var'), throw_error = false; end;
-    % eval options
-    cmd_idx = cellfun(@(x)ischar(x),funcs);
-    options(cmd_idx) = pebl_eval(options(cmd_idx),'cmd');
-    options(~cmd_idx) = pebl_eval(options(~cmd_idx));
     % print outputs as selected, return verbose
     params = print_options(params); 
     struct2var(params,'verbose_arg'); 

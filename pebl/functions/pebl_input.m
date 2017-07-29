@@ -72,8 +72,8 @@ for x = 1:numel(inputs),
     end
 end
 
-% if batch, add Matlabbatch Dependency
-if ~isempty(batch), options = cat(2, options, 'Matlabbatch Dependency'); end;
+% if batch, add Batch Dependency
+if ~isempty(batch), options = cat(2, options, 'Batch Dependency'); end;
 
 % add functions
 options = cat(2, options, func);
@@ -268,7 +268,7 @@ for c = chc
             % load matlabbatch and get deps
             [~, cjob] = evalc('cfg_util(''initjob'',batch);'); 
             [~,~,~,~,dep]=cfg_util('showjob',cjob);
-            if isempty(dep), return; end;
+            if isempty(dep), warning('No dependencies found'); return; end;
             % get module names and dep names
             m_names = cell(size(dep)); s_names = cell(size(dep));
             for x = 1:numel(dep),
