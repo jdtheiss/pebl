@@ -92,7 +92,7 @@ function output = pebl_feval(varargin)
 % matlabbatch{1}.spm.util.disp.data = '<UNDEFINED>';
 % output = pebl_feval({@fullfile, matlabbatch}, ...
 %          {fileparts(which('spm')), 'canonical', 'avg152T1.nii'},...
-%          {'.*\.data$', @()'output{1}{1}'})
+%          {'.*\.data$', @()'output{1}(1)'})
 % 
 % ------------------------------------------------------------------------
 % Running job #1

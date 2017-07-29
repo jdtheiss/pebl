@@ -149,6 +149,7 @@ function S = local_setdefaults(S)
     % set position sizes
     [sizes, sub_size] = pebl_getfield(S, 'expr', '.*\.size$');
     [S, sub_size] = pebl_setfield(S, 'S', sub_size, 'remove', true);
+    if numel(sizes) == 1, sizes = sizes{1}; end;
     S = pebl_setfield(S, 'S', sub_size, 'append', '.position(3:4)', 'C', sizes);
     % set unset sizes
     [~, sub_size] = pebl_getfield(S, 'expr', '.*\.position$', 'fun', @(x)all(x(3:4)==0));
