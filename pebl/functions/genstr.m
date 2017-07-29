@@ -86,6 +86,9 @@ else % switch class
         case {'double','single'} % numeric arrays
             str = sprintf('%0.5g, ', obj);
             str = str(1:end-2);
+            if numel(obj)>1 && numel(obj(1):obj(end))==numel(obj) && all(eq(obj(1):obj(end),obj)),
+                str = sprintf('%0.5g:%0.5g', obj(1), obj(end));
+            end
             str = ['[', str, ']'];
         case 'logical' % logical arrays
             for x = 1:numel(obj),
