@@ -63,18 +63,16 @@ if ~exist('S','var') && ~exist('R','var'),
     [~, S] = pebl_getfield(A,varargin{:});
 end
 
-% init C/S/R
-if ~exist('C','var'), C = []; end;
-if ~iscell(C), C = {C}; end;
+% init S/R/C
 if ~exist('R','var'), R = []; end;
 if ~iscell(R), R = {R}; end;
 if ~exist('S','var'), S = cell(size(R)); end;
 if ~iscell(S), S = {S}; end;
+if ~exist('C','var'), C = []; end;
+if ~iscell(C), C = {C}; end;
+if numel(S) < numel(C), C = {C}; end;
 if ~exist('append','var'), append = []; end;
 if ~exist('remove','var'), remove = false; end;
-
-% if only 1 S, set C to cell
-if numel(S)==1, C = {C}; end;
 
 % for each, subsasgn or evaluate
 for n = 1:numel(S),
