@@ -449,6 +449,10 @@ function [matlabbatch, dep] = local_setbatch(matlabbatch, options)
     if numel(options) < 1, options{2} = []; end;
     % for each option, get subsref struct
     for x = 1:2:numel(options)
+        % if @() function, skip setting (it should be evaluated with local_eval)
+        if isa(options{x+1}, 'function_handle') && strncmp(func2str(options{x+1}), '@()', 3), 
+            continue; 
+        end
         switch class(options{x})
             case 'struct' % use pebl_setfield with S
                 % if cell substruct but not cell in matlabbatch, set to {}

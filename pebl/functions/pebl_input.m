@@ -44,7 +44,7 @@ cellfun(@(x,y)assignin('caller',x,y), varargin(1:2:end), varargin(2:2:end));
 output = {};
 
 % set options
-inputs = {'variable','title','msg','func','value','options','iter','array'};
+inputs = {'variable','title','msg','func','batch','value','options','iter','array'};
 for x = 1:numel(inputs),
     if ~exist(inputs{x}, 'var'),
         switch inputs{x},
@@ -264,7 +264,7 @@ for c = chc
                     value{v} = strcat('sa(', arrayfun(@(x){num2str(x)},iter),').',value{v},subvars)'; 
                 end
             end
-        case 'Matlabbatch Dependency' % dependencies
+        case 'Batch Dependency' % dependencies
             % load matlabbatch and get deps
             [~, cjob] = evalc('cfg_util(''initjob'',batch);'); 
             [~,~,~,~,dep]=cfg_util('showjob',cjob);
@@ -284,7 +284,7 @@ for c = chc
                 v1 = listdlg('PromptString',['Choose dependencies to set ' variable],...
                     'ListString',s_names{n});
                 if isempty(v1),
-                    out_fn = cat(2, out_fn, ['dep{' num2str(n) '},']);
+                    out_fn = cat(2, out_fn, ['num2cell(dep{' num2str(n) '}),']);
                 else
                     out_fn = cat(2, out_fn, sprintf('dep{%d}(%s),', n, genstr(v1)));
                 end
