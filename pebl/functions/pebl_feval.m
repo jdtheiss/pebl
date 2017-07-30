@@ -391,8 +391,10 @@ function varargout = local_feval(func, options, verbose)
     % set func to str if function_handle
     if isa(func,'function_handle'), func = func2str(func); end;
 
-    % if nargin is less than 2, remove empty cells
-    if ~iscell(options), options = {options}; end;
+    % if options is not cell or more inputs than nargin, set to cell
+    if ~iscell(options) || (nargin(func) > 0 && numel(options) > nargin(func)),
+        options = {options}; 
+    end
     
     % get number of outputs
     try o = nargout(func); catch, o = 0; end;
