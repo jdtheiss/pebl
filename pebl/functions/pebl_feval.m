@@ -21,7 +21,8 @@ function output = pebl_feval(varargin)
 % 'iter' - sequence of iterations to run (e.g., [1:2] to run the first two
 %   options for each function). alternatively, each function's sequence of
 %   iterations can be provied as a cell of sequences coresponding to the 
-%   number of functions (e.g., {1:2,1,1:3}).
+%   number of functions (e.g., {1:2,1,1:3}). additionally, iter can be set
+%   to -1 to use the 'loop' number
 %   [default is 0, which assumes there is no sequence to iterate]
 % 'stop_fcn' - stop function to use as part of a "while loop" (e.g.,
 %   @()'output{1}{end}==0' to run until the first output is 0).
@@ -47,7 +48,7 @@ function output = pebl_feval(varargin)
 % Example 1: system echo 'this' and compare output with 'that' using
 % strcmp, then repeat with system echo 'that'
 % output = pebl_feval({'echo',@strcmp}, {'-n',{'this'; 'that'}},...
-%          {@()'output{1}{end}', 'that'}, 'loop', 2, 'iter', {1:2,0})
+%          {@()'output{1}{end}', 'that'}, 'loop', 2, 'iter', {-1,0})
 % this
 % that
 % 
@@ -249,8 +250,8 @@ for f = seq,
         end
         % for specified loops/iterations
         for n = iter{f}, 
-            % if looping with iterations, skip unless n == l 
-            if loop > 1 && n > 0 && n ~= l, continue; end;
+            % if -1, set to l 
+            if n == -1, n = l; end;
             % set program
             program = local_setprog(funcs{f}); 
             try % run program with funcs and options
