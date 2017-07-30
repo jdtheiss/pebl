@@ -3,21 +3,24 @@ function [C, S, R] = pebl_getfield(A, varargin)
 % Return values, substructs, and string representations from A.
 %
 % Inputs:
-% A - cell/structure array
+% A - object (cell, structure, etc.)
+% 'S' - substruct(s) of locations in A (i.e. subsref(A, S{1}))
+% 'R' - string(s) representation corresponding to location in A 
+%   (i.e. eval(['A', R]))
 % 'expr' - regular expression to search within A (default returns all values)
 % 'fun' - function and arguments to be used to evaluate with each C as 
-% feval(fun{1}, C{x}, fun{2:end}).
-% The result from each evaluation should be true or false in order to
-% create a logical array to be used in indexing C, S, and R.
+%   feval(fun{1}, C{x}, fun{2:end}).
+%   The result from each evaluation should be true or false in order to
+%   create a logical array to be used in indexing C, S, and R.
 % 'r' - recursion limit/number of levels to search (default is inf)
 % 'verbose' - set to true if you wish to see error messages
-% (default is false)
+%   (default is false)
 %
 % Outputs:
 % C - values indexed from A
 % S - substruct of locations C in A (i.e. C{1} == subsref(A, S{1}))
 % R - string representations correpsonding to location of each value in C
-% (i.e. C{1} == eval(horzcat('A', R{1})))
+% (i.e. C{1} == eval(['A', R{1}]))
 %
 % Example 1:
 % matlabbatch{1}.spm.util.disp.data = '<UNDEFINED>';
@@ -65,9 +68,18 @@ arrayfun(@(x)assignin('caller',varargin{x},varargin{x+1}), 1:2:numel(varargin));
 if ~exist('r','var')||isempty(r), r = inf; end;
 if ~exist('verbose','var')||isempty(verbose), verbose = false; end;
 % get substructs of A
-S = struct2sub(A, r);
+if ~exist('S', 'var'),
+    S = struct2sub(A, r);
+elseif ~iscell(S),
+    S = {S};
+end
 % get R from S
-R = cellfun(@(x){sub2str(x)}, S);
+if ~exist('R', 'var'),
+    R = cellfun(@(x){sub2str(x)}, S);
+else % set S from R
+    if ~iscell(R), R = {R}; end;
+    S = cellfun(@(x){sub2str(x)}, R);
+end
 if ~iscellstr(R), R = repmat({''}, size(S)); end;
 % find R using regexp
 if exist('expr','var'),
