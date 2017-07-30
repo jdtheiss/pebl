@@ -1,62 +1,25 @@
-function params = subjectarray(cmd,varargin)
-% params = subjectarray(cmd, varargin)
+function [array, task, filename] = studyarray(cmd,varargin)
+% params = studyarray(cmd, varargin)
 % Create a structural array containing study information (e.g., subject
-% folder/file locations, demographic information, etc.) that can be used
-% with pebl_eval.
+% folder/file locations, demographic information, etc.)
 %
 % Inputs:
 % cmd - cellstr array of subfunction(s) to run
 % varargin - arguments to pass to subfunction 
-% if no inputs, subjectarray will run its gui (see example)
+% if no inputs, studyarray will run its gui (see example)
 % 
 % Outputs (only returned from command prompt call):
-% params - structure array with fields:
-%   sa - study array
-%   task - string task name
-%   filename - name of file study array loaded/saved
+% array - study array
+% task - string task name
+% filename - name of file study array loaded/saved
 %
-% Example1 (no inputs):
-% - study array Name: Enter a name for the study array (e.g., gonogo).
-% - studyarray.mat File: This is the file that will hold the study array.
-% You may add a study array to a previous studyarray.mat file or create one.
-% - Enter Subjects: Choose subjects/add subjects to study array.
-% - Subject Folders: Choose the main folders for each subject (and
-% optionally create them)
-% - Create New Field: Create a field for each subject in the study array
-% (e.g., age, group, gender, etc.). 
-% - Load/Save study array:
-% -- Load study array: Load a previous studyarray.mat file or an excel, txt
-% or mat file. (Note: excel files should have field names as headers and
-% one header must be 'subj' with subject names. txt files should be the
-% same with tabs between columns. mat files should contain field names as
-% variables with rows corresponding to each subject.) Once loaded, subject
-% arrays may be edited.
-% -- Save study array: Save the study array to the chosen studyarray.mat
-% file. Additionally, you may save the study array as an excel, txt, or
-% mat file in the format as indicated above.
+% Example:
 %
-% Example2 (with inputs):
-% [sa,subjs] = subjectarray('load_sa',struct(filename,{'/Users/test.mat'},'flds',...
-% {{'subj','subjFolders1'}},'subjs',{[2,3]}));
-% sa =
-% 1x4 struct array with fields:
-%
-%   subj
-%   subjFolders
-%   
-% subjs = 
-%   
-%   2   3
-%
-% requires: make_gui cell2strtable choose_SubjectArray choose_fields struct2var
-% printres savesubjfile pebl pebl_input pebl_dlmread pebl_getfield 
-% pebl_setfield pebl_strjoin pebl_subjs pebl_xlsread update_array
-% 
 % Created by Justin Theiss
 
 % init vars
 if ~exist('cmd','var')||isempty(cmd), cmd = []; end;
-if isnumeric(cmd), cmd = {'subjectarray_gui'}; varargin = {struct}; end;
+if isnumeric(cmd), cmd = {'studyarray_gui'}; varargin = {struct}; end;
 if ~iscell(cmd), cmd = {cmd}; end; 
 if isempty(varargin), varargin = {struct}; end;
 
@@ -65,16 +28,13 @@ for x = 1:numel(cmd), varargin{1} = feval(cmd{x},varargin{:}); end;
 
 % set varargin to params as output
 params = varargin{1};
-
-% remove subjectarrayname field if exists
-if isfield(params,'subjectarrayname'), 
-    params = rmfield(params,'subjectarrayname'); 
-end
+C = pebl_getfield(params, 'R', {'.array', '.task', '.filename'});
+[array, task, filename] = deal(C{:});
 end
 
 % Callback functions
-function params = subjectarray_gui(params)
-% params = subjectarray_gui(params)
+function params = studyarray_gui(params)
+% params = studyarray_gui(params)
 % Open gui to create study array.
 
 % setup structure for make_gui
@@ -102,25 +62,25 @@ function params = createfield(params, field, vals)
 % If no field or vals, these will be input by user.
 
 % get vars from params
-struct2var(params,{'sa','subjs'});
+struct2var(params,{'array','subjs'});
 
 % init vars
 if ~exist('flds','var'), flds = get(findobj('tag',[mfilename, 'listbox']),'string'); end;
 if ~exist('field','var'), field = cell2mat(inputdlg('Enter field name:')); end;
 
-% create sa as empty if not existing
-if ~exist('sa','var'), sa = struct; end; 
+% create array as empty if not existing
+if ~exist('array','var'), array = struct; end; 
 
 % if not setting subj, choose subjects
 if strcmp(field,'subj'),
     subjs = [];
 elseif ~exist('subjs','var'),
-    subjs = pebl_subjs(sa);  
+    subjs = pebl_subjs(array);  
 end
 
 % create vars
 if ~exist('vals','var')
-    vals = pebl_input('variable', field, 'iter', subjs, 'array', sa);
+    vals = pebl_input('variable', field, 'iter', subjs, 'array', array);
     if isempty(vals), return; end;
 end
 
@@ -135,7 +95,7 @@ if ~isempty(subjs),
 else
     R = ['.', field];
 end
-sa = pebl_setfield(sa,'R',R,'C',vals);
+array = pebl_setfield(array,'R',R,'C',vals);
 
 % add to flds
 flds{end+1} = field;
@@ -145,7 +105,7 @@ set(findobj('tag',[mfilename 'listbox']),'value',1);
 set(findobj('tag',[mfilename 'listbox']),'string',unique(flds)); 
 
 % set vars to params
-params = struct2var(params,{'sa','subjs'});
+params = struct2var(params,{'array','subjs'});
 end
 
 function params = load_sa(params, filename, task)
@@ -186,9 +146,9 @@ switch ext(1:4)
         end
         % get structure
         tmp = load(filename, task);
-        sa = tmp.(task);
+        array = tmp.(task);
         % get flds
-        flds = fieldnames(sa);
+        flds = fieldnames(array);
     otherwise % other
         delim = cell2mat(inputdlg(['Enter delimiter for ' filename]));
         raw = pebl_dlmread(filename,delim); 
@@ -205,12 +165,12 @@ end
 % set task
 if ~exist('task','var'), task = tmp; end;
 
-% create sa
-if ~exist('sa','var'),
-    sa = struct;
+% create array
+if ~exist('array','var'),
+    array = struct;
     for n = 1:numel(flds),
         R = strcat('(', arrayfun(@(x){num2str(x)}, 1:numel(vals{n})), ').', flds{n});
-        sa = pebl_setfield(sa, 'R', R, 'C', vals{n});
+        array = pebl_setfield(array, 'R', R, 'C', vals{n});
     end
 end
 
@@ -224,7 +184,7 @@ set(findobj('tag','study array name'),'string',task);
 set(findobj('tag',[mfilename 'listbox']),'string',unique(flds));
 
 % set vars to params
-params = struct2var(params,{'sa','task','filename'});
+params = struct2var(params,{'array','task','filename'});
 end
 
 function params = save_sa(params, filename, task)
@@ -237,9 +197,9 @@ function params = save_sa(params, filename, task)
 %
 % If no filename or task, these will be set by user.
 
-% if no sa field, assume sa
-if ~isfield(params,'sa'),
-    sa = params; params = struct;
+% if no array field, assume array
+if ~isfield(params,'array'),
+    array = params; params = struct;
 else
     struct2var(params);
 end
@@ -255,17 +215,17 @@ end
 
 % set task
 if ~exist('task','var'),
-    if ~exist('subjectarrayname','var'),
+    if ~exist('studyarrayname','var'),
         task = tmp; 
     else
-        task = subjectarrayname.String;
+        task = studyarrayname.String;
     end
 end
 
 % get fields
-flds = fieldnames(sa);
+flds = fieldnames(array);
 for f = 1:numel(flds),
-    vals{f} = pebl_getfield(sa,'expr',['.*\.' flds{f} '$'])'; 
+    vals{f} = pebl_getfield(array,'expr',['.*\.' flds{f} '$'])'; 
     vals{f} = cellfun(@(x){genstr(x)}, vals{f});
     raw(:,f) = vertcat(flds{f},vals{f});
 end
@@ -291,7 +251,7 @@ switch ext(1:4),
         end
         fclose(fid);
     case '.mat' % mat
-        eval([task '= sa;']);
+        eval([task '= array;']);
         if exist(filename,'file'),
             save(filename,task,'-append');
         else
@@ -303,5 +263,5 @@ end
 disp([filename ' saved with task: ' task]);
 
 % set vars to params
-params = struct2var(params,{'sa','task','filename'});
+params = struct2var(params,{'array','task','filename'});
 end

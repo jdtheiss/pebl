@@ -51,7 +51,7 @@ function params = pebl(cmd, varargin)
 %      print_type: 'diary'
 %      print_file: 'output.txt'
 %         
-% Note the following commands are supported: 'setup', 'set_subjectarray',
+% Note the following commands are supported: 'setup', 'set_studyarray',
 % 'load_editor', 'set_iter', 'init_env', 'add_function', 'set_options',
 % 'get_docstr', 'load_save_params', 'print_options', and 'run_params'. 
 % Type help pebl>subfunction to get help for desired subfunction.
@@ -89,14 +89,14 @@ function params = setup(params)
 end
 
 % load study array
-function params = set_subjectarray(params)
-% params = set_subjectarray(params)
-% Load/create study array (sa) using @subjectarray.
+function params = set_studyarray(params)
+% params = set_studyarray(params)
+% Load/create study array using @studyarray and add to functions.
 
     % init sa
-    sa = subjectarray;
-    % set sa to params
-    params = struct2var(params,'sa');
+    array = studyarray;
+    params = add_function(params, [], @deal);
+    params = set_options(params, [], array);
 end
 
 % create editor
@@ -116,7 +116,7 @@ function params = load_editor(params)
     [s.push.order] = deal([1,2],[1,3],[1,4],[1,5],[1,6]);
     [s.push.tag] = deal(s.push.string);
     [s.push.callback] = deal(@(x,y)guidata(gcf,init_env(guidata(gcf))),...
-        @(x,y)guidata(gcf,set_subjectarray(guidata(gcf))),...
+        @(x,y)guidata(gcf,set_studyarray(guidata(gcf))),...
         @(x,y)guidata(gcf,set_iter(guidata(gcf))),...
         @(x,y)guidata(gcf,add_function(guidata(gcf))),...
         @(x,y)guidata(gcf,set_options(guidata(gcf))));
@@ -419,7 +419,7 @@ function params = set_options(params, idx, option)
     struct2var(params,{'funcs','options','idx','subjs','sa'});
     % init vars
     if ~exist('funcs','var')||isempty(funcs), return; end;
-    if ~exist('idx','var')||isempty(idx), idx = 1:numel(funcs); end;
+    if ~exist('idx','var')||isempty(idx), idx = numel(funcs); end;
     if ~exist('subjs','var'), subjs = []; end;
     if ~exist('sa','var'), sa = struct; end;
     % get string funcs
