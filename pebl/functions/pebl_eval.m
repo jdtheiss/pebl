@@ -39,7 +39,6 @@ for x = 1:numel(C),
 end
 
 % find cells with filesep
-clear vals S; 
 [C,S] = pebl_getfield(evaled_obj,'fun',@(x)ischar(x) && any(strfind(x,filesep))); 
 for x = 1:numel(C),
     evaled_obj = local_mkdir_select(evaled_obj,C{x},S{x},opt); % mkdir/select
@@ -63,7 +62,7 @@ function obj = local_mkdir_select(obj, C, S, opt)
 % skip if not char
 if ischar(C), 
     % if any "", remove
-    C = regexprep(C,'["]','');
+    C = regexprep(strtrim(C),'["]','');
 
     % get path,file,ext
     [p,f,e] = fileparts(C);
