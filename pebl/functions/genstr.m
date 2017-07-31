@@ -57,7 +57,7 @@ function str = genstr(obj, split)
 % Created by Justin Theiss
 
 % if number of rows > 1, use ; to separate each row
-if numel(size(obj)) == 2 && size(obj, 1) > 1,
+if numel(size(obj)) == 2 && size(obj, 1) > 1, 
     for x = 1:size(obj,1),
         str{x} = genstr(obj(x,:));
     end
@@ -74,7 +74,7 @@ elseif numel(size(obj)) > 2,
     str = str(1:end-2);
     str = sprintf('cat(%d, %s)', numel(size(obj)), str);
 % if multiple graphics
-elseif numel(obj) > 1 && all(isgraphics(obj)),
+elseif numel(obj) > 1 && all(isgraphics(obj)) && ~all(isnumeric(obj)), 
     for x = 1:numel(obj),
         str{x} = genstr(obj(x));
     end
