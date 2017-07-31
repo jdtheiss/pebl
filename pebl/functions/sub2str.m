@@ -49,10 +49,12 @@ for x = 1:numel(S),
     if strcmp(S(x).type,'.')
         str = cat(2,str,S(x).type,S(x).subs);
     else % otherwise () or {}
-        subs = cellfun(@(x){num2str(x)},S(x).subs);
+        subs = cellfun(@(x){genstr(x)},S(x).subs); 
         str = cat(2,str,S(x).type(1),strjoin(subs,','),S(x).type(2));
     end
 end
+% set ':' to :
+str = strrep(str, ''':''', ':');
 end
 
 function S = local_gensub(str)
@@ -64,6 +66,8 @@ S = [];
 if isempty(str), return; end;
 % remove leading characters
 str = regexprep(str, '^\w+', '');
+% set : to ':'
+str = regexprep(str, '(\D)(:)', '$1''$2''');
 % get types and indices
 [types, n] = regexp(str, {'\.', '\([^\)]+\)', '\{[^\}]+\}'}, 'match', 'start');
 % sort n and get indices for typesubs
@@ -84,6 +88,5 @@ subs = regexp(str, '\.', 'split');
 typesubs(n1{1}) = subs(~cellfun('isempty',subs));
 % set subs for ()/{} by evaluating inside ()/{} as cell
 typesubs([n1{2:3}]) = cellfun(@(x){eval(['{',x(2:end-1),'}'])}, [types{2:3}]);
-% create substruct
 S = substruct(typesubs{:});
 end
