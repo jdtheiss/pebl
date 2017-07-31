@@ -485,8 +485,13 @@ function [matlabbatch, dep] = local_setbatch(matlabbatch, options)
                 matlabbatch = pebl_setfield(matlabbatch, 'S', options{x}, 'C', options{x+1});
             case 'cell' % use pebl_setfield with options
                 matlabbatch = pebl_setfield(matlabbatch, options{x}{:}, 'C', options{x+1});
-            case 'char' % use pebl_setfield with expr
-                matlabbatch = pebl_setfield(matlabbatch, 'expr', options{x}, 'C', options{x+1});
+            case 'char' % use pebl_setfield with expr or R
+                if any(regexp(options{x}, '[\\|^$*+?]')),
+                    type = 'expr';
+                else
+                    type = 'R';
+                end
+                matlabbatch = pebl_setfield(matlabbatch, type, options{x}, 'C', options{x+1});
         end
     end
     % get dependencies
