@@ -45,6 +45,13 @@ function [A, S, R] = pebl_setfield(varargin)
 %
 % requires: pebl_getfield
 %
+% Note: if the number of components to set is equal to the number of cells
+% in 'C', each component will be set iteratively to the corresponding cell
+% in 'C'. if the number of components does not equal the number of cells,
+% as the minimum between number of components and number of cells will be
+% set. finally, if there is only one component, it will be set to 'C' as
+% is.
+%
 % Created by Justin Theiss
 
 % init vars/remove varargin{1}
@@ -85,6 +92,7 @@ R = cell(size(S));
 % init C
 if ~exist('C','var'), C = []; end;
 if numel(S)==1||~iscell(C)||isempty(C), C = {C}; end; 
+if numel(C)==1, C = repmat(C, 1, numel(S)); end;
 
 % for each, subsasgn or evaluate
 for n = 1:numel(S),
@@ -113,7 +121,7 @@ for n = 1:numel(S),
                 A = subsasgn(A, S{n}, C{n});
             end
         else % set field with subsasgn
-            A = subsasgn(A, S{n}, C{min(n, end)});        
+            A = subsasgn(A, S{n}, C{n});   
         end 
     catch err
         if verbose, disp(err.message); end;
