@@ -484,7 +484,13 @@ function [matlabbatch, dep] = local_setbatch(matlabbatch, options)
                 end
                 matlabbatch = pebl_setfield(matlabbatch, 'S', options{x}, 'C', options{x+1});
             case 'cell' % use pebl_setfield with options
-                matlabbatch = pebl_setfield(matlabbatch, options{x}{:}, 'C', options{x+1});
+                if all(cellfun('isclass', options{x}, 'struct')), % S
+                    matlabbatch = pebl_setfield(matlabbatch, 'S', options{x}, 'C', options{x+1});
+                elseif iscellstr(options{x}) && ~strcmp(options{x}{1}, 'R'), % R
+                    matlabbatch = pebl_setfield(matlabbatch, 'R', options{x}, 'C', options{x+1});
+                else % any options
+                    matlabbatch = pebl_setfield(matlabbatch, options{x}{:}, 'C', options{x+1});
+                end
             case 'char' % use pebl_setfield with expr or R
                 if any(regexp(options{x}, '[\\|^$*+?]')),
                     type = 'expr';
