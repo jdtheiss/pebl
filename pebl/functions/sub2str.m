@@ -27,14 +27,44 @@ function str = sub2str(S)
 % 
 %     type
 %     subs
+% 
+% Example 3: Generate multiple substructs for multi-indexing
+% 
+% str = '(1:3).test';
+% S = sub2str(str)
 %
+% S =
+% 
+%    [1x2 struct]    [1x2 struct]    [1x2 struct]
+% 
 % Created by Justin Theiss
 
 % if substruct, generate str
 if isstruct(S),
     str = local_genstr(S);
-else % otherwise generate substruct
-    str = local_gensub(S);
+elseif ischar(S), % if char generate substruct
+    % get parenthetical index at end 
+    P = regexp(S, '\([^\.]+$', 'match');
+    if isempty(P), P = ''; end;
+    % remove end for getting earlier indices
+    R = regexprep(S, '\([^\.]+$', '');
+    % get matches of earlier indices
+    M = regexp(R, '\d+:\d+', 'match');
+    for n = 1:numel(M), % for each match, set to each number in indices
+        R = arrayfun(@(x){regexprep(R, M{n}, num2str(x), 'once')}, eval(M{n}));
+        if all(cellfun('isclass', R, 'cell')), R = [R{:}]; end;
+    end
+    % re-append P
+    R = strcat(R, P);
+    if ~iscell(R), R = {R}; end;
+    % init str and get for each R
+    str = cell(size(R));
+    for x = 1:numel(R),
+        str{x} = local_gensub(R{x});
+    end
+    if numel(str)==1, str = str{1}; end;
+else % otherwise, return empty
+    str = [];
 end
 end
 

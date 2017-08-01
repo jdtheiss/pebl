@@ -67,28 +67,32 @@ function [C, S, R] = pebl_getfield(A, varargin)
 arrayfun(@(x)assignin('caller',varargin{x},varargin{x+1}), 1:2:numel(varargin));
 if ~exist('r','var')||isempty(r), r = inf; end;
 if ~exist('verbose','var')||isempty(verbose), verbose = false; end;
+
 % get substructs of A
 if ~exist('S', 'var'),
     S = struct2sub(A, r);
 elseif ~iscell(S),
     S = {S};
 end
-% get R from S
-if ~exist('R', 'var'),
-    R = cellfun(@(x){sub2str(x)}, S);
-else % set S from R
+
+% set S from R
+if exist('R', 'var'), 
     if ~iscell(R), R = {R}; end;
     S = cellfun(@(x){sub2str(x)}, R);
+    if all(cellfun('isclass', S, 'cell')), S = [S{:}]; end;
 end
-if ~iscellstr(R), R = repmat({''}, size(S)); end;
+% reset R (in case changes from S)
+R = cellfun(@(x){sub2str(x)}, S);
+
 % find R using regexp
 if exist('expr','var'),
     R = regexp(R, expr, 'match', 'once');
     R(cellfun('isempty',R)) = [];
     S = cellfun(@(x){sub2str(x)}, R);
 end
+
 % use subsref to get values of subsref(A, S)
-C = cell(size(S));
+C = cell(size(S)); 
 for x = 1:numel(S),
     try
         C{x} = subsref(A, S{x});
@@ -96,6 +100,7 @@ for x = 1:numel(S),
         if verbose, fprintf('%s\n', R{x}, err.message); end;
     end
 end
+
 % find using function
 if exist('fun','var'),
     if ~iscell(fun), fun = {fun}; end;
@@ -112,8 +117,11 @@ if exist('fun','var'),
     S = S(fnd);
     R = R(fnd);
 end
+
 % return only unique R
-[R, uidx] = unique(R, 'stable');
-C = C(uidx);
-S = S(uidx);
+if ~all(cellfun('isempty',R)),
+    [R, uidx] = unique(R, 'stable');
+    C = C(uidx);
+    S = S(uidx);
+end
 end

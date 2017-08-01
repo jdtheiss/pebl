@@ -1,5 +1,5 @@
 function [A, S, R] = pebl_setfield(varargin)
-% [A,S,R] = pebl_setfield(A,'property1','value1',...)
+% [A, S, R] = pebl_setfield(A,'property1','value1',...)
 % Set field/index for object A. 
 %
 % Inputs:
@@ -8,7 +8,7 @@ function [A, S, R] = pebl_setfield(varargin)
 % Optional Properties:
 % 'S' - substruct(s) to set
 % 'R' - string representations to set
-% 'C' - values to set to A(idx).field
+% 'C' - values to set to A
 % 'append' - string to append to each S or R (e.g., '.field' or '(2)')
 % 'remove' - true/false to remove fields at S/R/append (default is false)
 % 'verbose' - true/false to display errors (default is false)
@@ -63,21 +63,34 @@ if ~exist('S','var') && ~exist('R','var'),
     [~, S] = pebl_getfield(A,varargin{:});
 end
 
-% init S/R/C
+% init S/R/append/remove
 if ~exist('R','var'), R = []; end;
 if ~iscell(R), R = {R}; end;
 if ~exist('S','var'), S = cell(size(R)); end;
 if ~iscell(S), S = {S}; end;
-if ~exist('C','var'), C = []; end;
-if numel(S)==1||~iscell(C)||isempty(C), C = {C}; end; 
 if ~exist('append','var'), append = []; end;
 if ~exist('remove','var'), remove = false; end;
+
+% append S with R/append
+for n = 1:numel(S),
+    S1 = sub2str([R{min(n, end)}, append]);
+    if ~iscell(S1), S1 = {S1}; end;
+    S{n} = cellfun(@(x){[S{n}, x]}, S1);
+end
+S = [S{:}];
+
+% init R for output
+R = cell(size(S));
+
+% init C
+if ~exist('C','var'), C = []; end;
+if numel(S)==1||~iscell(C)||isempty(C), C = {C}; end; 
 
 % for each, subsasgn or evaluate
 for n = 1:numel(S),
     try
-        % set substruct
-        S{n} = [S{n}, sub2str([R{min(n, end)}, append])];
+        % set new R
+        R{n} = sub2str(S{n});
         if remove, % remove at substruct location
             if strcmp(S{n}(end).type, '.'),
                 if strcmp(S{n}(max(1, end-1)).type, '()'), 
@@ -99,7 +112,7 @@ for n = 1:numel(S),
                 C{n} =  [];
                 A = subsasgn(A, S{n}, C{n});
             end
-        else % set field
+        else % set field with subsasgn
             A = subsasgn(A, S{n}, C{min(n, end)});        
         end 
     catch err

@@ -157,7 +157,7 @@ function test_pebl_input
 end
 
 function test_pebl_dlmread
-    file = fullfile(fileparts(mfilename('fullpath')), 'test.txt');
+    file = [tempname, '.txt'];
     str = 'test1|test2\ntest3|test4';
     fid = fopen(file, 'w');
     fprintf(fid, str);
@@ -170,7 +170,7 @@ end
 
 function test_pebl_eq
     C1 = 0;
-    reps1 = {'.test1', '.test2_{1}', '.test2{1}', '.test3'};
+    reps1 = {'.test1', '.test2_{[1]}', '.test2{[1]}', '.test3'};
     test1 = struct('test1',1,'test2',{{2}},'test3','3');
     test2 = struct('test1',2,'test2_',{{2}},'test3','3 ');
     [C2, reps2] = pebl_eq(test1,test2);
@@ -179,10 +179,11 @@ function test_pebl_eq
 end
 
 function test_pebl_eval
-    outputs1 = 1;
-    sa = struct('test',{1,2});
-    outputs2 = pebl_eval('sa(1).test');
-    assert(outputs1==outputs2);
+    outputs1 = tempname;
+    outputs2 = pebl_eval([outputs1, '\']);
+    assert(isdir(outputs2));
+    rmdir(outputs1);
+    assert(strcmp(outputs1, outputs2));
 end
 
 function test_pebl_feval
@@ -297,7 +298,7 @@ function test_subidx
 end
 
 function test_sub2str
-    outputs1 = '{1}.test1(2).test2';
+    outputs1 = '{[1]}.test1([2]).test2';
     S = substruct('{}',{1},'.','test1','()',{2},'.','test2');
     outputs2 = sub2str(S);
     assert(strcmp(outputs1,outputs2));
@@ -322,7 +323,7 @@ function test_switchcase
 end
 
 function test_update_var
-    file1 = fullfile(fileparts(mfilename('fullpath')), 'test.txt');
+    file1 = [tempname, '.txt'];
     fid = fopen(file1, 'w');
     str = 'test_str = '';\ntest_num = 0;\ntest_logic = false;';
     fprintf(fid, str);

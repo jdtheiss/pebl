@@ -1,5 +1,5 @@
-function [C, reps] =  pebl_eq(A,B)
-% [C, reps] = pebl_eq(A,B)
+function [C, reps] =  pebl_eq(A, B)
+% [C, reps] = pebl_eq(A, B)
 % Checks if all components of A and B are equal.
 %
 % Inputs:
@@ -25,20 +25,24 @@ function [C, reps] =  pebl_eq(A,B)
 %     '.field1'   
 %
 % Note: if a non-struct or non-cell object is input, the returned rep will
-% be ''.
+% be unreliable.
 %
 % requires: pebl_getfield
 % Created by Justin Theiss
 
-% set reps
+% init C, reps
 C = true;
 reps = {};
 
+% if empty or number, set cell
+if isempty(A)||isnumeric(A), A = {A}; end;
+if isempty(B)||isnumeric(B), B = {B}; end;
+
 % get all values
 [Avals,~,Areps] = pebl_getfield(A);
-if ~iscell(Avals) && isempty(Avals), Avals = {A}; Areps = {''}; end; 
+if all(cellfun('isempty',Avals)), Areps = {''}; end; 
 [Bvals,~,Breps] = pebl_getfield(B);
-if ~iscell(Bvals) && isempty(Bvals), Bvals = {B}; Breps = {''}; end;
+if all(cellfun('isempty',Bvals)), Breps = {''}; end;
 
 % check for nan
 r = randn(1);
@@ -110,6 +114,4 @@ function reps = local_unique(reps,Areps,Breps,ck)
     % get unique reps, ensuring ck is same size as Areps or Breps
     if all(size(ck) == size(Areps)), reps = unique([reps,Areps(~ck)]); end;
     if all(size(ck) == size(Breps)), reps = unique([reps,Breps(~ck)]); end;
-end
-    
-    
+end 

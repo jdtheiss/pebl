@@ -47,6 +47,7 @@ for n = find(cellfun('isclass',S0,'struct')),
         S{n} = S0{n};
     end
 end
+
 % if any subcells, collapse
 if any(cellfun('isclass',S,'cell')),
     S = [S{:}]; 
@@ -82,7 +83,7 @@ try
     f = ~isempty(fieldnames(C));
 catch
     f = iscell(C) && ~isempty(C); 
-end;
+end
 if ~f, S = {[]}; return; end;
 % if . type, set to fieldnames
 if strcmp(type,'.'), 
