@@ -257,7 +257,7 @@ for f = seq,
             try % run program with funcs and options
                 try o = abs(nargout(funcs{f})); o = max(o, max(n_out)); catch, o = max(n_out); end;
                 % set options (for using outputs/dep)
-                evaled_opts = local_eval(options{f}, 'output', output, 'func', funcs{f}, 'n', n);
+                [evaled_opts, n] = local_eval(options{f}, 'output', output, 'func', funcs{f}, 'n', n);
                 % feval
                 [results{1:o}] = feval(program, funcs{f}, evaled_opts, verbose); 
                 % display outputs
@@ -293,15 +293,11 @@ for f = seq,
             if wait_bar,
                 settimeleft(f, 1:numel(iter), h);
             end
-            % if all iterations, 
+            % if all iterations
             if ~isempty(stop_fn{f}) && strcmp(func2str(stop_fn{f}), '@()''n==inf'''),
-                if ~iscell(options{f}), 
-                    n = inf; iter{f} = inf; % if not cell, done
-                elseif ~any(cellfun('isclass',options{f},'cell')) && n==size(options{f},1),
-                    n = inf; iter{f} = inf; % if only one set of cells
-                elseif any(cellfun('isclass',options{f},'cell')) && n==max(cellfun('size',options{f},1)),
-                    n = inf; iter{f} = inf; % multiple sets of cells
-                else % otherwise advance
+                if n == inf, % if inf, done
+                    iter{f} = inf;
+                else % advance
                     iter{f} = iter{f} + 1;
                 end
             end
@@ -321,27 +317,13 @@ output = cellfun(@(x){x(:, n_out)}, output);
 end
 
 % evaluate @() inputs
-function options = local_eval(options, varargin)
+function [options, n] = local_eval(options, varargin)
     % for each varargin, set as variable
     for x = 1:2:numel(varargin), 
         eval([varargin{x} '= varargin{x+1};']);
     end
-    % if no n, set to 0
+    % init n
     if ~exist('n', 'var'), n = 0; end;
-    % get row from options
-    if ~all(n==0) && ~any(n==inf) && iscell(options), 
-        if any(cellfun('isclass', options, 'cell')),
-            % for each column, set to row
-            for x = find(cellfun('isclass',options,'cell')),
-                if size(options{x}, 1) > 1,
-                    options{x} = options{x}{min(end,n)};
-                end
-            end
-        elseif ~isempty(options) && size(options, 1) > 1, 
-            % if cell, set to row
-            options = options{min(end,n)};
-        end
-    end
     
     % find functions in options
     if ~iscell(options), options = {options}; end;
@@ -360,7 +342,7 @@ function options = local_eval(options, varargin)
         % set options based on output
         for x = find(o_idx),
             C{x} = subsref(options, S{x});
-            options = subsasgn(options,S{x},eval(feval(C{x}))); 
+            try options = subsasgn(options,S{x},eval(feval(C{x}))); end;
         end
 
         % if program is batch, get depenencies
@@ -374,7 +356,24 @@ function options = local_eval(options, varargin)
         % set options based on dependencies
         for x = find(~o_idx),
             C{x} = subsref(options, S{x});
-            options = subsasgn(options,S{x},eval(feval(C{x}))); 
+            try options = subsasgn(options,S{x},eval(feval(C{x}))); end;
+        end
+    end
+    
+    % get row from options
+    if n~=0 && iscell(options), 
+        if size(options, 1) > 1,
+            % if cell, set to row
+            if n == size(options, 1), n = inf; end;
+            options = options{min(end,n)};
+        elseif any(cellfun('isclass', options, 'cell')),
+            % for each column, set to row
+            for x = find(cellfun('isclass',options,'cell')),
+                if size(options{x}, 1) > 1,
+                    if n == size(options{x}, 1), n = inf; end; 
+                    options{x} = options{x}{min(end,n)};
+                end
+            end
         end
     end
     
