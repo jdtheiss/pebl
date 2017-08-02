@@ -1,44 +1,37 @@
 function output = pebl_feval(varargin)
-% output = pebl_feval('Param1', Value1, 'Param2', Value2, funcs, options1, options2, ...)
+% output = pebl_feval(funcs, options1, options2, ..., 'Param1', Value1, ...)
 % Run wrapper of multiple scripts/functions/system commands/matlabbatch.
 %
 % Inputs:
-% funcs - cell array, functions to run. matlab commands should be function
-%   handles (i.e. begin with @), system command should be char, and
-%   matlabbatch commands should be struct array or cell array of structs
+% funcs - cell array, functions to run. matlab functions as function
+%   handles, system commands as char, and matlabbatch modules as cell/struct
 %   [no default]
-% options - cell array, inputs for functions as variable inputs with rows 
-%   per function. the options for each function should be entered as a
-%   separate argument
-%   [default is {} per function, which is not input to the function/script]
-% 'loop' - number of times to loop through functions (e.g., 3 to run all
-%   functions in sequence 3 times). can be combined with 'iter' to use
-%   different parameters on each loop (e.g., 'loop', 3, 'iter', 1:3).
-%   [default is 1]
-% 'seq' - sequence of functions to run (e.g., [1,2,2,3] to run the first
-%   function followed by the second function twice then the third function).
-%   [default is 1:numel(funcs)]
-% 'iter' - sequence of iterations to run (e.g., [1:2] to run the first two
-%   options for each function). alternatively, each function's sequence of
-%   iterations can be provied as a cell of sequences coresponding to the 
-%   number of functions (e.g., {1:2,1,1:3}). additionally, iter can be set
-%   to -1 to use the 'loop' number
-%   [default is 0, which assumes there is no sequence to iterate]
-% 'stop_fcn' - stop function to use as part of a "while loop" (e.g.,
-%   @()'output{1}{end}==0' to run until the first output is 0).
-%   alternatively, each function's stop function can be provided in a cell
-%   array (e.g., {@()'output{1}{end}==0', @()'output{2}{end}==1'}).
-%   [default is [], which is no while loop]
-% 'n_out' - range of outputs to return from each function (e.g., 2 or 1:3)
-%   [default is 1]
-% 'verbose' - optional boolean. true displays all inputs/outputs; false 
-%   displays nothing in the command prompt; 
-%   [default is [], displays normal command behavior]
-% 'throw_error' - optional boolean. true throws error when one occurs; 
-%   false displays error message without throwing error
-%   [default is false]
-% 'wait_bar' - optional boolean. true displays a waitbar; false does not
-%   [default is false] 
+% options - separate inputs per function. each function's input arguments
+%   should be contained in a cell array with rows corresponding to iterations
+%   [default {} per function]
+% 'loop' - number, optional number of times to loop through functions
+%   [default 1]
+% 'seq' - numeric array, optional sequence of functions to be run
+%   [default [] which runs all functions in order]
+% 'iter' - cell/numeric array, optional sequence of iterations to be run. 
+%   numeric array: iterations to run
+%   -1: set each iteration to loop number
+%   0: run all iterations based on number of rows in options
+%   []: run options as is, assumes no iterations
+%   cell array: each function's iter in separate cell
+%   [default []]
+% 'stop_fn' - cell array/function, function to evaluate during while loop.
+%   if function evaluates true, the loop ends.alternatively, cell array of
+%   stop_fn per function
+%   [default []]
+% 'n_out' - numeric array, range of outputs to return from each function
+%   [default 1]
+% 'verbose' - boolean, true displays function call with options and output
+%   [default false]
+% 'throw_error' - boolean, true throws error if any occurs
+%   [default false]
+% 'wait_bar' - boolean, true displays waitbar during loops
+%   [default false]
 % 
 % Outputs:
 % output - outputs organized as cells per function with inner cells of rows 
@@ -48,7 +41,7 @@ function output = pebl_feval(varargin)
 % Example 1: system echo 'this' and compare output with 'that' using
 % strcmp, then repeat with system echo 'that'
 % output = pebl_feval({'echo',@strcmp}, {'-n',{'this'; 'that'}},...
-%          {@()'output{1}{end}', 'that'}, 'loop', 2, 'iter', {-1,0})
+%          {@()'output{1}{end}', 'that'}, 'loop', 2, 'iter', {-1,[]})
 % this
 % that
 % 
@@ -117,7 +110,7 @@ function output = pebl_feval(varargin)
 % 
 % Example 4: use @() to evaluate inputs
 % output = pebl_feval({'echo',@minus}, {'-n', {@()'randi(10)';'2'}},...
-%          {@()'str2double(output{1}{end})', 2}, 'loop', 2, 'iter', {1:2,0})
+%          {@()'str2double(output{1}{end})', 2}, 'loop', 2, 'iter', {-1,[]})
 %
 % 5
 % 2
@@ -133,7 +126,7 @@ function output = pebl_feval(varargin)
 %     [0]
 % 
 % Example 5: run while loop until last two numbers are same
-% output = pebl_feval(@randi, {10;10}, 'iter', 1:2, 'stop_fcn',...
+% output = pebl_feval(@randi, {10;10}, 'iter', 1:2, 'stop_fn',...
 %          @()'output{1}{end}==output{1}{end-1}')
 % 
 % output{1} = 
@@ -153,12 +146,9 @@ function output = pebl_feval(varargin)
 %     [ 8]
 %     [ 8]
 %     
-% Note: in order to avoid overlap between system commands and matlab 
-% built-in functions, matlab functions/scripts should be input as 
-% function_handles (i.e. @func instead of 'func'). also, in order to avoid
-% function inputs being incorrectly assigned as parameters, put any 
-% inputs sharing parameter names in cell brackets 
-% (e.g., pebl_feval('verbose', true, @disp, {'verbose'})).
+% Note: in order to avoid function inputs being incorrectly assigned as 
+% parameters, put any inputs sharing parameter names in cell brackets 
+% (e.g., pebl_feval(@disp, {'verbose'}, 'verbose', true)).
 %
 % Created by Justin Theiss
 
@@ -167,8 +157,8 @@ output = cell(1, 1);
 if nargin==0, return; end; 
 
 % init varargin parameters
-params = {'loop', 'seq', 'iter', 'stop_fcn', 'verbose', 'throw_error', 'wait_bar', 'n_out'};
-values = {1, [], 0, [], [], false, false, 1};
+params = {'loop', 'seq', 'iter', 'stop_fn', 'verbose', 'throw_error', 'wait_bar', 'n_out'};
+values = {1, [], [], [], [], false, false, 1};
 x = 1;
 while x < numel(varargin),
     if ischar(varargin{x}) && any(strcmp(params, varargin{x})),
@@ -178,9 +168,9 @@ while x < numel(varargin),
             case 'seq'
                 seq = varargin{x+1};
             case 'iter'
-                iter = varargin{x+1};
-            case 'stop_fcn'
-                stop_fcn = varargin{x+1};
+                iter = varargin{x+1}; 
+            case 'stop_fn'
+                stop_fn = varargin{x+1};
             case 'verbose'
                 verbose = varargin{x+1};
             case 'throw_error'
@@ -230,9 +220,9 @@ if ~iscell(iter),
     iter = repmat({iter}, 1, numel(funcs));
 end
 
-% if stop_fcn is not cell, repmat
-if ~iscell(stop_fcn),
-    stop_fcn = repmat({stop_fcn}, 1, numel(funcs));
+% if stop_fn is not cell, repmat
+if ~iscell(stop_fn),
+    stop_fn = repmat({stop_fn}, 1, numel(funcs));
 end
 
 % init output
@@ -240,7 +230,15 @@ output = {{}};
 % for loop/sequence order
 for l = 1:loop,
 for f = seq,
-    if f > numel(iter), iter{f} = 0; end;
+    % default is [] meaning run once with no iterations
+    if f > numel(iter), iter{f} = []; end;
+    % different iter options
+    if isempty(iter{f}),
+        iter{f} = inf; 
+    elseif all(iter{f} == 0),
+        stop_fn{f} = @()'n==inf'; 
+        iter{f} = 1;
+    end  
     % if while loop
     done = false; 
     while ~done, 
@@ -257,7 +255,7 @@ for f = seq,
             try % run program with funcs and options
                 try o = abs(nargout(funcs{f})); o = max(o, max(n_out)); catch, o = max(n_out); end;
                 % set options (for using outputs/dep)
-                evaled_opts = local_eval(options{f}, 'output', output, 'func', funcs{f}, 'n', n); 
+                evaled_opts = local_eval(options{f}, 'output', output, 'func', funcs{f}, 'n', n);
                 % feval
                 [results{1:o}] = feval(program, funcs{f}, evaled_opts, verbose); 
                 % display outputs
@@ -293,12 +291,24 @@ for f = seq,
             if wait_bar,
                 settimeleft(f, 1:numel(iter), h);
             end
+            % if all iterations, 
+            if ~isempty(stop_fn{f}) && strcmp(func2str(stop_fn{f}), '@()''n==inf'''),
+                if ~iscell(options{f}), 
+                    n = inf; % if not cell, done
+                elseif ~any(cellfun('isclass',options{f},'cell')) && n==size(options{f},1),
+                    n = inf; % if only one set of cells
+                elseif any(cellfun('isclass',options{f},'cell')) && n==max(cellfun('size',options{f},1)),
+                    n = inf; % multiple sets of cells
+                else % otherwise advance
+                    iter{f} = iter{f} + 1;
+                end
+            end
         end
         % check stop_func
-        if isempty(stop_fcn{f}),
+        if isempty(stop_fn{f}),
             done = true;
         else
-            done = cell2mat(local_eval(stop_fcn{f}, 'output', output, 'func', funcs{f}));
+            done = cell2mat(local_eval(stop_fn{f},'output',output,'n',n));
         end
     end
 end
@@ -314,9 +324,9 @@ function options = local_eval(options, varargin)
         eval([varargin{x} '= varargin{x+1};']);
     end
     % if no n, set to 0
-    if ~exist('n', 'var'), n = 0; end;
+    if ~exist('n', 'var'), n = inf; end;
     % get row from options
-    if ~any(n==0) && iscell(options), 
+    if ~any(n==inf) && iscell(options), 
         if any(cellfun('isclass', options, 'cell')),
             % for each column, set to row
             for x = find(cellfun('isclass',options,'cell')),
@@ -351,6 +361,7 @@ function options = local_eval(options, varargin)
         end
 
         % if program is batch, get depenencies
+        if ~exist('func','var'), func = []; end;
         if iscell(func)||isstruct(func),
             [~, dep] = local_setbatch(func, options);
         else % otherwise set dep to []
