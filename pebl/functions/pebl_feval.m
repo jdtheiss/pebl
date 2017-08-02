@@ -316,6 +316,7 @@ for f = seq,
 end
 end
 % return output{f}(:, n_out)
+output(cellfun('isempty',output)) = {cell(1, max(n_out))};
 output = cellfun(@(x){x(:, n_out)}, output);
 end
 
