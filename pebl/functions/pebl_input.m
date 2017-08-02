@@ -276,12 +276,12 @@ for c = chc
                 m_names(x) = regexp(common_str(s_names{x}),'^[^:]+','match');
             end
             % choose modules
-            v0 = listdlg('PromptString',['Choose modules to set ' variable],...
+            v0 = listdlg('PromptString',{['Choose modules to set ' variable],''},...
                 'ListString',m_names);
             out_fn = ''; 
             % choose dependencies
             for n = v0,
-                v1 = listdlg('PromptString',['Choose dependencies to set ' variable],...
+                v1 = listdlg('PromptString',{['Choose dependencies to set ' variable],''},...
                     'ListString',s_names{n});
                 if isempty(v1),
                     out_fn = cat(2, out_fn, ['num2cell(dep{' num2str(n) '}),']);
