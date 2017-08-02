@@ -16,13 +16,13 @@ function output = pebl_feval(varargin)
 % 'iter' - cell/numeric array, optional sequence of iterations to be run. 
 %   numeric array: iterations to run
 %   -1: set each iteration to loop number
-%   0: run all iterations based on number of rows in options
-%   []: run options as is, assumes no iterations
+%   inf: run all iterations based on number of rows in options
+%   []: run as is, assumes no iterations
 %   cell array: each function's iter in separate cell
 %   [default []]
 % 'stop_fn' - cell array/function, function to evaluate during while loop.
 %   if function evaluates true, the loop ends.alternatively, cell array of
-%   stop_fn per function
+%   stop_fn per function. stop_fn is overrided by 'iter' option inf
 %   [default []]
 % 'n_out' - numeric array, range of outputs to return from each function
 %   [default 1]
@@ -148,7 +148,9 @@ function output = pebl_feval(varargin)
 %     
 % Note: in order to avoid function inputs being incorrectly assigned as 
 % parameters, put any inputs sharing parameter names in cell brackets 
-% (e.g., pebl_feval(@disp, {'verbose'}, 'verbose', true)).
+% (e.g., pebl_feval(@disp, {'verbose'}, 'verbose', true)). 
+% in order to evaluate options at runtime, @() can be prepended to a
+% character array within options (see examples above).
 %
 % Created by Justin Theiss
 
@@ -234,8 +236,8 @@ for f = seq,
     if f > numel(iter), iter{f} = []; end;
     % different iter options
     if isempty(iter{f}),
-        iter{f} = inf; 
-    elseif all(iter{f} == 0),
+        iter{f} = 0; 
+    elseif all(iter{f} == inf),
         stop_fn{f} = @()'n==inf'; 
         iter{f} = 1;
     end  
@@ -294,11 +296,11 @@ for f = seq,
             % if all iterations, 
             if ~isempty(stop_fn{f}) && strcmp(func2str(stop_fn{f}), '@()''n==inf'''),
                 if ~iscell(options{f}), 
-                    n = inf; % if not cell, done
+                    n = inf; iter{f} = inf; % if not cell, done
                 elseif ~any(cellfun('isclass',options{f},'cell')) && n==size(options{f},1),
-                    n = inf; % if only one set of cells
+                    n = inf; iter{f} = inf; % if only one set of cells
                 elseif any(cellfun('isclass',options{f},'cell')) && n==max(cellfun('size',options{f},1)),
-                    n = inf; % multiple sets of cells
+                    n = inf; iter{f} = inf; % multiple sets of cells
                 else % otherwise advance
                     iter{f} = iter{f} + 1;
                 end
@@ -324,9 +326,9 @@ function options = local_eval(options, varargin)
         eval([varargin{x} '= varargin{x+1};']);
     end
     % if no n, set to 0
-    if ~exist('n', 'var'), n = inf; end;
+    if ~exist('n', 'var'), n = 0; end;
     % get row from options
-    if ~any(n==inf) && iscell(options), 
+    if ~all(n==0) && ~any(n==inf) && iscell(options), 
         if any(cellfun('isclass', options, 'cell')),
             % for each column, set to row
             for x = find(cellfun('isclass',options,'cell')),
