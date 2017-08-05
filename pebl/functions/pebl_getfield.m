@@ -98,8 +98,14 @@ for x = 1:numel(S),
         C{x} = subsref(A, S{x});
     catch err
         if verbose, fprintf('%s\n', R{x}, err.message); end;
+        S{x} = []; R{x} = [];
     end
 end
+
+% remove empty cells
+C = C(~cellfun('isempty', R));
+S = S(~cellfun('isempty', R));
+R = R(~cellfun('isempty', R));
 
 % find using function
 if exist('fun','var'),
