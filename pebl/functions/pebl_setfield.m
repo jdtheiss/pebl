@@ -91,8 +91,7 @@ R = cell(size(S));
 
 % init C
 if ~exist('C','var'), C = []; end;
-if numel(S)==1||~iscell(C)||isempty(C), C = {C}; end; 
-if numel(C)==1, C = repmat(C, 1, numel(S)); end;
+if ~iscell(C)||isempty(C)||numel(C)==1, C = {C}; end; 
 
 % for each, subsasgn or evaluate
 for n = 1:numel(S),
@@ -120,6 +119,8 @@ for n = 1:numel(S),
                 C{n} =  [];
                 A = subsasgn(A, S{n}, C{n});
             end
+        elseif numel(S) == 1, % if only 1, use deal
+            eval(sprintf('[A%s] = deal(C{:});', R{n}));
         else % set field with subsasgn
             A = subsasgn(A, S{n}, C{n});   
         end 
