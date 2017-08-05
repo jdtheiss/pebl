@@ -59,7 +59,7 @@ elseif ischar(S), % if char generate substruct
     if ~iscell(R), R = {R}; end;
     % init str and get for each R
     str = cell(size(R));
-    for x = 1:numel(R),
+    for x = 1:numel(R), 
         str{x} = local_gensub(R{x});
     end
     if numel(str)==1, str = str{1}; end;
@@ -79,7 +79,7 @@ for x = 1:numel(S),
     if strcmp(S(x).type,'.')
         str = cat(2,str,S(x).type,S(x).subs);
     else % otherwise () or {}
-        subs = cellfun(@(x){genstr(x)},S(x).subs); 
+        subs = cellfun(@(y){genstr(y)},S(x).subs); 
         str = cat(2,str,S(x).type(1),strjoin(subs,','),S(x).type(2));
     end
 end
