@@ -80,7 +80,7 @@ if done_button,
 end
 
 % get fields then set uicontrols
-s = local_setdefaults(s);
+s = local_setdefaults(s); 
 f = local_setfields(f, s);
 
 % set data to gcf
@@ -121,7 +121,7 @@ function s = local_setdefaults(s)
         spacing = s.spacing;
     end
     default_size = s.position(3:4) ./ (1.5 * [c, r]);
-    % create location function and default size
+    % create location function using default size
     loc_fun = @(x)[spacing(1) + (spacing(1) + default_size(1)) * (x(1)-1),...
         s.position(4) - (spacing(2) + default_size(2)) * x(2)];
     % get fields without position and set to 0s

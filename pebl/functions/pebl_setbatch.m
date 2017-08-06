@@ -234,6 +234,9 @@ end
 
 function [C,S,R] = convert_ids(matlabbatch, m, ids, types)
 
+% init outputs
+[C, S, R] = deal({});
+
 % remove first type
 types = types(2:end);
 

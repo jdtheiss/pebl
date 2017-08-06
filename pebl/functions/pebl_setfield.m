@@ -91,9 +91,9 @@ R = cell(size(S));
 
 % init C
 if ~exist('C','var'), C = []; end;
-if numel(C) == 1, 
+if ~iscell(C) || numel(C) == 1, 
     C = repmat({C}, 1, numel(S));
-elseif ~iscell(C)|| isempty(C) || numel(S)==1,
+elseif ~iscell(C) || isempty(C) || numel(S)==1,
     C = {C};  
 end
 
