@@ -222,17 +222,22 @@ for c = chc
                 end
             end 
         case 'Function' % function
-            params = pebl({'add_function','set_options'},...
-                     struct('verbose_arg',false));
+            n = str2double(cell2mat(inputdlg('Enter number of functions')));
+            if isnan(n), return; end;
+            params = struct;
+            for n = 1:n, % for each, add function/set options
+                params = pebl({'add_function','set_options'},params);
+            end
             run_now = questdlg('Evaluate now or at runtime?','Function','now','runtime','now');
             if strcmp(run_now,'runtime'), % create function to be run in pebl_feval
-                value = [{func2str(params.funcs{1})}, cellfun(@(x){genstr(x)}, params.options{1})];
-                value = strrep(value, '''', '''''');
-                value = ['@()''', value{1}, '(', pebl_strjoin(value(2:end),','), ')'''];
-                value = str2func(value);
+                strfn = genstr(params.funcs);
+                stropt = pebl_strjoin(cellfun(@(x){genstr(x)}, params.options), ', ');
+                runfn = sprintf('subidx(pebl_feval(%s, %s), ''{%d}{1}'')', strfn, stropt, n); 
+                value = regexprep(runfn, '([^''])('')([^''])', '$1$2$2$3');
+                value = str2func(['@()''', value, '''']);
             else % run now
                 params = pebl('run_params', params);
-                value = params.outputs{1};
+                value = params.outputs{n};
             end
         case 'Workspace Variable' % workspace variable
             variable = cell2mat(inputdlg('Enter variable name from base workspace:'));
