@@ -464,16 +464,11 @@ function params = set_options(params, idx, option)
                 else
                     batch = {};
                 end
-                options{x}{y} = pebl_input('variable',option{y},'iter',subjs,...
-                                           'array',sa,'value',options{x}{y},...
+                options{x}{y} = pebl_input('variable',option{y},'value',options{x}{y},...
                                            'func',strfuncs(1:x-1),'batch',batch); 
             end
-            % if gui, done
-            if ~isempty(findobj('type','figure','name','pebl')),
-                done = true;
-            else % otherwise ask continue
-                done = strcmp(questdlg('Add new variable?','New variable','Yes','No','No'),'No');
-            end
+            % ask continue
+            done = strcmp(questdlg('Add new variable?','New variable','Yes','No','No'),'No');
         end
     end
     % set options to params

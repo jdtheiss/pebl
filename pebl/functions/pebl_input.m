@@ -18,11 +18,7 @@ function output = pebl_input(varargin)
 %   [default {}]
 % 'options' - options for setting output
 %   [default {'String','Number','Evaluate','Index','Structure','Choose File',...
-%     'Choose Directory','Function','Workspace Variable','Study Array'}]
-% 'iter' - numeric array of subjects to use (optional)
-%   [default []]
-% 'array' - study array (optional)
-%   [default {}]
+%     'Choose Directory','Function','Workspace Variable'}]
 % 
 % Outputs:
 % output - variable returned
@@ -44,7 +40,7 @@ cellfun(@(x,y)assignin('caller',x,y), varargin(1:2:end), varargin(2:2:end));
 output = {};
 
 % set options
-inputs = {'variable','title','msg','func','batch','value','options','iter','array'};
+inputs = {'variable','title','msg','func','batch','value','options'};
 for x = 1:numel(inputs),
     if ~exist(inputs{x}, 'var'),
         switch inputs{x},
@@ -63,11 +59,7 @@ for x = 1:numel(inputs),
             case 'options'
                 options = {'String','Number','Evaluate','Index','Structure',...
                            'Choose File','Choose Directory','Function',...
-                           'Workspace Variable','Study Array'};
-            case 'iter'
-                iter = [];
-            case 'array'
-                array = {};
+                           'Workspace Variable'};
         end
     end
 end
@@ -217,7 +209,7 @@ for c = chc
             if exist('spm_select','file'),
                 value = cellstr(spm_select(Inf,'any',['Select file for ' variable],value)); 
             else % no spm_select
-                try value = cellstr(uigetfile('*.*',['Select file for ' variable],'MultiSelect','on')); end;
+                value = cellstr(uigetfile('*.*',['Select file for ' variable],'MultiSelect','on'));
             end
         case 'Choose Directory' % choose dir
             if exist('spm_select','file'),
@@ -230,39 +222,24 @@ for c = chc
                 end
             end 
         case 'Function' % function
-            params = pebl({'add_function','set_options','run_params'},...
-                struct('array',array,'iter',iter,'verbose_arg',false));
-            value = params.outputs{1};
-            clear params;
+            params = pebl({'add_function','set_options'},...
+                     struct('verbose_arg',false));
+            run_now = questdlg('Evaluate now or at runtime?','Function','now','runtime','now');
+            if strcmp(run_now,'runtime'), % create function to be run in pebl_feval
+                value = [{func2str(params.funcs{1})}, cellfun(@(x){genstr(x)}, params.options{1})];
+                value = strrep(value, '''', '''''');
+                value = ['@()''', value{1}, '(', pebl_strjoin(value(2:end),','), ')'''];
+                value = str2func(value);
+            else % run now
+                params = pebl('run_params', params);
+                value = params.outputs{1};
+            end
         case 'Workspace Variable' % workspace variable
             variable = cell2mat(inputdlg('Enter variable name from base workspace:'));
             if evalin('base',sprintf('exist(''%s'',''var'')',variable)), % check for variable
                 value = evalin('base',variable); % evaluate
             else % display that it does not exist
                 disp([variable ' does not exist in the base workspace.']);
-            end
-        case 'Study Array' % study array
-            % choose group
-            if ~isempty(iter),
-                grp = questdlg(['Choose group or individual for ' variable '?'],...
-                    title,'Group','Individual','Individual');
-            else % set to group if empty
-                grp = 'Group';
-            end
-            % get iter
-            if strcmp(grp,'Group'), 
-                iter = pebl_subjs(sa,iter);
-            end
-            % choose fields
-            vars = choose_fields(sa,iter,['Choose field(s) for ' variable]);
-            subvalue = cell2mat(inputdlg('Enter subfolder, files, etc.'));
-            % strcat
-            if strcmp(grp,'Individual')
-                value = strcat('sa(i).',value,subvars);
-            else % group (only one field can be returned)
-                for v = 1:numel(value)
-                    value{v} = strcat('sa(', arrayfun(@(x){num2str(x)},iter),').',value{v},subvars)'; 
-                end
             end
         case 'Batch Dependency' % dependencies
             % load matlabbatch and get deps
@@ -303,8 +280,9 @@ for c = chc
             % get relative function position
             if ~iscell(func), func = {func}; end;
             v = num2str(c - (numel(options)-numel(func))); 
-            % inputdlg for value{f}{r, c}
+            % inputdlg for output{f}{r, c}
             out_fn = cell2mat(inputdlg('Enter output to use:','',1,{['output{',v,'}{end,1}']}));
+            out_fn = strrep(out_fn, '''', '''''');
             if isempty(out_fn), return; end;
             % str2func for use in pebl_feval
             value = str2func(['@()''', out_fn, '''']);
