@@ -254,7 +254,7 @@ for c = chc
             % get module names and dep names
             m_names = {}; s_names = {};
             for x = find(~cellfun('isempty',dep)),
-                s_names{end+1} = {dep{x}.sname};
+                s_names{end+1} = subidx(dep{x}, sprintf('(1:%d).sname', numel(dep{x})));
                 m_names(end+1) = regexp(common_str(s_names{end}),'^[^:]+','match');
             end
             % choose modules
