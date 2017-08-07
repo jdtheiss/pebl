@@ -252,10 +252,10 @@ for c = chc
             [~,~,~,~,dep]=cfg_util('showjob',cjob);
             if isempty(dep), warning('No dependencies found'); return; end;
             % get module names and dep names
-            m_names = cell(size(dep)); s_names = cell(size(dep));
-            for x = 1:numel(dep),
-                s_names{x} = {dep{x}.sname};
-                m_names(x) = regexp(common_str(s_names{x}),'^[^:]+','match');
+            m_names = {}; s_names = {};
+            for x = find(~cellfun('isempty',dep)),
+                s_names{end+1} = {dep{x}.sname};
+                m_names(end+1) = regexp(common_str(s_names{end}),'^[^:]+','match');
             end
             % choose modules
             v0 = listdlg('PromptString',{['Choose modules to set ' variable],''},...
