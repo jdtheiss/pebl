@@ -95,13 +95,13 @@ end
 
 % convert options to idx
 idx = cell(size(matlabbatch));
-idx = idx2options(h, matlabbatch, idx, options, 'idx');
+idx = idx2options(matlabbatch, idx, options, 'idx');
 
 % set userdata for h to current item value
 m = get(handles.modlist, 'value');
 i = get(handles.module, 'value');
 str = get(handles.module, 'string');
-str_ids = get_ids(h, m, 'str');
+str_ids = get_strids(h, m);
 % init params.m as 0 to force update on first load
 params = struct('m', 0, 'i', i, 'str', {str}, 'str_ids', {str_ids});
 set(h, 'userdata', params);
@@ -135,7 +135,7 @@ userdata = get(handles.modlist, 'userdata');
 [~, matlabbatch] = cfg_util('harvest', userdata.cjob); 
 
 % convert idx to options
-options = idx2options(h, matlabbatch, idx, options);
+options = idx2options(matlabbatch, idx, options, 'options');
 
 % delete figure
 delete(h);
@@ -169,24 +169,20 @@ str(idx) = {msg};
 set(handles.module, 'string', str);
 end
 
-function [id, types] = get_ids(h, m, opt)
+function strid = get_strids(h, m)
 
 % init ids
-id = {}; types = {};
+strid = {};
 % guidata and get userdata
 handles = guidata(h);
 userdata = get(handles.modlist, 'userdata');
 % if no mod, return
 if isempty(userdata.cmod), return; end;
 % get ids
-[id, ~, types] = cfg_util('listmod', userdata.cjob, userdata.id{m}, [],...
-              cfg_findspec({{'hidden',false}}),...
-              cfg_tropts({{'hidden',true}},1,inf,1,inf,false), {'class'});
-types = types{1};
-% if opt is str, output string ids
-if exist('opt','var')&&strcmp(opt, 'str'), 
-    id = cellfun(@(x){sub2str(x)},id); 
-end
+strid = cfg_util('listmod', userdata.cjob, userdata.id{m}, [],...
+              cfg_findspec({{'hidden',false}}));
+% output string ids
+strid = cellfun(@(x){sub2str(x)},strid); 
 end
 
 function idx = update_cfg(h, idx)
@@ -214,10 +210,10 @@ if isfield(handles, 'kp'),
     end
 % if new module, update str_ids
 elseif params.m ~= m,
-    params.str_ids = get_ids(h, m, 'str'); params.str = str;
+    params.str_ids = get_strids(h, m); params.str = str;
 % if updated module, update str_ids and indices
 elseif numel(params.str) ~= numel(str) || ~all(strcmp(params.str, str)),
-    str_ids = get_ids(h, m, 'str');
+    str_ids = get_strids(h, m);
     idx{m} = cell2mat(cellfun(@(x){find(strcmp(str_ids,x))}, params.str_ids(idx{m})));
     params.str_ids = str_ids; params.str = str;
 else % otherwise do not update string
@@ -232,74 +228,63 @@ idx{m} = unique(idx{m});
 update_str(h, idx{m});
 end
 
-function [C,S,R] = convert_ids(matlabbatch, m, ids, types)
+function [C,S,R] = convert_ids(matlabbatch)
 
 % init outputs
 [C, S, R] = deal({});
-
-% remove first type
-types = types(2:end);
-
+for m = 1:numel(matlabbatch),
 % find first level
 r = 1;
 while numel(struct2sub(matlabbatch{m}, r)) == 1,
     r = r + 1;
     if r > 10, return; end;
 end
-
 % get first level of module
-[M, S0, R0] = pebl_getfield(matlabbatch{m}, 'r', r); 
-Sm = struct2sub(matlabbatch, 1);
-M = M{1}; S0 = [Sm{m}, S0{1}]; R0 = [sub2str(Sm{m}), R0{1}];
-
-% remove empty ids
-ids(cellfun('isempty',ids)) = [];
-% set to only cell substructs
-cellids = cellfun(@(x){x(2:2:end)}, ids);
-
-% get first level
-[C1,S1,R1] = pebl_getfield(M, 'r', 1);
-
-% set C, S, R for first level
-C = cellfun(@(x){subsref(C1, x(1))}, cellids);
-S = cellfun(@(x){subsref(S1, x(1))}, cellids);
-R = cellfun(@(x){subsref(R1, x(1))}, cellids);
-
-% set each item's value/substruct/string rep
-for x = 1:numel(cellids),
-    for n = 2:numel(cellids{x}),
-        % if branch following repeat, need to ensure (1) is set for single struct
-        if strcmp(types{x}, 'cfg_branch') && strcmp(types{max(1,x-1)}, 'cfg_repeat') && numel(C{x})==1,
-            % for each with same field
-            for m = find(strcmp(R(x:end), R{x-1}))+x-1,
-                cellids{m}(n).type = '()';
-                C{x} = subsref(C{x}, cellids{m}(n));
-                S{m} = [S{m}, cellids{m}(n)];
-                R{m} = [R{m}, sub2str(cellids{m}(n))];
-                cellids{m}(n) = [];
+[~, ~, R0] = pebl_getfield(matlabbatch{m}, 'r', r); 
+% get ids
+[id, ~, vals] = cfg_util('listmod', 1, m, [],...
+cfg_findspec({{'hidden',false}}),...
+cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'val'});
+% set mod
+mod.val = vals{1}{1};
+% init R
+R_ = repmat(R0, 1, numel(id));
+% for each id, create string rep
+for x= 1:numel(id),
+    for n = 2:2:numel(id{x}),
+        % get cfg
+        cfg = subsref(mod, id{x}(1:n));
+        if ~strncmp(class(cfg), 'cfg', 3), % if not cfg, skip
+            continue;
+        elseif isa(cfg, 'cfg_repeat') && n==numel(id{x}), % if repeat parent
+            if numel(cfg.values) == 1, % if () repeat
+                cfg.tag = cfg.values{1}.tag;
             end
-        else % otherwise get appropriate field
-            [C_,S_,R_] = pebl_getfield(C{x}, 'r', 1);
-            C{x} = subsref(C_, cellids{x}(n));
-            S{x} = [S{x}, subsref(S_, cellids{x}(n))];
-            R{x} = [R{x}, subsref(R_, cellids{x}(n))];
+            idx = '';
+        elseif isa(cfg, 'cfg_repeat'), % if repeat, set idx
+            idx = cellfun(@(x){sprintf('(%d)',x)}, num2cell(1:numel(cfg.val)));
+            if numel(cfg.values) == 1, % if () repeat
+                continue; 
+            else % if {} repeat
+                idx = regexprep(idx, {'\(','\)'}, {'{','}'});
+                idx = subsref(idx, id{x}(n+2));
+            end
+        elseif iscell(idx) % if cell, subsref
+            idx = subsref(idx, id{x}(n));
+        else % otherwise idx is ''
+            idx = '';
         end
+        % update string rep
+        R_{x} = sprintf('%s.%s%s', R_{x}, cfg.tag, idx); 
     end
 end
-
-% prepend with M as first index
-C = [{M}, C];
-S = [{sub2str('(:)')}, S];
-R = [{''}, R];
-
-% prepend each S/R with matlabbatch 
-for x = 1:numel(S),
-    S{x} = [S0, S{x}];
-    R{x} = [R0, R{x}];
+% get actual values, substructs, and string reps
+[C{m},S{m},R{m}] = pebl_getfield(matlabbatch{m}, 'R', R_);
+R{m} = strcat(['{[',num2str(m),']}'], R{m});
 end
 end
 
-function output = idx2options(h, matlabbatch, idx, options, output_type)
+function output = idx2options(matlabbatch, idx, options, output_type)
     
 % init output_type output, idx
 if ~exist('output_type', 'var'), output_type = 'options'; end;
@@ -309,18 +294,17 @@ idx(end+1:numel(matlabbatch)) = {[]};
 % if empty matlabbatch, return empty output
 if isempty(matlabbatch)||all(cellfun('isempty',matlabbatch)), return; end;
 
+% get values, substructs, and string reps
+[C,~,R] = convert_ids(matlabbatch);
+
 % for each module, get values, substructs, string reps then set output
 for m = 1:numel(matlabbatch),
-    % get ids for matlabbatch{m}
-    [id, types] = get_ids(h, m);
-    % get values, substructs, and string reps
-    [C,~,R] = convert_ids(matlabbatch, m, id, types);
     % if output options
     if strcmp(output_type, 'options'),
         if isempty(idx{m}), continue; end;
         for x = idx{m},
-            output{end+1} = R{x};
-            output{end+1} = C{x};
+            output{end+1} = R{m}{x};
+            output{end+1} = C{m}{x};
         end
     else % if output idxs
         if m > numel(output), output{m} = []; end;
@@ -328,23 +312,30 @@ for m = 1:numel(matlabbatch),
             % if struct, convert to str
             if isstruct(options{x}),
                 R0 = sub2str(options{x});
-                idx = find(strcmp(R, R0));
+                idx = find(strcmp(R{m}, R0));
             % find using regexp if expr
-            elseif any(strfind(options{x},'*')),
-                idx = find(~cellfun('isempty',regexp(R, options{x})));
-            else % find using strcmp
-                idx = find(strcmp(R, options{x}));
+            elseif ischar(options{x}) && any(strfind(options{x},'*')),
+                idx = find(~cellfun('isempty',regexp(R{m}, options{x})));
+            elseif ischar(options{x}) % find using strcmp
+                idx = find(strcmp(R{m}, options{x}));
+            elseif iscell(options{x}) % if pebl_getfield options
+                [~,~,R0] = pebl_getfield(matlabbatch, options{x}{:});
+                idx = find(strcmp(R{m}, R0));
             end
-            if isempty(idx), % if none, try using pebl_getfield
-                R0 = strrep(options{x}, '(:)', '(1:100)');
-                [~,~,R0] = pebl_getfield(matlabbatch, 'R', R0);
-                idx = find(strcmp(R, R0));
+            % if none, try using pebl_getfield
+            if isempty(idx) && ischar(options{x}), 
+                mstr = sprintf('{[%d]}', m); % ensure same module
+                if strncmp(options{x}, mstr, numel(mstr)),
+                    R0 = strrep(options{x}, '(:)', '(1:100)');
+                    [~,~,R0] = pebl_getfield(matlabbatch, 'R', R0);
+                    idx = find(strcmp(R{m}, R0));
+                end
             end
             % concatenate and sort
             output{m} = cat(2, output{m}, idx);
             output{m} = sort(output{m});
         end
-    end 
+    end
 end
 
 % set output based on options
@@ -356,10 +347,14 @@ if strcmp(output_type, 'options') && ~isempty(output) && ~isempty(options),
             i1 = 2 * find(strcmp(R1, R0), 1) - 1;
         elseif any(strfind(options{x},'*')) % expr use regexp 
             i1 = 2 * find(~cellfun('isempty',regexp(R1, options{x})), 1) - 1;
-        else % otherwise pebl_getfield
+        elseif ischar(options{x}), % strcmp
+            i1 = 2 * find(strcmp(R1, options{x}), 1) - 1;
+        end
+        % if none, try using pebl_getfield
+        if isempty(i1) && ischar(options{x}), 
             R0 = strrep(options{x}, '(:)', '(1:100)');
             [~,~,R0] = pebl_getfield(matlabbatch, 'R', R0);
-            i1 = 2 * find(strcmp(R1, R0)) - 1;
+            i1 = 2 * find(strcmp(R1, R0), 1) - 1;
         end % set output
         if ~isempty(i1), output(i1:i1+1) = options(x:x+1); end;
     end
