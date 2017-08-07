@@ -293,7 +293,7 @@ end
 
 function test_subidx
     outputs1 = {'test'};
-    outputs2 = subidx({'test'},'(end)','[]');
+    outputs2 = subidx({'test'},'(1)');
     assert(all(strcmp(outputs1,outputs2)));
 end
 
