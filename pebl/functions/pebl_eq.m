@@ -34,9 +34,9 @@ function [C, reps] =  pebl_eq(A, B)
 C = true;
 reps = {};
 
-% if empty or number, set cell
-if isempty(A)||isnumeric(A), A = {A}; end;
-if isempty(B)||isnumeric(B), B = {B}; end;
+% if empty, number or string, set cell
+if isempty(A)||isnumeric(A)||ischar(A), A = {A}; end;
+if isempty(B)||isnumeric(B)||ischar(B), B = {B}; end;
 
 % get all values
 [Avals,~,Areps] = pebl_getfield(A);
