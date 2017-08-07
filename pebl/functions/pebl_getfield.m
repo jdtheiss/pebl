@@ -67,6 +67,7 @@ function [C, S, R] = pebl_getfield(A, varargin)
 arrayfun(@(x)assignin('caller',varargin{x},varargin{x+1}), 1:2:numel(varargin));
 if ~exist('r','var')||isempty(r), r = inf; end;
 if ~exist('verbose','var')||isempty(verbose), verbose = false; end;
+if exist('R','var')||exist('S','var'), input_SR = true; else input_SR = false; end;
 
 % get substructs of A
 if ~exist('S', 'var'),
@@ -86,8 +87,13 @@ R = cellfun(@(x){sub2str(x)}, S);
 
 % find R using regexp
 if exist('expr','var'),
-    R = regexp(R, expr, 'match', 'once');
-    R(cellfun('isempty',R)) = [];
+    if ~iscell(expr), expr = {expr}; end;
+    R_ = cell(size(expr));
+    for x = 1:numel(expr),
+        R_ = regexp(R, expr{x}, 'match', 'once');
+    end
+    if any(cellfun('isclass',R_,'cell')), R_ = [R_{:}]; end;
+    R = R_;
     S = cellfun(@(x){sub2str(x)}, R);
 end
 
@@ -98,7 +104,8 @@ for x = 1:numel(S),
         C{x} = subsref(A, S{x});
     catch err
         if verbose, fprintf('%s\n', R{x}, err.message); end;
-        S{x} = []; R{x} = [];
+        % if input R and failed, remove from outputs
+        if input_SR, S{x} = []; R{x} = []; end;
     end
 end
 
