@@ -98,12 +98,13 @@ idx = cell(size(matlabbatch));
 idx = idx2options(matlabbatch, idx, options, 'idx');
 
 % set userdata for h to current item value
+n = numel(handles.modlist.UserData.id);
 m = get(handles.modlist, 'value');
 i = get(handles.module, 'value');
 str = get(handles.module, 'string');
 str_ids = get_strids(h, m);
 % init params.m as 0 to force update on first load
-params = struct('m', 0, 'i', i, 'str', {str}, 'str_ids', {str_ids});
+params = struct('n', n, 'm', 0, 'i', i, 'str', {str}, 'str_ids', {str_ids});
 set(h, 'userdata', params);
 
 % update with previous options
@@ -114,7 +115,7 @@ stop(wait_t); delete(wait_t);
 
 % set timer
 t = timer('TimerFcn', @(x,y)set(x, 'userdata', update_cfg(h, get(x, 'userdata'))),...
-    'Period', 0.1, 'UserData', idx, 'ExecutionMode', 'fixedSpacing',...
+    'Period', .1, 'UserData', idx, 'ExecutionMode', 'fixedSpacing',...
     'ErrorFcn', @(x,y)stop(x));
 start(t);
 
@@ -132,7 +133,7 @@ delete(t);
 
 % harvest matlabbatch
 userdata = get(handles.modlist, 'userdata');
-[~, matlabbatch] = cfg_util('harvest', userdata.cjob); 
+[~, matlabbatch] = cfg_util('harvest', userdata.cjob);
 
 % convert idx to options
 options = idx2options(matlabbatch, idx, options, 'options');
@@ -190,10 +191,11 @@ function idx = update_cfg(h, idx)
 % get guidata
 handles = guidata(h);
 % get item value, string, and userdata
+n = numel(handles.modlist.UserData.id);
 m = get(handles.modlist, 'value');
 i = get(handles.module, 'value');
 str = get(handles.module, 'string');
-params = get(h, 'userdata'); 
+params = get(h, 'userdata');
 % init idx
 if m > numel(idx), idx{m} = []; end;
 % if key press
@@ -209,8 +211,12 @@ if isfield(handles, 'kp'),
         return; 
     end
 % if new module, update str_ids
-elseif params.m ~= m,
+elseif params.m ~= m && params.n <= n,
     params.str_ids = get_strids(h, m); params.str = str;
+% if deleted module, remove idx{m} and get_strids
+elseif params.n > n,
+    params.str_ids = get_strids(h, m); idx(m) = []; 
+    if isempty(idx), idx{m} = []; end;
 % if updated module, update str_ids and indices
 elseif numel(params.str) ~= numel(str) || ~all(strcmp(params.str, str)),
     str_ids = get_strids(h, m);
@@ -220,7 +226,7 @@ else % otherwise do not update string
     return;
 end
 % set params to h 
-params.i = i; params.m = m;
+params.i = i; params.m = m; params.n = n;
 set(h, 'userdata', params);
 % set idx unique
 idx{m} = unique(idx{m});
@@ -229,7 +235,7 @@ update_str(h, idx{m});
 end
 
 function [C,S,R] = convert_ids(matlabbatch)
-
+cjob = cfg_util('initjob',matlabbatch);%
 % init outputs
 [C, S, R] = deal({});
 for m = 1:numel(matlabbatch),
@@ -242,7 +248,7 @@ end
 % get first level of module
 [~, ~, R0] = pebl_getfield(matlabbatch{m}, 'r', r); 
 % get ids
-[id, ~, vals] = cfg_util('listmod', 1, m, [],...
+[id, ~, vals] = cfg_util('listmod', cjob, m, [],...
 cfg_findspec({{'hidden',false}}),...
 cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'val'});
 % set mod
@@ -269,7 +275,7 @@ for x= 1:numel(id),
                 idx = regexprep(idx, {'\(','\)'}, {'{','}'});
                 idx = subsref(idx, id{x}(n+2));
             end
-        elseif iscell(idx) % if cell, subsref
+        elseif exist('idx','var') && iscell(idx), % if cell, subsref
             idx = subsref(idx, id{x}(n));
         else % otherwise idx is ''
             idx = '';
@@ -329,6 +335,9 @@ for m = 1:numel(matlabbatch),
                     R0 = strrep(options{x}, '(:)', '(1:100)');
                     [~,~,R0] = pebl_getfield(matlabbatch, 'R', R0);
                     idx = find(strcmp(R{m}, R0));
+                else % if module number changed
+                    R0 = regexprep(options{x}, '^\{\[\d+\]\}', '');
+                    idx = find(~cellfun('isempty',regexp(R{m}, ['\{\[\d+\]\}', R0])));
                 end
             end
             % concatenate and sort
@@ -355,6 +364,9 @@ if strcmp(output_type, 'options') && ~isempty(output) && ~isempty(options),
             R0 = strrep(options{x}, '(:)', '(1:100)');
             [~,~,R0] = pebl_getfield(matlabbatch, 'R', R0);
             i1 = 2 * find(strcmp(R1, R0), 1) - 1;
+        elseif ischar(options{x}), % if module number changed
+            R0 = regexprep(options{x}, '^\{\[\d+\]\}', '');
+            i1 = 2 * find(~cellfun('isempty', regexp(R1, ['\{\[\d+\]\}', R0])), 1) - 1;
         end % set output
         if ~isempty(i1), output(i1:i1+1) = options(x:x+1); end;
     end
