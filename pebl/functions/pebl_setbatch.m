@@ -98,7 +98,8 @@ idx = cell(size(matlabbatch));
 idx = idx2options(matlabbatch, idx, options, 'idx');
 
 % set userdata for h to current item value
-n = numel(handles.modlist.UserData.id);
+userdata = get(handles.modlist, 'UserData');
+if isempty(userdata.cmod), n = 0; else n = numel(userdata.id); end;
 m = get(handles.modlist, 'value');
 i = get(handles.module, 'value');
 str = get(handles.module, 'string');
@@ -191,7 +192,8 @@ function idx = update_cfg(h, idx)
 % get guidata
 handles = guidata(h);
 % get item value, string, and userdata
-n = numel(handles.modlist.UserData.id);
+userdata = get(handles.modlist, 'UserData');
+if isempty(userdata.cmod), n = 0; else n = numel(userdata.id); end;
 m = get(handles.modlist, 'value');
 i = get(handles.module, 'value');
 str = get(handles.module, 'string');
