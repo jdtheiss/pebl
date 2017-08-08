@@ -206,13 +206,15 @@ for c = chc
                 end
             end
         case 'Choose File' % choose file
-            if exist('spm_select','file'),
+            if exist('spm_select','file'), 
+                if ~iscellstr(value), value = ''; end;
                 value = cellstr(spm_select(Inf,'any',['Select file for ' variable],value)); 
             else % no spm_select
                 value = cellstr(uigetfile('*.*',['Select file for ' variable],'MultiSelect','on'));
             end
         case 'Choose Directory' % choose dir
             if exist('spm_select','file'),
+                if ~iscellstr(value), value = ''; end;
                 value = cellstr(spm_select(Inf,'dir',['Select directory for ' variable],value));
             else % no spm_select
                 done = 0; value = {};
