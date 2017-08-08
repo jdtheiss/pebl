@@ -489,6 +489,11 @@ function [matlabbatch, dep] = local_setbatch(matlabbatch, options)
         if isa(options{x+1}, 'function_handle') && strncmp(func2str(options{x+1}), '@()', 3), 
             continue; 
         end
+        % if char file/dir, set cell
+        if ischar(options{x+1}) && (exist(options{x+1},'file') || isdir(options{x+1})),
+            options{x+1} = options(x+1);
+        end
+        % switch based on first option in pair
         switch class(options{x})
             case 'struct' % use pebl_setfield with S
                 % if cell substruct but not cell in matlabbatch, set to {}
