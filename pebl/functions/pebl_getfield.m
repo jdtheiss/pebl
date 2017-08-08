@@ -67,7 +67,11 @@ function [C, S, R] = pebl_getfield(A, varargin)
 arrayfun(@(x)assignin('caller',varargin{x},varargin{x+1}), 1:2:numel(varargin));
 if ~exist('r','var')||isempty(r), r = inf; end;
 if ~exist('verbose','var')||isempty(verbose), verbose = false; end;
-if exist('R','var')||exist('S','var'), input_SR = true; else input_SR = false; end;
+if exist('R','var')||exist('S','var')||exist('expr','var'), 
+    input_SR = true; 
+else
+    input_SR = false; 
+end
 
 % get substructs of A
 if ~exist('S', 'var'),
