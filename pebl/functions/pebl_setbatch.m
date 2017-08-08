@@ -235,7 +235,9 @@ update_str(h, idx{m});
 end
 
 function [C,S,R] = convert_ids(matlabbatch)
-cjob = cfg_util('initjob',matlabbatch);%
+
+% refresh job in case changes occurred
+cjob = cfg_util('initjob',matlabbatch);
 % init outputs
 [C, S, R] = deal({});
 for m = 1:numel(matlabbatch),
