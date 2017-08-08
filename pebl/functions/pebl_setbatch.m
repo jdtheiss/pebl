@@ -330,21 +330,16 @@ for m = 1:numel(matlabbatch),
                 [~,~,R0] = pebl_getfield(matlabbatch, options{x}{:});
                 idx = find(strcmp(R{m}, R0));
             end
-            % if none, try using pebl_getfield
-            if isempty(idx) && ischar(options{x}), 
-                mstr = sprintf('{[%d]}', m); % ensure same module
-                if strncmp(options{x}, mstr, numel(mstr)),
-                    R0 = strrep(options{x}, '(:)', '(1:100)');
-                    [~,~,R0] = pebl_getfield(matlabbatch, 'R', R0);
-                    idx = find(strcmp(R{m}, R0));
-                else % if module number changed
-                    R0 = regexprep(options{x}, '^\{\[\d+\]\}', '');
-                    idx = find(~cellfun('isempty',regexp(R{m}, ['\{\[\d+\]\}', R0])));
-                end
-            end
+            % if none, try regexp with wildcards
+            if isempty(idx) && ischar(options{x}),
+                R0 = regexprep(options{x}, '\{\[?\d*:?\d*\]?\}', '\\{\\[\\d+\\]\\}');
+                R0 = regexprep(R0, '\(\[?\d*:?\d*\]?\)', '\\(\\[\\d+\\]\\)');
+                idx = find(~cellfun('isempty',regexp(R{m}, R0)));
+                options{x} = ''; % remove to avoid multiple matches
+            end 
             % concatenate and sort
             output{m} = cat(2, output{m}, idx);
-            output{m} = sort(output{m});
+            output{m} = unique(output{m});
         end
     end
 end
@@ -361,14 +356,15 @@ if strcmp(output_type, 'options') && ~isempty(output) && ~isempty(options),
         elseif ischar(options{x}), % strcmp
             i1 = 2 * find(strcmp(R1, options{x}), 1) - 1;
         end
-        % if none, try using pebl_getfield
-        if isempty(i1) && ischar(options{x}), 
-            R0 = strrep(options{x}, '(:)', '(1:100)');
-            [~,~,R0] = pebl_getfield(matlabbatch, 'R', R0);
-            i1 = 2 * find(strcmp(R1, R0), 1) - 1;
-        elseif ischar(options{x}), % if module number changed
-            R0 = regexprep(options{x}, '^\{\[\d+\]\}', '');
-            i1 = 2 * find(~cellfun('isempty', regexp(R1, ['\{\[\d+\]\}', R0])), 1) - 1;
+        % if none, try regexp with wildcards
+        if isempty(i1) && ischar(options{x}),
+            R0 = regexprep(options{x}, '\{\[?\d*:?\d*\]?\}', '\\{\\[\\d+\\]\\}');
+            R0 = regexprep(R0, '\(\[?\d*:?\d*\]?\)', '\\(\\[\\d+\\]\\)');
+            i1 = 2 * find(~cellfun('isempty',regexp(R1, R0)), 1) - 1;
+            % match module
+            options{x} = regexprep(options{x}, '^\{\[?\d+\]?\}',...
+                         regexp(R1{(i1+1)/2}, '^\{\[\d+\]\}', 'match'));
+            R1((i1+1)/2) = {''}; % remove to avoid multiple matches
         end % set output
         if ~isempty(i1), output(i1:i1+1) = options(x:x+1); end;
     end
