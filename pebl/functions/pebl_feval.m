@@ -315,7 +315,7 @@ end
 end
 % return output{f}(:, n_out)
 if isempty(n_out), n_out = 1:max(cellfun('size',output,2)); end;
-output(cellfun('isempty',output)) = {cell(1, max(n_out))};
+output = cellfun(@(x){pebl_cat(2, x, cell(1, max(n_out)-size(x,2)))}, output);
 output = cellfun(@(x){x(:, n_out)}, output);
 end
 
