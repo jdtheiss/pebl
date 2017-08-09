@@ -164,8 +164,10 @@ for c = chc
         case 'Structure' % struct
             if isstruct(value), % if exists, choose component to edit
                 substr = vertcat(fieldnames(value),'Add'); 
+                components = arrayfun(@(x){num2str(x)},1:numel(value));
+                if isempty(components), components = {}; end;
                 n = listdlg('PromptString','Choose index to edit:','ListString',...
-                [arrayfun(@(x){num2str(x)},1:numel(value)),'Add','Delete']);
+                [components,'Add','Delete']);
                 if isempty(n), return; end;
                 if any(n == numel(value)+2), % delete
                     r = listdlg('PromptString','Choose index to delete:','ListString',...
