@@ -170,12 +170,13 @@ end
 
 function test_pebl_eq
     C1 = 0;
-    reps1 = {'.test1', '.test2_{[1]}', '.test2{[1]}', '.test3'};
+    reps1(:,1) = {'.test1'; '.test3'; '.test2{[1]}'};
+    reps1(:,2) = {'.test1'; '.test3'; '.test2_{[1]}'};
     test1 = struct('test1',1,'test2',{{2}},'test3','3');
     test2 = struct('test1',2,'test2_',{{2}},'test3','3 ');
     [C2, reps2] = pebl_eq(test1,test2);
     assert(C1==C2);
-    assert(all(strcmp(reps1,reps2)));
+    assert(all(strcmp(reps1(:),reps2(:))));
 end
 
 function test_pebl_eval
@@ -241,7 +242,7 @@ end
 function test_pebl_setbatch
     matlabbatch1{1}.spm.util.disp.data = '<UNDEFINED>';
     options1 = {};
-    figurefun(@(x,y)close(x),{'type','figure'},'StartDelay',25);
+    figurefun(@(x,y)close(x),{'type','figure'},'StartDelay',30);
     [matlabbatch2, options2] = pebl_setbatch(matlabbatch1);
     assert(pebl_eq(matlabbatch1,matlabbatch2));
     assert(pebl_eq(options1,options2));

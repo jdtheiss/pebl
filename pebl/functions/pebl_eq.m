@@ -8,7 +8,8 @@ function [C, reps] =  pebl_eq(A, B)
 % 
 % Outputs:
 % C - true/false all components are equal
-% reps - string representations of components that are not equal
+% reps - columns (A, B) with string representations indicating components
+% that were not equal
 %
 % Example:
 % A = struct('field1',{1},'field2',{2});
@@ -22,7 +23,7 @@ function [C, reps] =  pebl_eq(A, B)
 %
 % reps = 
 % 
-%     '.field1'   
+%     '.field1'    '.field1'  
 %
 % Note: if a non-struct or non-cell object is input, the returned rep will
 % be unreliable.
@@ -34,15 +35,16 @@ function [C, reps] =  pebl_eq(A, B)
 C = true;
 reps = {};
 
-% if empty, number or string, set cell
-if isempty(A)||isnumeric(A)||ischar(A), A = {A}; end;
-if isempty(B)||isnumeric(B)||ischar(B), B = {B}; end;
+% if empty, number or string, set genstr
+Acell = false; Bcell = false;
+if isempty(A)||isnumeric(A)||ischar(A), A = {A}; Acell = true; end;
+if isempty(B)||isnumeric(B)||ischar(B), B = {B}; Bcell = true; end;
 
 % get all values
 [Avals,~,Areps] = pebl_getfield(A);
-if all(cellfun('isempty',Avals)), Areps = {''}; end; 
+if Acell, Areps = {''}; end; 
 [Bvals,~,Breps] = pebl_getfield(B);
-if all(cellfun('isempty',Bvals)), Breps = {''}; end;
+if Bcell, Breps = {''}; end;
 
 % check for nan
 r = randn(1);
@@ -84,34 +86,20 @@ for f = 1:numel(cmp_funs),
     if nargout==1 && ~C, 
         return; 
     else
-        % get reps with differences
-        reps = local_unique(reps, Areps, Breps, ck);
-        % update values
-        [Avals,Bvals,Areps,Breps] = update_vals_reps(Avals,Bvals,Areps,Breps,reps);
+        % update vals and reps
+        [Avals, Bvals] = local_update(Avals, Bvals, ck);
+        [Areps, Breps, reps0] = local_update(Areps, Breps, ck);
+        if ~isempty(reps0), reps = pebl_cat(1, reps0, reps); end;
         % if no Areps/Breps, return
-        if isempty(Areps) || isempty(Breps), reps = unique([reps,Areps,Breps]); return; end;
-    end;
+        if isempty(Areps) || isempty(Breps), return; end;
+    end
 end
 end
         
-function [Avals,Bvals,Areps,Breps] = update_vals_reps(Avals,Bvals,Areps,Breps,reps)
-    % remove vals and reps
-    if ~isempty(Areps),
-        Avals(ismember(Areps,reps)) = [];
-        Areps(ismember(Areps,reps)) = [];
-    else % ensure [] for strcmp
-        Areps = [];
-    end;
-    if ~isempty(Breps),
-        Bvals(ismember(Breps,reps)) = [];
-        Breps(ismember(Breps,reps)) = [];
-    else % ensure [] for strcmp
-        Breps = [];
-    end;
-end
-
-function reps = local_unique(reps,Areps,Breps,ck)
+function [A, B, reps] = local_update(A, B, ck)
     % get unique reps, ensuring ck is same size as Areps or Breps
-    if all(size(ck) == size(Areps)), reps = unique([reps,Areps(~ck)]); end;
-    if all(size(ck) == size(Breps)), reps = unique([reps,Breps(~ck)]); end;
-end 
+    if all(size(ck) == size(A)), A0 = A(~ck); A(~ck) = []; else A0 = {}; end;
+    if all(size(ck) == size(B)), B0 = B(~ck); B(~ck) = []; else B0 = {}; end;
+    % concatenate removed reps from A/B
+    if nargout == 3, reps = pebl_cat(2, A0(:), B0(:)); end;
+end
