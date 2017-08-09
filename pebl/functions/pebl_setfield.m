@@ -78,6 +78,15 @@ if ~iscell(S), S = {S}; end;
 if ~exist('append','var'), append = []; end;
 if ~exist('remove','var'), remove = false; end;
 
+% set (:end)/{:end} to number of previous struct
+for n = 1:numel(R),
+    R1 = regexprep(R{n}, '\{?\(?\[?\d+:end\]?\)?\}?.*', '');
+    if strcmp(R1, R{n}), continue; end;
+    if isempty(R1), R1 = '(:)'; end;
+    e = numel(subsref(A, sub2str(R1)));
+    R{n} = regexprep(R{n}, ':end', sprintf(':%d', e));
+end
+
 % append S with R/append
 for n = 1:numel(S),
     S1 = sub2str([R{min(n, end)}, append]);
@@ -123,10 +132,13 @@ for n = 1:numel(S),
                 C{n} =  [];
                 A = subsasgn(A, S{n}, C{n});
             end
-        elseif any(~cellfun('isempty',regexp(R{n},{'\(:\)','\{:\}'}))), % use deal
-            if iscell(C{n}) && numel(C{n}) > 1, p = '{:}'; else p = ''; end;
-            eval(sprintf('[A%s] = deal(C{n}%s);', R{n}, p));
         else % set field with subsasgn
+            if strcmp(S{n}(end).type, '{}'),
+                % check for cell
+                try cell_end = iscell(subsref(A, S{n}(1:end-1))); catch, cell_end = false; end;
+                % if not cell, set penultimate to empty cell
+                try if ~cell_end, A = subsasgn(A, S{n}(1:end-1), {}); end; end;
+            end 
             A = subsasgn(A, S{n}, C{n});   
         end 
     catch err
