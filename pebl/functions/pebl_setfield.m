@@ -107,7 +107,7 @@ elseif ~iscell(C) || isempty(C) || numel(S)==1,
 end
 
 % for each, subsasgn or evaluate
-for n = 1:numel(S),
+for n = 1:min(numel(S),numel(C)),
     try
         % set new R
         R{n} = sub2str(S{n});
@@ -138,8 +138,12 @@ for n = 1:numel(S),
                 try cell_end = iscell(subsref(A, S{n}(1:end-1))); catch, cell_end = false; end;
                 % if not cell, set penultimate to empty cell
                 try if ~cell_end, A = subsasgn(A, S{n}(1:end-1), {}); end; end;
-            end 
-            A = subsasgn(A, S{n}, C{n});   
+            end
+            try % subsasgn
+                A = subsasgn(A, S{n}, C{n});
+            catch % if failed try eval with R{n}
+                eval(sprintf('[A%s] = C{n};', R{n}));
+            end   
         end 
     catch err
         if verbose, disp(err.message); end;
