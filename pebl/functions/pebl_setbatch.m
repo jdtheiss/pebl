@@ -344,8 +344,8 @@ for m = 1:numel(matlabbatch),
             end
             % if none, try regexp with wildcards
             if isempty(idx) && ischar(options{x}),
-                R0 = regexprep(options{x}, '\{\[?\d*:?\d*\]?\}', '\\{\\[\\d+\\]\\}');
-                R0 = regexprep(R0, '\(\[?\d*:?\d*\]?\)', '\\(\\[\\d+\\]\\)');
+                R0 = regexprep(options{x}, '\{\[?\d*:?\d*(end)?\]?\}', '\\{\\[\\d+\\]\\}');
+                R0 = regexprep(R0, '\(\[?\d*:?\d*(end)?\]?\)', '\\(\\[\\d+\\]\\)');
                 idx = find(~cellfun('isempty',regexp(R{m}, R0)));
                 % remove to avoid multiple matches
                 if ~isempty(idx), options{x} = ''; end;
@@ -370,8 +370,8 @@ if strcmp(output_type, 'options') && ~isempty(output) && ~isempty(options),
         end
         % if none, try regexp with wildcards
         if isempty(i1) && ischar(options{x}),
-            R0 = regexprep(options{x}, '\{\[?\d*:?\d*\]?\}', '\\{\\[\\d+\\]\\}');
-            R0 = regexprep(R0, '\(\[?\d*:?\d*\]?\)', '\\(\\[\\d+\\]\\)');
+            R0 = regexprep(options{x}, '\{\[?\d*:?\d*(end)?\]?\}', '\\{\\[\\d+\\]\\}');
+            R0 = regexprep(R0, '\(\[?\d*:?\d*(end)?\]?\)', '\\(\\[\\d+\\]\\)');
             i1 = 2 * find(~cellfun('isempty',regexp(R1, R0)), 1) - 1;
             % match module
             mstr = regexp(R1{(i1+1)/2}, '^\{\[\d+\]\}', 'match');
