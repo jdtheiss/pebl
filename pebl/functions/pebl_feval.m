@@ -325,8 +325,9 @@ function [options, n] = local_eval(options, varargin)
     for x = 1:2:numel(varargin), 
         eval([varargin{x} '= varargin{x+1};']);
     end
-    % init n
+    % init n/func
     if ~exist('n', 'var'), n = 0; end;
+    if ~exist('func','var'), func = []; end;
     
     % find functions in options
     if ~iscell(options), options = {options}; end;
@@ -350,7 +351,6 @@ function [options, n] = local_eval(options, varargin)
         
         for x = find(~o_idx),
             % if program is batch, get depenencies (for each @()dep)
-            if ~exist('func','var'), func = []; end;
             if iscell(func)||isstruct(func),
                 [~, dep] = local_setbatch(func, options);
             else % otherwise set dep to []
@@ -392,7 +392,7 @@ function [program, o] = local_setprog(func)
             if isstruct(func), o = 1; else o = numel(func); end;
         case 'function_handle' % function/builtin
             program = 'local_feval';
-            o = abs(nargout(funcs{f}));
+            o = abs(nargout(func));
         case 'char' % system
             program = 'local_system'; 
             o = 1;
