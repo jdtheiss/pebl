@@ -257,8 +257,9 @@ cfg_findspec({{'hidden',false}}),...
 cfg_tropts({{'hidden',true}},1,inf,1,inf,false),{'val'});
 % set mod
 mod.val = vals{1}{1};
-% init R
+% init R and append
 R_ = repmat(R0, 1, numel(id));
+a = cell(size(R_));
 % for each id, create string rep
 for x= 1:numel(id),
     for n = 2:2:numel(id{x}),
@@ -284,13 +285,22 @@ for x= 1:numel(id),
         else % otherwise idx is ''
             idx = '';
         end
+        % if cfg_files with max 1, append cell
+        if isa(cfg, 'cfg_files'),
+            idx = regexprep(idx, {'\(','\)'}, {'{', '}'});
+            if isempty(idx) && cfg.num(2) == 1, a{x} = '{[1]}'; end;
+        end
         % update string rep
-        R_{x} = sprintf('%s.%s%s', R_{x}, cfg.tag, idx); 
+        R_{x} = sprintf('%s.%s%s', R_{x}, cfg.tag, idx);
     end
 end
 % get actual values, substructs, and string reps
 [C{m},S{m},R{m}] = pebl_getfield(matlabbatch{m}, 'R', R_);
-R{m} = strcat(['{[',num2str(m),']}'], R{m});
+R{m} = strcat(['{[',num2str(m),']}'], R{m}, a);
+% subsref values that were appended as cell
+for x = find(~cellfun('isempty',a) & cellfun('isclass',C{m},'cell')),
+    C{m}{x} = subsref(C{m}{x}, sub2str(a{x}));
+end
 end
 end
 
@@ -337,7 +347,8 @@ for m = 1:numel(matlabbatch),
                 R0 = regexprep(options{x}, '\{\[?\d*:?\d*\]?\}', '\\{\\[\\d+\\]\\}');
                 R0 = regexprep(R0, '\(\[?\d*:?\d*\]?\)', '\\(\\[\\d+\\]\\)');
                 idx = find(~cellfun('isempty',regexp(R{m}, R0)));
-                options{x} = ''; % remove to avoid multiple matches
+                % remove to avoid multiple matches
+                if ~isempty(idx), options{x} = ''; end;
             end 
             % concatenate and sort
             output{m} = cat(2, output{m}, idx);
@@ -345,7 +356,6 @@ for m = 1:numel(matlabbatch),
         end
     end
 end
-
 % set output based on options
 if strcmp(output_type, 'options') && ~isempty(output) && ~isempty(options),
     R1 = output(1:2:end);
@@ -364,8 +374,9 @@ if strcmp(output_type, 'options') && ~isempty(output) && ~isempty(options),
             R0 = regexprep(R0, '\(\[?\d*:?\d*\]?\)', '\\(\\[\\d+\\]\\)');
             i1 = 2 * find(~cellfun('isempty',regexp(R1, R0)), 1) - 1;
             % match module
-            options{x} = regexprep(options{x}, '^\{\[?\d+\]?\}',...
-                         regexp(R1{(i1+1)/2}, '^\{\[\d+\]\}', 'match'));
+            mstr = regexp(R1{(i1+1)/2}, '^\{\[\d+\]\}', 'match');
+            if isempty(mstr), continue; end;
+            options{x} = regexprep(options{x}, '^\{\[?\d+\]?\}', mstr);%ERROR
             R1((i1+1)/2) = {''}; % remove to avoid multiple matches
         end % set output
         if ~isempty(i1), output(i1:i1+1) = options(x:x+1); end;
