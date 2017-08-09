@@ -151,6 +151,8 @@ function output = pebl_feval(varargin)
 % (e.g., pebl_feval(@disp, {'verbose'}, 'verbose', true)). 
 % in order to evaluate options at runtime, @() can be prepended to a
 % character array within options (see examples above).
+% if running iterations, the iterations should be in vertical cells, and 
+% the cells to be iterated should have the same number of rows
 % outputs for matlabbatch functions are per module (e.g., if there are 4
 % modules, there are a possible 4 output cells)
 %
@@ -370,7 +372,7 @@ function [options, n] = local_eval(options, varargin)
         elseif any(cellfun('isclass', options, 'cell')),
             % for each column, set to row
             for x = find(cellfun('isclass',options,'cell')),
-                if size(options{x}, 1) > 1,
+                if size(options{x}, 1) == max(cellfun('size',options,1)),
                     if n == size(options{x}, 1), n = inf; end; 
                     options{x} = options{x}{min(end,n)};
                 end
