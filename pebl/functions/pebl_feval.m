@@ -25,7 +25,7 @@ function output = pebl_feval(varargin)
 %   stop_fn per function. stop_fn is overrided by 'iter' option inf
 %   [default []]
 % 'n_out' - numeric array, range of outputs to return from each function
-%   [default 1]
+%   [default [], all outputs from each function]
 % 'verbose' - boolean, true displays function call with options and output
 %   [default false]
 % 'throw_error' - boolean, true throws error if any occurs
@@ -151,6 +151,8 @@ function output = pebl_feval(varargin)
 % (e.g., pebl_feval(@disp, {'verbose'}, 'verbose', true)). 
 % in order to evaluate options at runtime, @() can be prepended to a
 % character array within options (see examples above).
+% outputs for matlabbatch functions are per module (e.g., if there are 4
+% modules, there are a possible 4 output cells)
 %
 % Created by Justin Theiss
 
@@ -160,7 +162,7 @@ if nargin==0, return; end;
 
 % init varargin parameters
 params = {'loop', 'seq', 'iter', 'stop_fn', 'verbose', 'throw_error', 'wait_bar', 'n_out'};
-values = {1, [], [], [], [], false, false, 1};
+values = {1, [], [], [], [], false, false, []};
 x = 1;
 while x < numel(varargin),
     if ischar(varargin{x}) && any(strcmp(params, varargin{x})),
@@ -252,10 +254,10 @@ for f = seq,
         for n = iter{f}, 
             % if -1, set to l 
             if n == -1, n = l; end;
-            % set program
-            program = local_setprog(funcs{f}); 
-            try % run program with funcs and options
-                try o = abs(nargout(funcs{f})); o = max(o, max(n_out)); catch, o = max(n_out); end;
+            % set program and max number of outputs
+            [program, o] = local_setprog(funcs{f});
+            if ~isempty(n_out), o = max(o, max(n_out)); end;
+            try
                 % set options (for using outputs/dep)
                 [evaled_opts, n] = local_eval(options{f}, 'output', output, 'func', funcs{f}, 'n', n);
                 % feval
@@ -312,6 +314,7 @@ for f = seq,
 end
 end
 % return output{f}(:, n_out)
+if isempty(n_out), n_out = 1:max(cellfun('size',output,2)); end;
 output(cellfun('isempty',output)) = {cell(1, max(n_out))};
 output = cellfun(@(x){x(:, n_out)}, output);
 end
@@ -344,19 +347,17 @@ function [options, n] = local_eval(options, varargin)
             C{x} = subsref(options, S{x});
             try options = subsasgn(options,S{x},eval(feval(C{x}))); end;
         end
-
-        % if program is batch, get depenencies
-        if ~exist('func','var'), func = []; end;
-        if iscell(func)||isstruct(func),
-            [~, dep] = local_setbatch(func, options);
-        else % otherwise set dep to []
-            dep = [];
-        end
-
-        % set options based on dependencies
+        
         for x = find(~o_idx),
+            % if program is batch, get depenencies (for each @()dep)
+            if ~exist('func','var'), func = []; end;
+            if iscell(func)||isstruct(func),
+                [~, dep] = local_setbatch(func, options);
+            else % otherwise set dep to []
+                dep = [];
+            end
             C{x} = subsref(options, S{x});
-            try options = subsasgn(options,S{x},eval(feval(C{x}))); end;
+            try options = subsasgn(options, S{x}, eval(feval(C{x}))); end;
         end
     end
     
@@ -383,17 +384,18 @@ function [options, n] = local_eval(options, varargin)
 end
 
 % set program types
-function program = local_setprog(func)
-    % get first function if cell
-    if iscell(func), func = func{1}; end;
+function [program, o] = local_setprog(func)
     % switch class
     switch class(func),
-        case 'struct' % matlabbatch
+        case {'cell','struct'} % matlabbatch
             program = 'local_batch'; 
+            if isstruct(func), o = 1; else o = numel(func); end;
         case 'function_handle' % function/builtin
             program = 'local_feval';
+            o = abs(nargout(funcs{f}));
         case 'char' % system
             program = 'local_system'; 
+            o = 1;
     end
 end
 
@@ -533,7 +535,7 @@ function varargout = local_batch(matlabbatch, options, verbose)
     if verbose,
         [C,~,R] = pebl_getfield(matlabbatch);
         cellfun(@(x,y)fprintf('%s: %s\n', x, genstr(y)), R, C);
-    end;
+    end
     
     % run job
     cjob = cfg_util('initjob',matlabbatch); 
