@@ -79,7 +79,7 @@ if ~exist('append','var'), append = []; end;
 if ~exist('remove','var'), remove = false; end;
 
 % set (:end)/{:end} to number of previous struct
-for n = 1:numel(R),
+for n = find(~cellfun('isempty',R)),
     R1 = regexprep(R{n}, '\{?\(?\[?\d+:end\]?\)?\}?.*', '');
     if strcmp(R1, R{n}), continue; end;
     if isempty(R1), R1 = '(:)'; end;
