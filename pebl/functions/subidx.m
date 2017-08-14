@@ -1,5 +1,5 @@
-function output = subidx(obj, idx)
-% output = subidx(obj, idx)
+function varargout = subidx(obj, idx)
+% varargout = subidx(obj, idx)
 % Index item as subsref(obj, sub2str(idx))
 %
 % Inputs: 
@@ -11,7 +11,7 @@ function output = subidx(obj, idx)
 %
 % Example: 
 % obj = struct('test', {1,2,3});
-% output = subidx(obj, '(2:3).test')
+% [output{1:2}] = subidx(obj, '(2:3).test')
 %
 % output = 
 % 
@@ -24,11 +24,11 @@ if ~exist('idx','var'), idx = '(:)'; end;
 % sub2str idx
 S = sub2str(idx);
 if iscell(S), % if multiple substructs
-    output = cell(size(S));
+    varargout = cell(size(S));
     for n = 1:numel(S),
-        output{n} = subsref(obj, S{n});
+        [varargout{n}] = subsref(obj, S{n});
     end
 else % subsref single substruct
-    output = subsref(obj, S);
+    [varargout{1:nargout}] = subsref(obj, S);
 end
 end
