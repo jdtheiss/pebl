@@ -73,9 +73,9 @@ if ~k, % use man text
     txt = fileread(tmpfile);
 else % try help argument
     if ispc, % pc
-        txt = evalc(['system(''' cmd ' /h'');']);
+        txt = evalc(['system(''' cmd ' /help'');']);
     else % mac, etc.
-        txt = evalc(['system(''' cmd ' -h'');']);
+        txt = evalc(['system(''' cmd ' -help'');']);
     end
 end
 % delete tmpfile
