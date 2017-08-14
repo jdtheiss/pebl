@@ -263,11 +263,20 @@ for f = seq,
                 % set options (for using outputs/dep)
                 [evaled_opts, n] = local_eval(options{f}, 'output', output, 'func', funcs{f}, 'n', n);
                 % feval
+                clear results;
                 [results{1:o}] = feval(program, funcs{f}, evaled_opts, verbose); 
                 % display outputs
                 if verbose, 
                     fprintf('\nOutput:\n');
-                    disp(cell2strtable(any2str(results{1:o}),' ')); 
+                    strs = cell(1, o);
+                    for s = 1:o,
+                        if numel(results{s}) > 1e5, 
+                            strs(s) = any2str(results(s));
+                        else
+                            strs(s) = any2str(results{s});
+                        end
+                    end
+                    disp(cell2strtable(strs, ' '));
                     fprintf('\n'); 
                 end
             catch err % display error
@@ -486,7 +495,7 @@ function [matlabbatch, dep] = local_setbatch(matlabbatch, options)
     % ensure cells
     if ~iscell(matlabbatch), matlabbatch = {matlabbatch}; end;
     if ~iscell(options), options = {options}; end;
-    if numel(options) < 1, options{2} = []; end;
+    if numel(options) < 2, options{2} = []; end;
     % for each option, get subsref struct
     for x = 1:2:numel(options)
         % if @() function, skip setting (it should be evaluated with local_eval)
