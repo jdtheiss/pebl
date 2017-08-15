@@ -109,10 +109,10 @@ end
 
 % if cellstr, check for evals/files/dirs
 if iscellstr(value)&&~isempty(value), 
-    if all(cellfun(@(x)exist(x,'file'),value)), % if files
+    if all(cellfun(@(x)exist(x,'file')&any(strfind(x,filesep)),value)), % if files
         ival = find(strcmpi(options,'choose file'),1); 
     end
-    if all(cellfun(@(x)isdir(x),value)), % if dir
+    if all(cellfun(@(x)isdir(x)&any(strfind(x,filesep)),value)), % if dir
         ival = find(strcmpi(options,'choose directory'),1);
     end
 end
