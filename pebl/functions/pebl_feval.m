@@ -374,7 +374,7 @@ function [options, n] = local_eval(options, varargin)
     
     % get row from options
     if n~=0, 
-        [C,S] = pebl_getfield(options, 'fun', @(x)iscell(x) && size(x, 1) > 1, 'r', 1);
+        [C,S] = pebl_getfield(options, 'fun', @(x)iscell(x) && size(x, 2)==1, 'r', 1);
         max_size = max(cellfun('size', C, 1));
         if n == max_size, n = inf; end;
         for x = 1:numel(C),
