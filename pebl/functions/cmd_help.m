@@ -71,12 +71,21 @@ tmpfile = tempname;
 [~, k] = evalc(['system(''man ' cmd ' >> ' tmpfile ''');']);
 if ~k, % use man text
     txt = fileread(tmpfile);
-else % try help argument
-    if ispc, % pc
-        txt = evalc(['system(''' cmd ' /help'');']);
-    else % mac, etc.
-        txt = evalc(['system(''' cmd ' -help'');']);
+else % try help arguments
+    opts = {'h', 'help', '?'};
+    for x = 1:numel(opts),
+        if ispc, % pc switch
+            swtch = '/'; 
+        else % mac switch
+            swtch = '-'; 
+        end
+        % eval cmd help
+        cmdstr = sprintf('system(''%s %s%s'');', cmd, swtch, opts{x});
+        txt{x} = evalc(cmdstr);
     end
+    % get max txt
+    [~,idx] = sort(cellfun('size', txt, 2));
+    txt = txt{idx(end)};
 end
 % delete tmpfile
 delete(tmpfile);
