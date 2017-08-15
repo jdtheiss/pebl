@@ -403,7 +403,7 @@ function [program, o] = local_setprog(func)
             if isstruct(func), o = 1; else o = numel(func); end;
         case 'function_handle' % function/builtin
             program = 'local_feval';
-            o = abs(nargout(func));
+            o = max(1, abs(nargout(func)));
         case 'char' % system
             program = 'local_system'; 
             o = 1;
