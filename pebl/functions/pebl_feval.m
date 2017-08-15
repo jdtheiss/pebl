@@ -341,7 +341,7 @@ function [options, n] = local_eval(options, varargin)
     if ~exist('func','var'), func = []; end;
     
     % find functions in options
-    if ~iscell(options), options = {options}; end;
+    if ~iscell(options) || size(options,2)==1, options = {options}; end;
     [C,S] = pebl_getfield(options,'fun',@(x)isa(x,'function_handle')); 
     
     if ~isempty(C),
@@ -373,19 +373,12 @@ function [options, n] = local_eval(options, varargin)
     end
     
     % get row from options
-    if n~=0 && iscell(options), 
-        if size(options, 1) > 1,
-            % if cell, set to row
-            if n == size(options, 1), n = inf; end;
-            options = options{min(end,n)};
-        elseif any(cellfun('isclass', options, 'cell')),
-            % for each column, set to row
-            for x = find(cellfun('isclass',options,'cell')),
-                if size(options{x}, 1) == max(cellfun('size',options,1)),
-                    if n == size(options{x}, 1), n = inf; end; 
-                    options{x} = options{x}{min(end,n)};
-                end
-            end
+    if n~=0, 
+        [C,S] = pebl_getfield(options, 'fun', @(x)iscell(x) && size(x, 1) > 1, 'r', 1);
+        max_size = max(cellfun('size', C, 1));
+        if n == max_size, n = inf; end;
+        for x = 1:numel(C),
+            options = subsasgn(options, S{x}, C{x}{min(end, n)}); 
         end
     end
     
@@ -420,7 +413,7 @@ function varargout = local_feval(func, options, verbose)
 
     % if options is not cell or more inputs than nargin, set to cell
     if ~iscell(options) || (nargin(func) > 0 && numel(options) > nargin(func)),
-        options = {options}; 
+        options = {options};
     end
     
     % get number of outputs
