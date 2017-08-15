@@ -29,7 +29,7 @@ function S = struct2sub(C, r)
 
 % init recursion limit
 if ~exist('r','var')||isempty(r), r = inf; end;
-if r == 0, S = {substruct('()', {':'})}; return; end;
+if r == 0, S = {substruct('()', repmat({':'}, 1, numel(size(C))))}; return; end;
 
 % get S0 and initialize S
 S0 = local_gensub(C);
