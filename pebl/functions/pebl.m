@@ -647,7 +647,7 @@ function params = run_params(params)
                             'throw_error',throw_error,'wait_bar',wait_bar,...
                             funcs,options{:});
     catch err
-        disp(['fatal error:', err.message]);
+        disp(['fatal error: ', err.message]);
     end
     % set outputs to params
     params = struct2var(params,'outputs');
