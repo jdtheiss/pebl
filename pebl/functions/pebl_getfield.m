@@ -75,7 +75,10 @@ end
 
 % get substructs of A
 if ~exist('S', 'var'),
-    S = struct2sub(A, r);
+    S = {};
+    for r = r,
+        S = cat(2, S, struct2sub(A, r));
+    end
 elseif ~iscell(S),
     S = {S};
 end
