@@ -261,7 +261,7 @@ mod.val = vals{1}{1};
 R_ = repmat(R0, 1, numel(id));
 a = cell(size(R_));
 % for each id, create string rep
-for x= 1:numel(id),
+for x = 1:numel(id),
     for n = 2:2:numel(id{x}),
         % get cfg
         cfg = subsref(mod, id{x}(1:n));
@@ -285,10 +285,12 @@ for x= 1:numel(id),
         else % otherwise idx is ''
             idx = '';
         end
-        % if cfg_files with max 1, append cell
+        % if cfg_files and no repeat, append cell
         if isa(cfg, 'cfg_files'),
             idx = regexprep(idx, {'\(','\)'}, {'{', '}'});
-            if isempty(idx) && cfg.num(2) == 1, a{x} = '{[1]}'; end;
+            if isempty(idx) && cfg.num(2)==1, 
+                a{x} = '{[1]}'; 
+            end 
         end
         % update string rep
         R_{x} = sprintf('%s.%s%s', R_{x}, cfg.tag, idx);
