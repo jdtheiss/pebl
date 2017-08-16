@@ -46,10 +46,10 @@ function [A, S, R] = pebl_setfield(varargin)
 % requires: pebl_getfield
 %
 % Note: if the number of components to set is equal to the number of cells
-% in 'C', each component will be set iteratively to the corresponding cell
-% in 'C'. if the number of components does not equal the number of cells,
-% as the minimum between number of components and number of cells will be
-% set. finally, if there is only one component, it will be set to 'C' as
+% in 'C', each component will be set iteratively to the corresponding 
+% value. if the number of components does not equal the number of cells in 
+% 'C', the minimum between number of components and number of values will 
+% be set. finally, if there is only one component, it will be set to 'C' as
 % is.
 %
 % Created by Justin Theiss
@@ -67,7 +67,7 @@ if ~exist('verbose','var'), verbose = false; end;
 
 % pebl_getfield
 if ~exist('S','var') && ~exist('R','var'),
-    [~, S] = pebl_getfield(A,varargin{:});
+    [~, S] = pebl_getfield(A, varargin{:});
 end
 
 % init S/R/append/remove
@@ -93,18 +93,28 @@ for n = 1:numel(S),
     if ~iscell(S1), S1 = {S1}; end;
     S{n} = cellfun(@(x){[S{n}, x]}, S1);
 end
-S = [S{:}];
-
-% init R for output
-R = cell(size(S));
 
 % init C
 if ~exist('C','var'), C = []; end;
-if ~iscell(C) || numel(C) == 1, 
-    C = repmat({C}, 1, numel(S));
-elseif ~iscell(C) || isempty(C) || numel(S)==1,
-    C = {C};  
+if ~iscell(C) || numel(C)==1 || numel(S)==1, C = {C}; end;
+if numel(C)==1 && numel(S)>1, C = repmat(C, 1, numel(S)); end;
+
+% set C based on S
+for n = 1:numel(S),
+    if ~iscell(C{n}) || numel(C{n})==1,
+        C{n} = repmat(C(n), size(S{n}));
+    elseif numel(C{n}) ~= numel(S{n}),
+        C{n} = C{n}(1:min(numel(S{n}), numel(C{n})));
+        S{n} = S{n}(1:min(numel(S{n}), numel(C{n})));
+    end
 end
+
+% expand S and C
+S = [S{:}];
+C = [C{:}];
+
+% init R for output
+R = cell(size(S));
 
 % for each, subsasgn or evaluate
 for n = 1:min(numel(S),numel(C)),
