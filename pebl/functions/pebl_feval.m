@@ -26,10 +26,13 @@ function output = pebl_feval(varargin)
 %   [default []]
 % 'n_out' - numeric array, range of outputs to return from each function
 %   [default [], all outputs from each function]
-% 'verbose' - boolean, true displays function call with options and output
-%   [default false]
+% 'verbose' - boolean, true displays function call with options and output;
+%   false suppresses output; [] displays normal command window behavior
+%   [default []]
 % 'throw_error' - boolean, true throws error if any occurs
 %   [default false]
+% 'save_batch' - char, filename to save filled matlabbatch structure
+%   [default []]
 % 'wait_bar' - boolean, true displays waitbar during loops
 %   [default false]
 % 
@@ -162,12 +165,18 @@ function output = pebl_feval(varargin)
 output = cell(1, 1);
 if nargin==0, return; end; 
 
-% init varargin parameters
-params = {'loop', 'seq', 'iter', 'stop_fn', 'verbose', 'throw_error', 'wait_bar', 'n_out'};
-values = {1, [], [], [], [], false, false, []};
-x = 1;
-while x < numel(varargin),
-    if ischar(varargin{x}) && any(strcmp(params, varargin{x})),
+% init defaults
+vars = {'loop', 'seq', 'iter', 'stop_fn', 'n_out', 'verbose', 'throw_error',...
+        'save_batch', 'wait_bar'};
+vals = {1, [], [], [], [], [], false, [], false};
+n_idx = ~ismember(vars, varargin(cellfun('isclass',varargin,'char')));
+defaults = cat(1, vars(n_idx), vals(n_idx));
+varargin = cat(2, varargin, defaults(:)');
+inputs = varargin;
+
+% set variables
+for x = 1:numel(varargin),
+    if ischar(varargin{x}), 
         switch varargin{x}
             case 'loop'
                 loop = varargin{x+1};
@@ -181,39 +190,29 @@ while x < numel(varargin),
                 verbose = varargin{x+1};
             case 'throw_error'
                 throw_error = varargin{x+1};
+            case 'save_batch'
+                save_batch = varargin{x+1};
             case 'wait_bar'
                 wait_bar = varargin{x+1};
             case 'n_out'
                 n_out = varargin{x+1};
-            otherwise % advance
-                x = x + 1;
-                continue;
         end
-        % remove from params/values/varargin
-        values(strcmp(params, varargin{x})) = [];
-        params(strcmp(params, varargin{x})) = [];
-        varargin(x:x+1) = [];
-    else % advance
-        x = x + 1;
+        % remove from inputs
+        inputs(x:x+1) = {[]};
     end
 end
 
-% set defaults
-for x = 1:numel(params),
-    eval([params{x} '= values{x};']);
-end
-
 % get funcs
-funcs = varargin{1};
+funcs = inputs{1};
 if ~iscell(funcs), funcs = {funcs}; end;
 funcs = funcs(:);
 
 % set options and ensure cell
-if numel(varargin) >= numel(funcs)+1,
-    options = varargin(2:numel(funcs)+1);
+if numel(inputs) >= numel(funcs)+1,
+    options = inputs(2:numel(funcs)+1);
 elseif all(cellfun('isclass',funcs,'struct')), % if all batch
     funcs = {funcs};
-    options = varargin(2:numel(funcs)+1);
+    options = inputs(2:numel(funcs)+1);
 else % set options empty
     options = repmat({{}}, 1, numel(funcs));
 end
@@ -261,10 +260,11 @@ for f = seq,
             if ~isempty(n_out), o = max(o, max(n_out)); end;
             try
                 % set options (for using outputs/dep)
-                [evaled_opts, n] = local_eval(options{f}, 'output', output, 'func', funcs{f}, 'n', n);
+                [evaled_opts, n] = local_eval(options{f}, 'output', output,...
+                                              'func', funcs{f}, 'n', n);
                 % feval
                 clear results;
-                [results{1:o}] = feval(program, funcs{f}, evaled_opts, verbose); 
+                [results{1:o}] = feval(program, funcs{f}, evaled_opts, verbose, save_batch); 
                 % display outputs
                 if verbose, 
                     fprintf('\nOutput:\n');
@@ -404,7 +404,10 @@ function [program, o] = local_setprog(func)
 end
 
 % matlab functions
-function varargout = local_feval(func, options, verbose)
+function varargout = local_feval(func, varargin)
+    % set options and verbose
+    [options, verbose] = deal(varargin{1:2});
+    
     % init varargout
     varargout = cell(1, nargout); 
     
@@ -437,7 +440,10 @@ function varargout = local_feval(func, options, verbose)
 end
 
 % system commands
-function varargout = local_system(func, options, verbose)
+function varargout = local_system(func, varargin)
+    % set options and verbose
+    [options, verbose] = deal(varargin{1:2});
+    
     % init varargout
     varargout = cell(1, nargout);
 
@@ -527,14 +533,35 @@ function [matlabbatch, dep] = local_setbatch(matlabbatch, options)
     end
 end
 
+% save batch
+function local_savebatch(filename, matlabbatch)
+    % append file
+    if exist(filename, 'file'),
+        tmp = load(filename, 'matlabbatch');
+        if ~isfield(tmp, 'matlabbatch'), 
+            tmp.matlabbatch = {};
+        end
+        matlabbatch = cat(2, tmp.matlabbatch, matlabbatch);
+        save(filename, 'matlabbatch', '-append');
+    elseif ~isempty(filename) % save new file
+        save(filename, 'matlabbatch');
+    end
+end
+
 % matlabbatch commands
-function varargout = local_batch(matlabbatch, options, verbose)
+function varargout = local_batch(matlabbatch, varargin)
+    % set options, verbose, and save_batch
+    [options, verbose, save_batch] = deal(varargin{1:3});
+    
     % init varargout
     varargout = cell(1, nargout); 
     
     % set batch
     matlabbatch = local_setbatch(matlabbatch, options);
-   
+    
+    % save batch
+    local_savebatch(save_batch, matlabbatch);
+    
     % display functions of structure
     if verbose,
         [C,~,R] = pebl_getfield(matlabbatch);
