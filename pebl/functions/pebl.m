@@ -93,7 +93,7 @@ function params = set_studyarray(params)
 % params = set_studyarray(params)
 % Load/create study array using @studyarray and add to functions.
 
-    % init sa
+    % init array
     array = studyarray;
     params = add_function(params, [], @deal);
     params = set_options(params, [], array);
@@ -292,7 +292,7 @@ function params = set_iter(params, iter_args)
         if ~exist('iter_args','var'), iter_args = {}; end;
         % set default fields, values
         fields = {'loop', 'seq', 'iter'};
-        values = {1, [], 0};
+        values = {1, [], []};
         % set values if in iter_args
         for x = 1:numel(fields),
             f = find(strcmp(iter_args, fields{x}), 1);
@@ -416,12 +416,10 @@ function params = set_options(params, idx, option)
 % Options will be set using @pebl_input.
 
     % load params
-    struct2var(params,{'funcs','options','idx','subjs','sa'});
+    struct2var(params,{'funcs','options','idx'});
     % init vars
     if ~exist('funcs','var')||isempty(funcs), return; end;
     if ~exist('idx','var')||isempty(idx), idx = numel(funcs); end;
-    if ~exist('subjs','var'), subjs = []; end;
-    if ~exist('sa','var'), sa = struct; end;
     % get string funcs
     strfuncs = local_getfunctions(funcs);
     strfuncs = strcat('@', strfuncs);
@@ -629,7 +627,7 @@ function params = run_params(params)
 %   output{func}{iter/loop, n_out}
 
     % load iter, funcs, options, nout
-    struct2var(params,{'iter_args','funcs','options','n_out','wait_bar','throw_error','sa'});
+    struct2var(params,{'iter_args','funcs','options','n_out','wait_bar','throw_error'});
     % init iter, funcs, options if not exist
     if ~exist('iter_args','var'), iter_args = {}; end;
     if ~exist('funcs','var'), funcs = {}; end;
