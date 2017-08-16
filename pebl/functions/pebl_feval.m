@@ -172,9 +172,9 @@ vals = {1, [], [], [], [], [], false, [], false};
 n_idx = ~ismember(vars, varargin(cellfun('isclass',varargin,'char')));
 defaults = cat(1, vars(n_idx), vals(n_idx));
 varargin = cat(2, varargin, defaults(:)');
-inputs = varargin;
 
 % set variables
+r_idx = [];
 for x = 1:numel(varargin),
     if ischar(varargin{x}), 
         switch varargin{x}
@@ -197,22 +197,25 @@ for x = 1:numel(varargin),
             case 'n_out'
                 n_out = varargin{x+1};
         end
-        % remove from inputs
-        inputs(x:x+1) = {[]};
+        % set indices to remove
+        r_idx = cat(2, r_idx, x:x+1);
     end
 end
 
+% remove r_idx indices
+varargin(r_idx) = [];
+
 % get funcs
-funcs = inputs{1};
+funcs = varargin{1};
 if ~iscell(funcs), funcs = {funcs}; end;
 funcs = funcs(:);
 
 % set options and ensure cell
-if numel(inputs) >= numel(funcs)+1,
-    options = inputs(2:numel(funcs)+1);
+if numel(varargin) >= numel(funcs)+1,
+    options = varargin(2:numel(funcs)+1);
 elseif all(cellfun('isclass',funcs,'struct')), % if all batch
     funcs = {funcs};
-    options = inputs(2:numel(funcs)+1);
+    options = varargin(2:numel(funcs)+1);
 else % set options empty
     options = repmat({{}}, 1, numel(funcs));
 end
