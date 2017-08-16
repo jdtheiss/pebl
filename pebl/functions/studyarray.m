@@ -1,5 +1,5 @@
-function [array, task, filename] = studyarray(cmd,varargin)
-% params = studyarray(cmd, varargin)
+function [array, filename, task] = studyarray(cmd,varargin)
+% [array, filename, task] = studyarray(cmd, varargin)
 % Create a structural array containing study information (e.g., subject
 % folder/file locations, demographic information, etc.)
 %
@@ -14,6 +14,27 @@ function [array, task, filename] = studyarray(cmd,varargin)
 % filename - name of file study array loaded/saved
 %
 % Example:
+% array = studyarray('createfield', struct, 'subj', {'S1','S2','S3'});
+% array = studyarray('createfield', struct('array',array), 'age', {21, 25, 33});
+% [array,filename,task] = studyarray('savearray', struct('array',array),...
+%                                    fullfile(pwd,'test.mat'), 'test')
+% 
+% array = 
+% 
+% 1x3 struct array with fields:
+% 
+%     subj
+%     age
+% 
+% 
+% filename =
+% 
+% /Users/test.mat
+% 
+% 
+% task =
+% 
+% test
 %
 % Created by Justin Theiss
 
@@ -28,8 +49,8 @@ for x = 1:numel(cmd), varargin{1} = feval(cmd{x},varargin{:}); end;
 
 % set varargin to params as output
 params = varargin{1};
-C = pebl_getfield(params, 'R', {'.array', '.task', '.filename'});
-[array, task, filename] = deal(C{:});
+C = pebl_getfield(params, 'R', {'.array', '.filename', '.task'});
+[array, filename, task] = deal(C{:});
 end
 
 % Callback functions
@@ -44,8 +65,8 @@ s.edit = struct('string','study array name','tag','study array name','order',[1,
 [s.push.tag] = deal(s.push.string);
 [s.push.callback] = deal(@(x,y)guidata(gcf,createfield(guidata(gcf),'subj')),...
     @(x,y)guidata(gcf,createfield(guidata(gcf))),...
-    @(x,y)guidata(gcf,load_sa(guidata(gcf))),...
-    @(x,y)guidata(gcf,save_sa(guidata(gcf))));
+    @(x,y)guidata(gcf,loadarray(guidata(gcf))),...
+    @(x,y)guidata(gcf,savearray(guidata(gcf))));
 push_order = arrayfun(@(x){[1,x]}, 3:6);
 [s.push.order] = deal(push_order{:});
 s.text = struct('string','study array fields','size',[165,25],'order',[2,2]);
@@ -74,8 +95,10 @@ if ~exist('array','var'), array = struct; end;
 % if not setting subj, choose subjects
 if strcmp(field,'subj'),
     subjs = [];
-elseif ~exist('subjs','var'),
+elseif ~exist('subjs','var') && nargin < 3,
     subjs = pebl_subjs(array);  
+else % otherwise set to all subjects
+    subjs = 1:numel(array);
 end
 
 % create vars
@@ -108,8 +131,8 @@ set(findobj('tag',[mfilename 'listbox']),'string',unique(flds));
 params = struct2var(params,{'array','subjs'});
 end
 
-function params = load_sa(params, filename, task)
-% params = load_sa(params, filename, task)
+function params = loadarray(params, filename, task)
+% params = loadarray(params, filename, task)
 % Load study array structure from one of following files:
 %   *.mat
 %   *.xls*
@@ -187,8 +210,8 @@ set(findobj('tag',[mfilename 'listbox']),'string',unique(flds));
 params = struct2var(params,{'array','task','filename'});
 end
 
-function params = save_sa(params, filename, task)
-% params = save_sa(params, filename, task)
+function params = savearray(params, filename, task)
+% params = savearray(params, filename, task)
 % Save study array to filename with task name.
 % Filename can be one of following types:
 %   *.mat
