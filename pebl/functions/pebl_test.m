@@ -129,8 +129,9 @@ function test_pebl
     outputs10 = pebl('init_env',[],@setenv,{'test','test'});
     setenv('test',tmp);
     assert(pebl_eq(outputs9,outputs10));
-    outputs11 = {cmd_help('echo'),help('strcmp'),[]};
-    outputs12 = pebl('get_docstr',{'echo',@strcmp,tmp});
+    outputs11 = {cmd_help('echo'),help('strcmp'),''};
+    outputs12 = pebl('get_docstr',{'echo',@strcmp,''});
+    assert(all(strcmp(outputs11,outputs12)));
     params = pebl('add_function',[],1,@minus);
     params = pebl('set_options',params,1,{10,5});
     params.verbose_arg = false; params.wait_bar = false;
@@ -189,7 +190,7 @@ end
 
 function test_pebl_feval
     outputs1 = {1;2;};
-    outputs2 = pebl_feval('iter', 1:2, @str2double, {'1';'2'});
+    outputs2 = pebl_feval(@str2double, {'1';'2'}, 'iter', 1:2);
     assert(all(cellfun(@(x,y)x==y,outputs1,outputs2{1})));
 end
 
