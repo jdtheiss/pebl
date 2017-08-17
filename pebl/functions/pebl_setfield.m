@@ -101,7 +101,7 @@ if numel(C)==1 && numel(S)>1, C = repmat(C, 1, numel(S)); end;
 
 % set C based on S
 for n = 1:numel(S),
-    if ~iscell(C{n}) || numel(C{n})==1,
+    if ~iscell(C{n}) || numel(C{n})==1 || numel(S{n})==1,
         C{n} = repmat(C(n), size(S{n}));
     elseif numel(C{n}) ~= numel(S{n}),
         C{n} = C{n}(1:min(numel(S{n}), numel(C{n})));
