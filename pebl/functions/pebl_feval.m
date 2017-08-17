@@ -35,6 +35,7 @@ function output = pebl_feval(varargin)
 %   [default []]
 % 'wait_bar' - boolean, true displays waitbar during loops
 %   [default false]
+% 'output' -cell, outputs that can be evaluated with @()'output...'
 % 
 % Outputs:
 % output - outputs organized as cells per function with inner cells of rows 
@@ -167,8 +168,8 @@ if nargin==0, return; end;
 
 % init defaults
 vars = {'loop', 'seq', 'iter', 'stop_fn', 'n_out', 'verbose', 'throw_error',...
-        'save_batch', 'wait_bar'};
-vals = {1, [], [], [], [], [], false, [], false};
+        'save_batch', 'wait_bar', 'output'};
+vals = {1, [], [], [], [], [], false, [], false, {{}}};
 n_idx = ~ismember(vars, varargin(cellfun('isclass',varargin,'char')));
 defaults = cat(1, vars(n_idx), vals(n_idx));
 varargin = cat(2, varargin, defaults(:)');
@@ -196,6 +197,10 @@ for x = 1:numel(varargin),
                 wait_bar = varargin{x+1};
             case 'n_out'
                 n_out = varargin{x+1};
+            case 'output'
+                output = varargin{x+1};
+            otherwise % if not found, skip
+                continue; 
         end
         % set indices to remove
         r_idx = cat(2, r_idx, x:x+1);
@@ -233,8 +238,6 @@ if ~iscell(stop_fn),
     stop_fn = repmat({stop_fn}, 1, numel(funcs));
 end
 
-% init output
-output = {{}};
 % for loop/sequence order
 for l = 1:loop,
 for f = seq,
@@ -544,7 +547,7 @@ function local_savebatch(filename, matlabbatch)
         if ~isfield(tmp, 'matlabbatch'), 
             tmp.matlabbatch = {};
         end
-        matlabbatch = cat(2, tmp.matlabbatch, matlabbatch);
+        matlabbatch = cat(1, tmp.matlabbatch(:), matlabbatch(:))';
         save(filename, 'matlabbatch', '-append');
     elseif ~isempty(filename) % save new file
         save(filename, 'matlabbatch');
