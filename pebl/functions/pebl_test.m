@@ -121,8 +121,8 @@ function test_pebl
     outputs6 = pebl('local_getoptions',@strcmp,{'test'},'add');
     assert(all(strcmp(outputs3,outputs4)));
     assert(all(strcmp(outputs5,outputs6)));
-    outputs7 = struct('iter_args', {{'loop', 2, 'seq', [], 'iter', 1:2}});
-    outputs8 = pebl('set_iter',[],{'loop', 2, 'seq', [], 'iter', 1:2});
+    outputs7 = struct('loop', 2, 'seq', [], 'iter', 1:2);
+    outputs8 = pebl('set_iter',[],{'loop','seq','iter'}, {2,[],1:2});
     assert(pebl_eq(outputs7,outputs8));
     tmp = getenv('test');
     outputs9 = struct('env',{{{'setenv','test','test'}}});
@@ -137,7 +137,7 @@ function test_pebl
     params.verbose_arg = false; params.wait_bar = false;
     params = pebl('run_params', params);
     outputs13 = minus(10, 5);
-    outputs14 = params.outputs{1}{1};
+    outputs14 = params.output{1}{1};
     assert(outputs13==outputs14);
 end
 

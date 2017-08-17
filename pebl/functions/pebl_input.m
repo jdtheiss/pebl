@@ -241,7 +241,7 @@ for c = chc
                 value = str2func(['@()''', value, '''']);
             else % run now
                 params = pebl('run_params', params);
-                value = params.outputs{n};
+                value = params.output{n};
             end
         case 'Workspace Variable' % workspace variable
             variable = cell2mat(inputdlg('Enter variable name from base workspace:'));
