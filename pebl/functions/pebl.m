@@ -280,24 +280,20 @@ function params = listbox_callback(params, fig, x)
 end
 
 % set iterations
-function params = set_iter(params, iter_args)
-% params = set_iter(params, iter_args)
+function params = set_iter(params, fields, values)
+% params = set_iter(params, field, value)
 % Set the number of iterations for @pebl_feval
 % If no iter_args, 
 
     % load iter if not input
     if nargin == 1,
-        % load iter_args
-        struct2var(params, 'iter_args');
-        if ~exist('iter_args','var'), iter_args = {}; end;
         % set default fields, values
         fields = {'loop', 'seq', 'iter'};
         values = {1, [], []};
-        % set values if in iter_args
+        % set values if in params
         for x = 1:numel(fields),
-            f = find(strcmp(iter_args, fields{x}), 1);
-            if f < numel(iter_args),
-                values{x} = iter_args{f+1};
+            if isfield(params, fields{x}),
+                values{x} = params.(fields{x});
             end
         end
         % choose fields
@@ -305,18 +301,15 @@ function params = set_iter(params, iter_args)
                       'ListString',fields);
         % set fields
         for x = chc,
-            % find place in iter_args
-            f = find(strcmp(iter_args, fields{x}), 1);
-            if isempty(f), f = numel(iter_args)+1; end;
-            % set field
-            iter_args{f} = fields{x};
             % set value
-            iter_args{f+1} = eval(cell2mat(inputdlg(['Input value for ' fields{x}],...
-                             fields{x}, 1, {genstr(values{x})})));
+            params.(fields{x}) = eval(cell2mat(inputdlg(['Input value for ' fields{x}],...
+                                      fields{x}, 1, {genstr(values{x})})));
+        end
+    else % set fields
+        for x = 1:numel(fields),
+            params.(fields{x}) = values{x};
         end
     end
-    % set iter to params
-    params = struct2var(params, 'iter_args');
 end
 
 % set environments
@@ -609,46 +602,35 @@ function params = run_params(params)
 % @print_options.
 %
 % Available options (fields of params):
-% iter_args - cell array of arguments related to iter/loop/seq for
-%   pebl_feval (e.g., {'iter', 1:2, 'loop', 2})
-%   [default {}]
 % funcs - cell array of functions to be run 
 %   [default {}]
 % options - cell array of options corresponding to functions (e.g.,
 %   options{1} for funcs{1}) 
-%   [default {}]
-% n_out - number of outputs expected (max) for all functions 
-%   [default 1]
-% wait_bar - boolean for displaying waitbar of time left
-%   [default false]
+% other inputs for pebl_feval (see @pebl_feval for more information)
 %
 % Outputs (field of params):
-% outputs - cell array of outputs from each function call organized as
+% output - cell array of outputs from each function call organized as
 %   output{func}{iter/loop, n_out}
 
-    % load iter, funcs, options, nout
-    struct2var(params,{'iter_args','funcs','options','n_out','wait_bar','throw_error'});
-    % init iter, funcs, options if not exist
-    if ~exist('iter_args','var'), iter_args = {}; end;
-    if ~exist('funcs','var'), funcs = {}; end;
+    % load funcs, options
+    struct2var(params, {'funcs','options'});
+    % init vars
+    if ~exist('funcs','var'), return; end;
     if ~exist('options','var'), options = {}; end;
-    if ~exist('n_out','var'), n_out = 1; end;
-    if ~exist('wait_bar','var'), wait_bar = false; end;
-    if ~exist('throw_error','var'), throw_error = false; end;
     % print outputs as selected, return verbose
     params = print_options(params); 
-    struct2var(params,'verbose_arg'); 
-    if isempty(funcs), return; end;
+    % get args
+    f = fieldnames(params)'; c = struct2cell(params)';
+    n_idx = ~ismember(f, {'funcs','options'});
+    args = cat(1, f(n_idx), c(n_idx));
     try
         % run pebl_feval
-        outputs = pebl_feval(funcs,options{:},iter_args{:},'n_out',n_out,...
-                            'verbose',verbose_arg,'throw_error',throw_error,...
-                            'wait_bar',wait_bar);
+        output = pebl_feval(funcs, options{:}, args(:)');
     catch err
         disp(['fatal error: ', err.message]);
     end
     % set outputs to params
-    params = struct2var(params,'outputs');
+    params = struct2var(params, 'output');
     % finish printing outputs
     print_options(params);
 end
