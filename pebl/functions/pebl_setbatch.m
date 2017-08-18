@@ -243,14 +243,9 @@ cjob = cfg_util('initjob',matlabbatch);
 % init outputs
 [C, S, R] = deal({});
 for m = 1:numel(matlabbatch),
-% find first level
-r = 1;
-while numel(struct2sub(matlabbatch{m}, r)) == 1,
-    r = r + 1;
-    if r > 10, return; end;
-end
 % get first level of module
-[~, ~, R0] = pebl_getfield(matlabbatch{m}, 'r', r); 
+mod_tag = cfg_util('harvest', cjob, m);
+[~, ~, R0] = pebl_getfield(matlabbatch{m}, 'expr', ['.*\.', mod_tag]); 
 % get ids
 [id, ~, vals] = cfg_util('listmod', cjob, m, [],...
 cfg_findspec({{'hidden',false}}),...
