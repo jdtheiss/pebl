@@ -505,15 +505,11 @@ function [matlabbatch, dep] = local_setbatch(matlabbatch, options)
     for x = 1:2:numel(options)
         % if @() function, skip setting (it should be evaluated with local_eval)
         if isa(options{x+1}, 'function_handle') && strncmp(func2str(options{x+1}), '@()', 3), 
-            continue; 
+            continue;
         end
         % switch based on first option in pair
         switch class(options{x})
             case 'struct' % use pebl_setfield with S
-                % if cell substruct but not cell in matlabbatch, set to {}
-                if strcmp(options{x}(end).type,'{}')&&~iscell(subsref(matlabbatch,options{x}(1:end-1))),
-                    matlabbatch = subsasgn(matlabbatch, options{x}(1:end-1), {});
-                end
                 matlabbatch = pebl_setfield(matlabbatch, 'S', options{x}, 'C', options{x+1});
             case 'cell' % use pebl_setfield with options
                 if all(cellfun('isclass', options{x}, 'struct')), % S
