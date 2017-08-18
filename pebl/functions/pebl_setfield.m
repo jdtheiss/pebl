@@ -80,7 +80,7 @@ if ~exist('remove','var'), remove = false; end;
 
 % set (:end)/{:end} to number of previous struct
 for n = find(~cellfun('isempty',R)),
-    R1 = regexprep(R{n}, '\{?\(?\[?\d*:?end\]?\)?\}?.*', '');
+    R1 = regexprep(R{n}, '\{?\(?\[?(\d*:?)*end\]?\)?\}?.*', '');
     if strcmp(R1, R{n}), continue; end;
     if isempty(R1), R1 = '(:)'; end;
     e = numel(subsref(A, sub2str(R1)));
