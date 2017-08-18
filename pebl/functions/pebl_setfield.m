@@ -117,7 +117,7 @@ C = [C{:}];
 R = cell(size(S));
 
 % for each, subsasgn or evaluate
-for n = 1:min(numel(S),numel(C)),
+for n = 1:numel(S),
     try
         % set new R
         R{n} = sub2str(S{n});
@@ -143,17 +143,22 @@ for n = 1:min(numel(S),numel(C)),
                 A = subsasgn(A, S{n}, C{n});
             end
         else % set field with subsasgn
-            if strcmp(S{n}(end).type, '{}'),
+            % ensure cell if needed
+            if ~strcmp(S{n}(end).type, '.') && ~isempty(A),
                 % check for cell
-                try cell_end = iscell(subsref(A, S{n}(1:end-1))); catch, cell_end = false; end;
-                % if not cell, set penultimate to empty cell
-                try if ~cell_end, A = subsasgn(A, S{n}(1:end-1), {}); end; end;
+                try 
+                    cell_end = iscell(subsref(A, S{n}(1:end-1))); 
+                catch
+                    cell_end = false;
+                end
+                % if not cell, set penultimate to empty cells
+                if ~cell_end && iscell(C{n}), 
+                    A = subsasgn(A, S{n}(1:end-1), cell(size(C{n}))); 
+                elseif ~cell_end && strcmp(S{n}(end).type, '{}'),
+                    A = subsasgn(A, S{n}(1:end-1), cell(size(C(n))));
+                end
             end
-            try % subsasgn
-                A = subsasgn(A, S{n}, C{n});
-            catch % if failed try eval with R{n}
-                eval(sprintf('[A%s] = C{n};', R{n}));
-            end   
+            A = subsasgn(A, S{n}, C{n});
         end 
     catch err
         if verbose, disp(err.message); end;
