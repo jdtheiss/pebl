@@ -84,8 +84,16 @@ elseif ~iscell(S),
 end
 
 % set S from R
-if exist('R', 'var'), 
+if exist('R', 'var'),
     if ~iscell(R), R = {R}; end;
+    % set (:end)/{:end} to number of previous struct
+    for n = find(~cellfun('isempty',R)),
+        R1 = regexprep(R{n}, '\{?\(?\[?\d*:?end\]?\)?\}?.*', '');
+        if strcmp(R1, R{n}), continue; end;
+        if isempty(R1), R1 = '(:)'; end;
+        e = numel(subsref(A, sub2str(R1)));
+        R{n} = regexprep(R{n}, '(:?)end', sprintf('$1%d', e));
+    end
     S = cellfun(@(x){sub2str(x)}, R);
     if all(cellfun('isclass', S, 'cell')), S = [S{:}]; end;
 end
