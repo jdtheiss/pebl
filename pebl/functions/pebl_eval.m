@@ -22,7 +22,9 @@ function evaled_obj = pebl_eval(obj, opt)
 %     field1: '/Users/test'
 %
 % Note: In order to create a new directory, the path should have a backslash
-% at the end (e.g., '/User/Test\' or 'C:\Test\').
+% at the end (e.g., '/User/Test\' or 'C:\Test\'). Furthermore, to avoid
+% recursion issues when searching for 'eval(' or filepaths, 'r' for
+% pebl_getfield is set at 3 (i.e. it can search 3 levels).
 %
 % Created by Justin Theiss
 
@@ -32,14 +34,14 @@ evaled_obj = obj;
 if ~iscell(evaled_obj), evaled_obj = {evaled_obj}; end;
 
 % find cells with 'eval'
-[C,S] = pebl_getfield(evaled_obj,'fun',@(x)strncmp(x,'eval',4)); 
+[C,S] = pebl_getfield(evaled_obj,'fun',@(x)strncmp(x,'eval',4),'r',3); 
 for x = 1:numel(C), 
     try C{x} = eval(C{x}); catch, return; end; % eval
     evaled_obj = local_mkdir_select(evaled_obj,C{x},S{x},opt); % mkdir/select
 end
 
 % find cells with filesep
-[C,S] = pebl_getfield(evaled_obj,'fun',@(x)ischar(x) && any(strfind(x,filesep))); 
+[C,S] = pebl_getfield(evaled_obj,'fun',@(x)ischar(x) && any(strfind(x,filesep)),'r',3); 
 for x = 1:numel(C),
     evaled_obj = local_mkdir_select(evaled_obj,C{x},S{x},opt); % mkdir/select
 end
@@ -53,8 +55,7 @@ end
 % output
 if ~iscell(obj)&&iscell(evaled_obj)&&numel(evaled_obj)==1,
     evaled_obj = evaled_obj{1}; 
-end;
-if isempty(evaled_obj), evaled_obj = []; end;
+end
 end
 
 function obj = local_mkdir_select(obj, C, S, opt)
