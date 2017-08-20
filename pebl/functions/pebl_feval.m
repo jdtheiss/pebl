@@ -176,7 +176,7 @@ varargin = cat(2, varargin, defaults(:)');
 
 % set variables
 r_idx = [];
-for x = 1:numel(varargin),
+for x = 1:numel(varargin)-1,
     if ischar(varargin{x}), 
         switch varargin{x}
             case 'loop'
@@ -262,46 +262,23 @@ for f = seq,
             % if -1, set to l 
             if n == -1, n = l; end;
             % set program and max number of outputs
-            [program, o] = local_setprog(funcs{f});
-            if ~isempty(n_out), o = max(o, max(n_out)); end;
+            [program, o] = local_setprogram(funcs{f}, n_out);
             try
                 % set options (for using outputs/dep)
                 [evaled_opts, n] = local_eval(options{f}, 'output', output,...
                                               'func', funcs{f}, 'n', n);
                 % feval
                 clear results;
-                [results{1:o}] = feval(program, funcs{f}, evaled_opts, verbose, save_batch); 
+                [results{1:o}] = feval(program, funcs{f}, evaled_opts, verbose, save_batch);
                 % display outputs
-                if verbose, 
-                    fprintf('\nOutput:\n');
-                    strs = cell(1, o);
-                    for s = 1:o,
-                        if numel(results{s}) > 1e5, 
-                            strs(s) = any2str(results(s));
-                        else
-                            strs(s) = any2str(results{s});
-                        end
-                    end
-                    disp(cell2strtable(strs, ' '));
-                    fprintf('\n'); 
-                end
+                local_print(results, verbose);
             catch err % display error
                 % if throw_error is true, rethrow
                 if throw_error,
                     rethrow(err);
                 end
-                % if not string, set to string
-                if isa(funcs{f},'function_handle'),
-                    func = func2str(funcs{f});
-                elseif ~ischar(funcs{f}),
-                    func = 'matlabbatch';
-                else % set to funcs{f}
-                    func = funcs{f};
-                end
-                % display error
-                if isempty(verbose) || verbose, 
-                    fprintf('%s %s %s\n',func,'error:',err.message); 
-                end;
+                % print error
+                local_print(funcs{f}, verbose, err);
                 % set output to empty
                 results(1:o) = {[]};
             end
@@ -333,7 +310,40 @@ end
 % return output{f}(:, n_out)
 if isempty(n_out), n_out = 1:max(cellfun('size',output,2)); end;
 output = cellfun(@(x){pebl_cat(2, x, cell(1, max(n_out)-size(x,2)))}, output);
-output = cellfun(@(x){x(:, n_out)}, output);
+if all(n_out > 0), output = cellfun(@(x){x(:, n_out)}, output); end;
+end
+
+function local_print(msg, verbose, err)
+
+% not verbose, return
+if ~isempty(verbose) && ~verbose, return; end;
+% print results
+if nargin == 2 && ~isempty(verbose),
+    strs = cell(size(msg));
+    for s = 1:size(msg, 2),
+        if numel(msg{s}) > 1e5, 
+            strs(s) = any2str(msg(s));
+        else
+            strs(s) = any2str(msg{s});
+        end
+    end
+    % print outputs
+    if isempty(strs), strs = any2str(strs); end;
+    fprintf('\nOutput:\n');
+    disp(cell2strtable(strs, ' '));
+    fprintf('\n'); 
+elseif nargin == 3, % print error
+    % if not string, set to string
+    if isa(msg,'function_handle'),
+        func = func2str(msg);
+    elseif ~ischar(msg),
+        func = 'matlabbatch';
+    else % set to func
+        func = msg;
+    end
+    % display error
+    fprintf('%s %s %s\n',func,'error:',err.message); 
+end
 end
 
 % evaluate @() inputs
@@ -394,7 +404,7 @@ function [options, n] = local_eval(options, varargin)
 end
 
 % set program types
-function [program, o] = local_setprog(func)
+function [program, o] = local_setprogram(func, n_out)
     % switch class
     switch class(func),
         case {'cell','struct'} % matlabbatch
@@ -402,10 +412,16 @@ function [program, o] = local_setprog(func)
             if isstruct(func), o = 1; else o = numel(func); end;
         case 'function_handle' % function/builtin
             program = 'local_feval';
-            o = max(1, abs(nargout(func)));
+            try o = max(1, abs(nargout(func))); catch, o = 1; end;
         case 'char' % system
             program = 'local_system'; 
             o = 1;
+    end
+    % set output number
+    if ~isempty(n_out) && ~any(n_out==0), 
+        o = max(o, max(n_out)); 
+    elseif ~isempty(n_out),
+        o = n_out;
     end
 end
 
@@ -415,19 +431,19 @@ function varargout = local_feval(func, varargin)
     [options, verbose] = deal(varargin{1:2});
     
     % init varargout
-    varargout = cell(1, nargout); 
+    varargout = cell(1, nargout);
     
     % set func to str if function_handle
     if isa(func,'function_handle'), func = func2str(func); end;
 
     % if options is not cell or more inputs than nargin, set to cell
-    if ~iscell(options) || (nargin(func) > 0 && numel(options) > nargin(func)),
+    try i = nargin(func); catch, i = 1; end;
+    if ~iscell(options) || (i > 0 && numel(options) > i),
         options = {options};
     end
     
     % get number of outputs
-    try o = nargout(func); catch, o = 0; end;
-    if o < 0, o = nargout; elseif o > 0, o = min(nargout, o); end;
+    try o = nargout(func); catch, o = 1; end;
     
     % display function and options
     if verbose, disp(cell2strtable(any2str(func,options{:}),' ')); end;
@@ -436,11 +452,12 @@ function varargout = local_feval(func, varargin)
     if o == 0,
         varargout{1} = evalc([func '(options{:});']);
         if isempty(verbose) || verbose, disp(varargout{1}); end;
+        if nargout == 0, varargout = cell(1, nargout); end;
     else  % multiple outputs
         if isempty(verbose) || verbose,
-            [varargout{1:o}] = feval(func, options{:}); 
+            [varargout{1:nargout}] = feval(func, options{:}); 
         else % prevent display
-            [~,varargout{1:o}] = evalc([func '(options{:});']);
+            [~,varargout{1:nargout}] = evalc([func '(options{:});']);
         end
     end
 end
