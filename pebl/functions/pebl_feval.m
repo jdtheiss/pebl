@@ -400,7 +400,9 @@ function [options, n] = local_eval(options, varargin)
     
     % eval remaining options
     if ischar(func), opt = 'system'; else opt = ''; end;
-    options = pebl_eval(options, opt);
+    for x = 1:numel(options),
+        options{x} = pebl_eval(options{x}, opt);
+    end
 end
 
 % set program types
