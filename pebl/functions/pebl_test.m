@@ -180,14 +180,6 @@ function test_pebl_eq
     assert(all(strcmp(reps1(:),reps2(:))));
 end
 
-function test_pebl_eval
-    outputs1 = tempname;
-    outputs2 = pebl_eval([outputs1, '\']);
-    assert(isdir(outputs2));
-    rmdir(outputs1);
-    assert(strcmp(outputs1, outputs2));
-end
-
 function test_pebl_feval
     outputs1 = {1;2;};
     outputs2 = pebl_feval(@str2double, {'1';'2'}, 'iter', 1:2);
