@@ -129,7 +129,7 @@ for c = chc
             if ~iscell(value)||isempty(value), value = {value}; end;
             if all(cellfun('isempty',value)), value = {''}; end;
             n_rows = numel(value);
-            if ~iscellstr(value), value = genstr(value{:}); end;
+            if ~iscellstr(value), value = genstr(value); end;
             value = cell2mat(inputdlg(['Set ', variable],title,...
                             [max(n_rows,2),50],{char(value)}));
             if isempty(value), output = {}; return; end;
