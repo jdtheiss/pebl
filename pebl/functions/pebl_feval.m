@@ -313,37 +313,37 @@ output = cellfun(@(x){pebl_cat(2, x, cell(1, max(n_out)-size(x,2)))}, output);
 if all(n_out > 0), output = cellfun(@(x){x(:, n_out)}, output); end;
 end
 
+% print outputs or errors
 function local_print(msg, verbose, err)
-
-% not verbose, return
-if ~isempty(verbose) && ~verbose, return; end;
-% print results
-if nargin == 2 && ~isempty(verbose),
-    strs = cell(size(msg));
-    for s = 1:size(msg, 2),
-        if numel(msg{s}) > 1e5, 
-            strs(s) = any2str(msg(s));
-        else
-            strs(s) = any2str(msg{s});
+    % not verbose, return
+    if ~isempty(verbose) && ~verbose, return; end;
+    % print results
+    if nargin == 2 && ~isempty(verbose),
+        strs = cell(size(msg));
+        for s = 1:size(msg, 2),
+            if numel(msg{s}) > 1e5, 
+                strs(s) = any2str(msg(s));
+            else
+                strs(s) = any2str(msg{s});
+            end
         end
+        % print outputs
+        if isempty(strs), strs = any2str(strs); end;
+        fprintf('\nOutput:\n');
+        disp(cell2strtable(strs, ' '));
+        fprintf('\n'); 
+    elseif nargin == 3, % print error
+        % if not string, set to string
+        if isa(msg,'function_handle'),
+            func = func2str(msg);
+        elseif ~ischar(msg),
+            func = 'matlabbatch';
+        else % set to func
+            func = msg;
+        end
+        % display error
+        fprintf('%s %s %s\n',func,'error:',err.message); 
     end
-    % print outputs
-    if isempty(strs), strs = any2str(strs); end;
-    fprintf('\nOutput:\n');
-    disp(cell2strtable(strs, ' '));
-    fprintf('\n'); 
-elseif nargin == 3, % print error
-    % if not string, set to string
-    if isa(msg,'function_handle'),
-        func = func2str(msg);
-    elseif ~ischar(msg),
-        func = 'matlabbatch';
-    else % set to func
-        func = msg;
-    end
-    % display error
-    fprintf('%s %s %s\n',func,'error:',err.message); 
-end
 end
 
 % evaluate @() inputs
@@ -393,15 +393,62 @@ function [options, n] = local_eval(options, varargin)
         [C,S] = pebl_getfield(options, 'fun', @(x)iscell(x) && size(x, 2)==1, 'r', 1);
         max_size = max(cellfun('size', C, 1));
         if n == max_size, n = inf; end;
-        for x = 1:numel(C),
+        for x = find(cellfun('size', C, 1) == max_size),
             options = subsasgn(options, S{x}, C{x}{min(end, n)}); 
         end
     end
     
-    % eval remaining options
-    if ischar(func), opt = 'system'; else opt = ''; end;
-    for x = 1:numel(options),
-        options{x} = pebl_eval(options{x}, opt);
+    % if matlabbatch, check for .nii.gz or 4D .nii
+    if iscell(func)||isstruct(func),
+        for x = 1:numel(options),
+            options{x} = local_niftiframes(options{x});
+        end
+    elseif ischar(func), % if system, put quotes around files
+        for x = 1:numel(options),
+            options{x} = local_pathquotes(options{x});
+        end
+    end
+end
+
+% check for nifti frames
+function C = local_niftiframes(C)
+    % get options based on class
+    if iscellstr(C), % cellstr, loop through options
+        for x = 1:numel(C),
+            C{x} = local_niftiframes(C{x});
+        end
+        return;
+    elseif ischar(C), % char, get fileparts
+        [p,f,e] = fileparts(C);
+    else % otherwise, return
+        return;
+    end
+    % get frames
+    frames = regexp(e, ',.+$', 'match', 'once');
+    frames = frames(2:end);
+    e = regexprep(e, ',.+$', '');
+    if strcmp(e, '.gz'), % gunzip
+        gunzip(fullfile(p, [f,e])); e = '';
+    elseif ~strcmp(e, '.nii'),
+        return;
+    end
+    % eval frames
+    if ~isempty(frames) && ischar(frames),
+        frames = eval(frames);
+    else
+        frames = inf;
+    end
+    % use spm_select to expand filelist
+    C = cellstr(spm_select('ExtFPList',p,['^' regexptranslate('wildcard',[f,e])],frames));
+end
+
+% set quotes around files
+function C = local_pathquotes(C)
+    if ~ischar(C),
+        return;
+    else % regexprep files with quotes
+        C = regexprep(C,['.*' filesep '.*'],'"$0"'); 
+        C = regexprep(C,'""','"');
     end
 end
 
