@@ -126,7 +126,7 @@ for c = chc
     % set based on choice
     switch options{c}
         case {'String','Number','Evaluate'} % input
-            if ~iscellstr(value), value = genstr(value); end;
+            if ~iscellstr(value) && size(value,1) > 1, value = genstr(value); end;
             if ~iscell(value)||isempty(value), value = {value}; end;
             n_rows = size(value, 1);
             value = cell2mat(inputdlg(['Set ', variable],title,...
@@ -134,7 +134,7 @@ for c = chc
             if isempty(value), output = {}; return; end;
             value = arrayfun(@(x){value(x,:)},1:size(value,1));
             % number or evaluate
-            if any(strcmpi({'number','evaluate'},options{c})), 
+            if any(strcmpi({'number','evaluate'}, options{c})), 
                 % if @, convert to function handle
                 value(strncmp(value,'@',1)) = cellfun(@(x){str2func(x)},...
                                                 value(strncmp(value,'@',1)));
