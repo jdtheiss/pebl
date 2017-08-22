@@ -562,7 +562,7 @@ function params = print_options(params, varargin)
     if isempty(varargin),
         struct2var(params,{'print_type','print_file'});
         % init verbose_arg
-        verbose_arg = [];
+        verbose = [];
     else % set from varargin
         arrayfun(@(x)assignin('caller',varargin{x},varargin{x+1}),1:2:numel(varargin)-1);
     end
@@ -582,16 +582,16 @@ function params = print_options(params, varargin)
                 diary('off');
                 disp(['Outputs saved in: ' print_file]);
             end
-            verbose_arg = true;
+            verbose = true;
         case 'on' % set verbose to true
-            verbose_arg = true;
+            verbose = true;
         case 'off' % set verbose to false
-            verbose_arg = false;
+            verbose = false;
         otherwise % if set directly
-            struct2var(params,'verbose_arg');
+            struct2var(params, 'verbose');
     end 
     % set verbose_arg to params
-    params = struct2var(params,{'verbose_arg','print_type','print_file'});
+    params = struct2var(params,{'verbose','print_type','print_file'});
 end
 
 % run functions
@@ -625,7 +625,7 @@ function params = run_params(params)
     args = cat(1, f(n_idx), c(n_idx));
     try
         % run pebl_feval
-        output = pebl_feval(funcs, options{:}, args(:)');
+        output = pebl_feval(funcs, options{:}, args{:});
     catch err
         disp(['fatal error: ', err.message]);
     end
