@@ -78,7 +78,7 @@ try
                 if size(value, 1) > 1, % set to string
                     ival = find(strcmpi(options,'string'),1); 
                 else % set to evaluate, genstr
-                    value = genstr(value);
+%                     value = genstr(value);
                     ival = find(strcmpi(options,'evaluate'),1);
                 end
             elseif all(cellfun(@(x)iscell(x)||isstruct(x),value)) % all cell/struct
@@ -87,14 +87,15 @@ try
                 ival = find(strcmpi(options,'number'),1);
             end
         case 'char' % set char to cellstr
-            value = cellstr(value); ival = find(strcmpi(options,'string'),1);
+            ival = find(strcmpi(options,'string'),1); 
+%             value = cellstr(value); 
         case 'double' % if double, num2str
             if isempty(value), 
                 ival = find(strcmpi(options,'string'),1); 
             else
                 ival = find(strcmpi(options,'number'),1);
             end
-            value = {num2str(value)};
+%             value = {num2str(value)};
         case 'function_handle' % function handle should go to number
             ival = find(strcmpi(options,'number'),1);
         case 'struct' % if struct
@@ -126,11 +127,16 @@ for c = chc
     % set based on choice
     switch options{c}
         case {'String','Number','Evaluate'} % input
-            if ~iscellstr(value) && size(value,1) > 1, value = genstr(value); end;
-            if ~iscell(value)||isempty(value), value = {value}; end;
+            if size(value, 2) > 1, % columns, use genstr
+                value = genstr(value);
+            elseif ~iscellstr(value), % not cellstr, genstr each value
+                value = char(cellfun(@(x){genstr(x)}, value));
+            else % otherwise char
+                value = char(value);
+            end
             n_rows = size(value, 1);
             value = cell2mat(inputdlg(['Set ', variable],title,...
-                            [max(n_rows,2),50],{char(value)}));
+                            [max(n_rows,2),50],{value}));
             if isempty(value), output = {}; return; end;
             value = arrayfun(@(x){value(x,:)},1:size(value,1));
             % number or evaluate
