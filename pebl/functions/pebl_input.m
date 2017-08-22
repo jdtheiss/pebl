@@ -126,10 +126,9 @@ for c = chc
     % set based on choice
     switch options{c}
         case {'String','Number','Evaluate'} % input
-            if ~iscell(value)||isempty(value), value = {value}; end;
-            if all(cellfun('isempty',value)), value = {''}; end;
-            n_rows = numel(value);
             if ~iscellstr(value), value = genstr(value); end;
+            if ~iscell(value)||isempty(value), value = {value}; end;
+            n_rows = size(value, 1);
             value = cell2mat(inputdlg(['Set ', variable],title,...
                             [max(n_rows,2),50],{char(value)}));
             if isempty(value), output = {}; return; end;
