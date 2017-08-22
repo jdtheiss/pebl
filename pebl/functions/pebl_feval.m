@@ -390,6 +390,7 @@ function [options, n] = local_eval(options, varargin)
     
     % get row from options
     if n~=0, 
+        if numel(options) == 1, options = options{1}; end;
         [C,S] = pebl_getfield(options, 'fun', @(x)iscell(x) && size(x, 2)==1, 'r', 1);
         max_size = max(cellfun('size', C, 1));
         if n == max_size, n = inf; end;
