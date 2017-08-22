@@ -357,8 +357,8 @@ function [options, n] = local_eval(options, varargin)
     if ~exist('func','var'), func = []; end;
     
     % find functions in options
-    if ~iscell(options) || size(options,2)==1, options = {options}; end;
-    [C,S] = pebl_getfield(options,'fun',@(x)isa(x,'function_handle')); 
+    if ~iscell(options) || size(options, 1) > 1, options = {options}; end;
+    [C, S] = pebl_getfield(options, 'fun', @(x)isa(x,'function_handle')); 
     
     if ~isempty(C),
         % convert to str to check
@@ -390,8 +390,7 @@ function [options, n] = local_eval(options, varargin)
     
     % get row from options
     if n~=0, 
-        if numel(options) == 1, options = options{1}; end;
-        [C,S] = pebl_getfield(options, 'fun', @(x)iscell(x) && size(x, 2)==1, 'r', 1);
+        [C, S] = pebl_getfield(options, 'fun', @(x)iscell(x) && size(x, 2)==1, 'r', 1);
         max_size = max(cellfun('size', C, 1));
         if n == max_size, n = inf; end;
         for x = find(cellfun('size', C, 1) == max_size),
