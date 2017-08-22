@@ -73,34 +73,31 @@ options = cat(2, options, func);
 % set defaults based on class
 try
     switch class(value)
-        case 'cell' % if cellstr, set to 1
-            if iscellstr(value)&&~isempty(value), % cellstr 
-                if size(value, 1) > 1, % set to string
+        case 'cell' % string/evaluate/index/number
+            if iscellstr(value)&&~isempty(value),
+                if size(value, 1) > 1, % string
                     ival = find(strcmpi(options,'string'),1); 
-                else % set to evaluate, genstr
-%                     value = genstr(value);
+                else % evaluate
                     ival = find(strcmpi(options,'evaluate'),1);
                 end
-            elseif all(cellfun(@(x)iscell(x)||isstruct(x),value)) % all cell/struct
-                ival = find(strcmpi(options,'index'),1); % set to index
-            elseif ~isempty(value) % otherwise, set to number
+            elseif all(cellfun(@(x)iscell(x)||isstruct(x),value)) % index
+                ival = find(strcmpi(options,'index'),1);
+            elseif ~isempty(value) % otherwise, number
                 ival = find(strcmpi(options,'number'),1);
             end
-        case 'char' % set char to cellstr
-            ival = find(strcmpi(options,'string'),1); 
-%             value = cellstr(value); 
-        case 'double' % if double, num2str
+        case 'char' % string
+            ival = find(strcmpi(options,'string'),1);
+        case 'double' % string/number
             if isempty(value), 
                 ival = find(strcmpi(options,'string'),1); 
             else
                 ival = find(strcmpi(options,'number'),1);
             end
-%             value = {num2str(value)};
-        case 'function_handle' % function handle should go to number
+        case 'function_handle' % number
             ival = find(strcmpi(options,'number'),1);
-        case 'struct' % if struct
+        case 'struct' % structure
             ival = find(strcmpi(options,'structure'),1);
-        otherwise % default to string
+        otherwise % default string
             ival = find(strcmpi(options,'string'),1);
     end
 catch err % if error, set ival to string
@@ -121,24 +118,25 @@ end
 % choose method for invars
 chc = listdlg('Name',title,'PromptString',{msg,'',''},'ListString',options,...
               'InitialValue',ival); 
-if isempty(chc), return; end; 
+if isempty(chc), output = value; return; end; 
 
 for c = chc
     % set based on choice
     switch options{c}
         case {'String','Number','Evaluate'} % input
-            if size(value, 2) > 1, % columns, use genstr
-                value = genstr(value);
-            elseif ~iscellstr(value), % not cellstr, genstr each value
-                value = char(cellfun(@(x){genstr(x)}, value));
-            else % otherwise char
+            % cellstr/char
+            if (iscellstr(value) && size(value, 1) > 1) || ischar(value), 
                 value = char(value);
+            % not cell or one cell or columns
+            elseif (~iscell(value) || numel(value) == 1) || size(value, 2) > 1, 
+                value = genstr(value);
+            else % not cellstr but rows
+                value = char(cellfun(@(x){genstr(x)}, value));
             end
-            n_rows = size(value, 1);
-            value = cell2mat(inputdlg(['Set ', variable],title,...
-                            [max(n_rows,2),50],{value}));
+            n_rows = min(max(size(value, 1), 2), 15);
+            value = cell2mat(inputdlg(['Set ', variable],title,[n_rows,50],{value}));
             if isempty(value), output = {}; return; end;
-            value = arrayfun(@(x){value(x,:)},1:size(value,1));
+            value = arrayfun(@(x){strtrim(value(x,:))}, 1:size(value, 1));
             % number or evaluate
             if any(strcmpi({'number','evaluate'}, options{c})), 
                 % if @, convert to function handle
@@ -162,9 +160,12 @@ for c = chc
                 if isempty(ind), break; end;
                 s = sub2str(ind); % create s var for subsasgn
                 if ival==find(strcmpi(options,'index'),1), 
-                    try value = subsref(value,s); end; % set value
+                    % subsref value
+                    try tmpvalue = subsref(value,s); catch, tmpvalue = value; end;
+                else % set tmp to value
+                    tmpvalue = value;
                 end
-                value = subsasgn(value,s,pebl_input(varargin{:}));
+                value = subsasgn(value,s,pebl_input(varargin{:},'value',tmpvalue));
             end
         case 'Structure' % struct
             if isstruct(value), % if exists, choose component to edit
@@ -173,7 +174,7 @@ for c = chc
                 if isempty(components), components = {}; end;
                 n = listdlg('PromptString','Choose index to edit:','ListString',...
                 [components,'Add','Delete']);
-                if isempty(n), return; end;
+                if isempty(n), output = value; return; end;
                 if any(n == numel(value)+2), % delete
                     r = listdlg('PromptString','Choose index to delete:','ListString',...
                         arrayfun(@(x){num2str(x)},1:numel(value)));
@@ -183,7 +184,7 @@ for c = chc
                 end
             else % if new, create struct
                 n = cell2mat(inputdlg('Enter number of indices to create'));
-                n = 1:str2double(n); if isnan(n), return; end;
+                n = 1:str2double(n); if isnan(n), output = value; return; end;
                 value = repmat(struct,1,max(n)); substr = {'Add','Delete'};
             end;
             % for each component
@@ -232,7 +233,7 @@ for c = chc
             end 
         case 'Function' % function
             n = str2double(cell2mat(inputdlg('Enter number of functions')));
-            if isnan(n), return; end;
+            if isnan(n), output = value; return; end;
             params = struct;
             for n = 1:n, % for each, add function/set options
                 params = pebl({'add_function','set_options'},params);
@@ -259,7 +260,11 @@ for c = chc
             % load matlabbatch and get deps
             [~, cjob] = evalc('cfg_util(''initjob'',batch);'); 
             [~,~,~,~,dep]=cfg_util('showjob',cjob);
-            if isempty(dep), warning('No dependencies found'); return; end;
+            if isempty(dep), 
+                warning('No dependencies found');
+                output = value;
+                return; 
+            end
             % get module names and dep names
             m_names = {}; s_names = {};
             for x = find(~cellfun('isempty',dep)),
@@ -297,7 +302,7 @@ for c = chc
             % inputdlg for output{f}{r, c}
             out_fn = cell2mat(inputdlg('Enter output to use:','',1,{['output{',v,'}{end,1}']}));
             out_fn = strrep(out_fn, '''', '''''');
-            if isempty(out_fn), return; end;
+            if isempty(out_fn), output = value; return; end;
             % str2func for use in pebl_feval
             value = str2func(['@()''', out_fn, '''']);
     end
