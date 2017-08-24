@@ -14,46 +14,14 @@ function params = pebl(cmd, varargin)
 %   options - cell array of options corresponding to each function
 %   outputs - cell array of outputs from functions
 %
-% Example 1: add a function, set the options, and run the function
-% params = pebl({'add_function','set_options','run_params'})
-% [enter @disp at prompt]
-% [choose "varargin"]
-% [choose "String"]
-% [enter test at prompt]
+% Example:
 %
-% test
-% 
-% params = 
-% 
-%           funcs: {@disp}
-%         options: {'test'}
-%     verbose_arg: []
-%         outputs: {{1x1 cell}}
-% 
-% Example 2: run parameters from example 1 with verbose on, and save output
-% to 'output.txt' 
-% params.print_type = 'diary'; 
-% params.print_file = 'output.txt';
-% params = pebl('run_params', params)
-%
-% Output will be saved in: output.txt
-% @disp test
-% test
-% 
-% test
-% 
-% params = 
-% 
-%           funcs: {@disp}
-%         options: {'test'}
-%     verbose_arg: 1
-%         outputs: {{1x1 cell}}
-%      print_type: 'diary'
-%      print_file: 'output.txt'
+% See pebl_demo for further demos.
 %         
-% Note the following commands are supported: 'setup', 'set_studyarray',
-% 'load_editor', 'set_iter', 'init_env', 'add_function', 'set_options',
-% 'get_docstr', 'load_save_params', 'print_options', and 'run_params'. 
+% Note the following commands are supported: 'setup', 'study_array',
+% 'load_editor', 'set_iter', 'add_path', 'add_function', 'set_options',
+% 'get_help', 'print_options', 'load_params', 'save_params', and
+% 'run_params'. 
 % Type help pebl>subfunction to get help for desired subfunction.
 %
 % Created by Justin Theiss
@@ -86,37 +54,42 @@ function params = setup(params)
     uiwait(msgbox('Running tests. Please ignore windows that display.', 'Running Tests'));
     % run tests
     pebl_test;
+    uiwait(msgbox('Success! See pebl_demo to learn about pebl.'));
 end
 
 % load study array
-function params = set_studyarray(params)
-% params = set_studyarray(params)
+function params = study_array(params, array)
+% params = study_array(params, array)
 % Load/create study array using @studyarray and add to functions.
+% If array is input, sets functions to @deal with options array.
+% Otherwise, runs @studyarray.
 
     % init array
-    array = studyarray;
-    params = add_function(params, [], @deal);
-    params = set_options(params, [], array);
+    if ~exist('array','var') || isempty(array),
+        array = studyarray;
+    end
+    params = insert_function(params, 1, @deal);
+    params = set_options(params, 1, array);
 end
 
 % create editor
 function params = load_editor(params)
 % params = load_editor(params)
-% Loads gui editor for input params. Additionally, runs init_env to set
+% Loads gui editor for input params. Additionally, runs add_path to set
 % environments if 'env' is a field in params.
 
     % init funcs
     if ~isfield(params,'funcs'), params.funcs = {}; end;
     % set environments if 'env' field
-    if isfield(params,'env'), init_env(params,params.env); end;
+    if isfield(params,'env'), add_path(params,params.env); end;
     % setup structure for make_gui
     s.name = 'pebl';
     [s.push(1:5).string] = deal('add path/environment', 'study array',...
         'iterations', 'add function', 'set options');
     [s.push.order] = deal([1,2],[1,3],[1,4],[1,5],[1,6]);
     [s.push.tag] = deal(s.push.string);
-    [s.push.callback] = deal(@(x,y)guidata(gcf,init_env(guidata(gcf))),...
-        @(x,y)guidata(gcf,set_studyarray(guidata(gcf))),...
+    [s.push.callback] = deal(@(x,y)guidata(gcf,add_path(guidata(gcf))),...
+        @(x,y)guidata(gcf,study_array(guidata(gcf))),...
         @(x,y)guidata(gcf,set_iter(guidata(gcf))),...
         @(x,y)guidata(gcf,add_function(guidata(gcf))),...
         @(x,y)guidata(gcf,set_options(guidata(gcf))));
@@ -255,22 +228,16 @@ function params = listbox_callback(params, fig, x)
         % switch option
         switch chc
             case 1 % copy
-                params.funcs(end+1) = params.funcs(idx);
-                params.options(end+1) = params.options(idx);
-                idx = numel(params.funcs);
+                params = copy_function(params, idx);
             case 2 % delete
-                params.funcs(idx) = [];
-                params.options(idx) = [];
-                idx = numel(params.funcs);
+                params = delete_function(parmas, idx);
             case 3 % edit
                 params = add_function(params, idx);
             case 4 % help
-                docstr = get_docstr(params.funcs, idx);
-                disp(docstr{idx});
+                helpstr = get_help(params.funcs, idx);
+                disp(helpstr{idx});
             case 5 % insert
-                params.funcs = pebl_insert(2, params.funcs, idx, {[]});
-                params.options = pebl_insert(2, params.options, idx, {[]});
-                params = add_function(params, idx);
+                params = insert_function(params, idx);
         end
     end
     % set idx to params
@@ -279,11 +246,58 @@ function params = listbox_callback(params, fig, x)
     params = update_editor(params);
 end
 
+% copy function
+function params = copy_function(params, idx)
+% params = copy_function(params, idx)
+% Copy function at idx to end of function list
+% If no idx, idx is set to 1
+    
+    % init idx
+    if ~exist('idx','var')||isempty(idx), idx = 1; end;
+    % copy func and options
+    params.funcs(end+1) = params.funcs(idx);
+    params.options(end+1) = params.options(idx);
+    params.idx = numel(params.funcs);
+end
+
+% delete function
+function params = delete_function(params, idx)
+% params = delete_function(params, idx)
+% Delete function at idx 
+% If no idx, idx is set to 1
+    
+    % init idx
+    if ~exist('idx','var')||isempty(idx), idx = 1; end;
+    % delete func and options
+    params.funcs(idx) = [];
+    params.options(idx) = [];
+    params.idx = numel(params.funcs);
+end
+
+function params = insert_function(params, idx, func)
+% params = insert_function(params, idx, func)
+% Insert function before idx
+% If no idx, idx is set to 1
+% If no func, function is input via inputdlg
+
+    % init idx
+    if ~exist('idx','var')||isempty(idx), idx = 1; end;
+    params.funcs = pebl_insert(2, params.funcs, idx, {{}});
+    params.options = pebl_insert(2, params.options, idx, {{}});
+    if ~exist('func','var')||isempty(func),
+        params = add_function(params, idx);
+    else
+        params = add_function(params, idx, func);
+    end
+end
+
 % set iterations
 function params = set_iter(params, fields, values)
 % params = set_iter(params, field, value)
 % Set the number of iterations for @pebl_feval
-% If no iter_args, 
+% Possible fields to set: 'loop', 'seq', 'iter'
+% Default values for corresponding fields: 1, [], []
+% The cells in 'values' should correspond to the cells in 'fields'
 
     % load iter if not input
     if nargin == 1,
@@ -306,6 +320,8 @@ function params = set_iter(params, fields, values)
                                       fields{x}, 1, {genstr(values{x})})));
         end
     else % set fields
+        if ~iscell(fields), fields = {fields}; end;
+        if ~iscell(values), values = {values}; end;
         for x = 1:numel(fields),
             params.(fields{x}) = values{x};
         end
@@ -313,15 +329,15 @@ function params = set_iter(params, fields, values)
 end
 
 % set environments
-function params = init_env(params, env_func, P)
-% params = init_env(params, env_func, P) 
+function params = add_path(params, env_func, P)
+% params = add_path(params, env_func, P) 
 % Add a path or set environmental variable as feval(env_func, P{:}).
 % If no env_func, choose from @addpath, @setenv, @rmpath, or enter with
 % @inputdlg. 
 % If no P, set using @pebl_input.
 % A new field, 'env', will be set to params as a cell containing the
 % function and path/etc. as {env_func, P{:}}, which will be used the next
-% time params is loaded using @load_editor.
+% time params are loaded using @load_editor.
 
     % if env_func iscell, assume 'env'
     if nargin==2 && iscell(env_func),
@@ -409,10 +425,16 @@ function params = set_options(params, idx, option)
 % Options will be set using @pebl_input.
 
     % load params
-    struct2var(params,{'funcs','options','idx'});
+    struct2var(params,{'funcs','options'});
     % init vars
     if ~exist('funcs','var')||isempty(funcs), return; end;
-    if ~exist('idx','var')||isempty(idx), idx = numel(funcs); end;
+    if ~exist('idx','var')||isempty(idx),
+        if nargin == 1, 
+            idx = params.idx;
+        else 
+            idx = numel(funcs); 
+        end
+    end
     % get string funcs
     strfuncs = local_getfunctions(funcs);
     strfuncs = strcat('@', strfuncs);
@@ -468,9 +490,9 @@ function params = set_options(params, idx, option)
     params = update_editor(params);
 end
 
-% get docstring
-function docstr = get_docstr(funcs, idx)
-% docstr = get_docstr(funcs, idx)
+% get helpstring
+function helpstr = get_help(funcs, idx)
+% helpstr = get_help(funcs, idx)
 % Get the help documentation for function at index idx.
 % If no idx, documentation for each function in funcs will be returned.
 
@@ -479,26 +501,26 @@ function docstr = get_docstr(funcs, idx)
     if ~iscell(funcs), funcs = {funcs}; end;
     % init idx
     if ~exist('idx','var') || isempty(idx), idx = 1:numel(funcs); end;
-    % init docstring
-    docstr = cell(size(idx));
-    % for each idx, get docstring
+    % init helpstring
+    helpstr = cell(size(idx));
+    % for each idx, get helpstring
     for x = idx,
         % switch class
         switch class(funcs{x})
             case 'function_handle' % help
-                docstr{x} = help(func2str(funcs{x}));
+                helpstr{x} = help(func2str(funcs{x}));
             case 'char' % command -h
-                docstr{x} = cmd_help(funcs{x});
+                helpstr{x} = cmd_help(funcs{x});
             case {'cell','struct'} % cfg_util('showdoc'...)
                 if ~iscell(funcs{x}), funcs{x} = funcs(x); end;
-                docstr{x} = '';
+                helpstr{x} = '';
                 cfg_util('initcfg');
                 [job, mods] = cfg_util('initjob', funcs{x});
                 for n = 1:numel(mods),
                     tagstr = cfg_util('harvest', job, mods{n});
                     [~,~,rep] = pebl_getfield(funcs{x}{n}, 'expr', ['.*', tagstr]);
                     tmpstr = cfg_util('showdocwidth', 70, rep{1}(2:end));
-                    docstr{x} = char(docstr{x}, tmpstr{:});
+                    helpstr{x} = char(helpstr{x}, tmpstr{:});
                 end
         end
     end
@@ -521,7 +543,7 @@ function params = load_params(params, file)
     load(file, 'params');
     if ~exist('params','var'), params = []; end;
     % set environments
-    if isfield(params,'env'), init_env(params, params.env); end;
+    if isfield(params,'env'), add_path(params, params.env); end;
     % update editor
     params = update_editor(params);
 end
@@ -556,7 +578,8 @@ function params = print_options(params, varargin)
 % options:
 % 'print_type' - 'diary' (save all outputs), 'off' (no outputs)
 % 'print_file' - if 'diary' print_type, set file to save output 
-% 'verbose_arg' - directly set verbose_arg to true (verbose) or false (off)
+% 'verbose' - directly set verbose to true (print_type 'on') or false 
+%   (print_type 'off')
 
     % load print_type
     if isempty(varargin),
