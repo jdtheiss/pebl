@@ -157,8 +157,11 @@ for n = 1:numel(S),
                 elseif ~cell_end && strcmp(S{n}(end).type, '{}'),
                     A = subsasgn(A, S{n}(1:end-1), cell(size(C(n))));
                 end
+                % use subsasgn
+                A = subsasgn(A, S{n}, C{n});
+            else % use eval
+                eval(sprintf('[A%s] = C{n};', R{n}));
             end
-            A = subsasgn(A, S{n}, C{n});
         end 
     catch err
         if verbose, disp(err.message); end;
