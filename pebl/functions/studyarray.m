@@ -44,13 +44,18 @@ if isnumeric(cmd), cmd = {'studyarray_gui'}; varargin = {struct}; end;
 if ~iscell(cmd), cmd = {cmd}; end; 
 if isempty(varargin), varargin = {struct}; end;
 
+% init outputs
+[array, filename, task] = deal({});
+
 % run chosen cmds
 for x = 1:numel(cmd), varargin{1} = feval(cmd{x},varargin{:}); end;
 
 % set varargin to params as output
 params = varargin{1};
 C = pebl_getfield(params, 'R', {'.array', '.filename', '.task'});
-[array, filename, task] = deal(C{:});
+if ~isempty(C),
+    [array, filename, task] = deal(C{:});
+end
 end
 
 % Callback functions
