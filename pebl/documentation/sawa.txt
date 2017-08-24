@@ -1,23 +1,0 @@
-Subject Array and Wrapper Automation (sawa) -version 2-
-
-Copyright (C) 2015  Justin Theiss
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-IntroductionThe main components of sawa are the subject array and wrapper automation functionalities. The subject array consists of a structural array that can contain subject-specific information to be utilized in wrapping functions, especially useful for maintaining information for separate studies. Meanwhile, wrapper automation allows users to create complex pipelines with unix/C/matlab/batch utility commands by passing variables from one function to the next. At its simplest, sawa is an organizational tool that can maintain up-to-date information as well as record inputs/outputs for analyses. However, sawa is built to feed information from the subject array to a pipeline of various types of functions. As such, sawa provides users the ability to perform complex analyses using subject data and pass variables between SPM, AFNI, FSL, etc., or any unix/C/matlab commands. With wrapper automation for batch utility, command line, and matlab functions, users can build simple pipelines for repeat analyses and combine batch, matlab, or command line functions. The batch editor directly uses the matlab batch utility system (https://sourceforge.net/p/matlabbatch/wiki/Home/), which allows users to directly choose variables that will be filled by the subject array or other functions/variables. When using a command-line function, sawa automatically displays help information and provides potential command switches. When using matlab functions, sawa again displays help information and allows users to select inputs. Where applicable, users are able to select outputs to return from the function that can then be entered to a later function. The inputs and outputs for each iteration and function are then printed when the user runs the pipeline.Installationsawa is available for download and is updated on github (see citation above for link). After you have downloaded the zipped file folder and moved it to your desired location, go into the “sawa/main/functions” folder and open “sawa.m” in matlab. Simply run the function, and sawa will be automatically be added to your matlab path. At this point, you may close the “sawa.m” file and begin using sawa through its graphical user interface (GUI) or from the command prompt.
-
-Highly Suggested: 
--SPM (for batch editor): http://www.fil.ion.ucl.ac.uk/spm/software/ 
-
--xlwrite (for mac users): http://www.mathworks.com/matlabcentral/fileexchange/38591-xlwrite--generate-xls-x--files-without-excel-on-mac-linux-win
-
--findjobj (for horizontal scrollbar in notes): http://www.mathworks.com/matlabcentral/fileexchange/14317-findjobj-find-java-handles-of-matlab-graphic-objects
-
