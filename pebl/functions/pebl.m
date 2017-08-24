@@ -230,7 +230,7 @@ function params = listbox_callback(params, fig, x)
             case 1 % copy
                 params = copy_function(params, idx);
             case 2 % delete
-                params = delete_function(parmas, idx);
+                params = delete_function(params, idx);
             case 3 % edit
                 params = add_function(params, idx);
             case 4 % help
@@ -429,7 +429,7 @@ function params = set_options(params, idx, option)
     % init vars
     if ~exist('funcs','var')||isempty(funcs), return; end;
     if ~exist('idx','var')||isempty(idx),
-        if nargin == 1, 
+        if nargin == 1 && isfield(params,'idx'), 
             idx = params.idx;
         else 
             idx = numel(funcs); 
