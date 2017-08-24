@@ -1,20 +1,20 @@
-function [subjs,sa] = pebl_subjs(sa, isubjs)
-% [subjs,sa] = pebl_subjs(sa, isubjs) 
+function [subjs,array] = pebl_subjs(array, isubjs)
+% [subjs,array] = pebl_subjs(array, isubjs) 
 % Choose subjects, and refine subjects based on subject fields
 %
 % Inputs:
-% - sa (optional): study array to use 
+% - array (optional): study array to use 
 % (if empty, choose study array file)
 % - isubjs (optional): indices of subjects in study array to choose from
 % (defualt is all subjects)
 %
 % Outputs:
-% - subjs: numeric array of subject indices (relative to sa)
-% - sa: study array
+% - subjs: numeric array of subject indices (relative to array)
+% - array: study array
 % 
 % Example 1:
-% sa = struct('subj',{'sub1','sub2','sub3'},'age',{12,13,14},'group',{'hc','patient','hc'});
-% subjs = pebl_subjs(sa)
+% array = struct('subj',{'sub1','sub2','sub3'},'age',{12,13,14},'group',{'hc','patient','hc'});
+% subjs = pebl_subjs(array)
 %
 % %Choose subjects: Select All
 % %Choose field: age
@@ -40,22 +40,22 @@ function [subjs,sa] = pebl_subjs(sa, isubjs)
 % Created by Justin Theiss
 
 % init vars
-if ~exist('sa','var')||isempty(sa),
-    sa_file = uigetfile('*.mat','Choose study array file');
-    if ~any(sa_file), error('No study array file selected.'); end;
-    sas = load(sa_file); names = fieldnames(sas);
+if ~exist('array','var')||isempty(array),
+    array_file = uigetfile('*.mat','Choose study array file');
+    if ~any(array_file), error('No study array file selected.'); end;
+    arrays = load(array_file); names = fieldnames(arrays);
     chc = listdlg('PromptString','Choose study array:','ListString',names,...
         'SelectionMode','single');
-    sa = sas.(names{chc});
+    array = arrays.(names{chc});
 end;
-if ~exist('isubjs','var')||isempty(isubjs), isubjs = 1:numel(sa); end;
+if ~exist('isubjs','var')||isempty(isubjs), isubjs = 1:numel(array); end;
 
 % choose subjects
-chc = listdlg('PromptString','Choose subjects:','ListString',{sa(isubjs).subj});
+chc = listdlg('PromptString','Choose subjects:','ListString',{array(isubjs).subj});
 subjs = isubjs(chc);
 
 % choose fields
-fld = choose_fields(sa,subjs,'Choose field to refine subjects:');
+fld = choose_fields(array,subjs,'Choose field to refine subjects:');
 if isempty(fld), return; end;
 fld = fld{1};
 
@@ -65,15 +65,15 @@ param = cell2mat(inputdlg(['Enter parameter for ' fun ' to refine subjects']));
 if isstrprop(param,'digit'), param = str2double(param); end;
 
 % pebl_find
-fnd = pebl_find(fun,param,sa(subjs),'str',['.', fld]);
+fnd = pebl_find(fun,param,array(subjs),'str',['.', fld]);
 if ~isempty(fnd), subjs = subjs(fnd); end;
 
 % add or refine
 type = questdlg('Add to or refine subjects','Add/Refine','add','refine','done','done');
 switch type
     case 'add' % add to subject list
-        subjs = cat(2, subjs, pebl_subjs(sa, isubjs));
+        subjs = cat(2, subjs, pebl_subjs(array, isubjs));
     case 'refine' % refine within current subjects
-        subjs = pebl_subjs(sa, subjs);
+        subjs = pebl_subjs(array, subjs);
 end
 end
