@@ -30,7 +30,7 @@ function output = pebl_feval(varargin)
 %   false suppresses output; [] displays normal command window behavior
 %   [default []]
 % 'throw_error' - boolean, true throws error if any occurs
-%   [default false]
+%   [default true]
 % 'save_batch' - char, filename to save filled matlabbatch structure
 %   [default []]
 % 'wait_bar' - boolean, true displays waitbar during loops
@@ -169,7 +169,7 @@ if nargin==0, return; end;
 % init defaults
 vars = {'loop', 'seq', 'iter', 'stop_fn', 'n_out', 'verbose', 'throw_error',...
         'save_batch', 'wait_bar', 'output'};
-vals = {1, [], [], [], [], [], false, [], false, {{}}};
+vals = {1, [], [], [], [], [], true, [], false, {{}}};
 n_idx = ~ismember(vars, varargin(cellfun('isclass',varargin,'char')));
 defaults = cat(1, vars(n_idx), vals(n_idx));
 varargin = cat(2, varargin, defaults(:)');
@@ -358,7 +358,7 @@ function [options, n] = local_eval(options, varargin)
     
     % find functions in options
     if ~iscell(options) || size(options, 1) > 1, options = {options}; end;
-    [C, S] = pebl_getfield(options, 'fun', @(x)isa(x,'function_handle')); 
+    [C, S] = pebl_getfield(options, 'fun', @(x)isa(x,'function_handle'), 'r', 3); 
     
     if ~isempty(C),
         % convert to str to check
@@ -366,14 +366,14 @@ function [options, n] = local_eval(options, varargin)
         % get only those beginning with @()
         S = S(strncmp(C,'@()',3));
         C = C(strncmp(C,'@()',3));
-    
+        
         % get functions with output
         o_idx = ~cellfun('isempty', regexp(C, 'output'));
 
         % set options based on output
         for x = find(o_idx),
             C{x} = subsref(options, S{x});
-            try options = subsasgn(options,S{x},eval(feval(C{x}))); end;
+            options = subsasgn(options, S{x}, eval(feval(C{x})));
         end
         
         for x = find(~o_idx),
@@ -384,12 +384,12 @@ function [options, n] = local_eval(options, varargin)
                 dep = [];
             end
             C{x} = subsref(options, S{x});
-            try options = subsasgn(options, S{x}, eval(feval(C{x}))); end;
+            options = subsasgn(options, S{x}, eval(feval(C{x})));
         end
     end
     
     % get row from options
-    if n~=0, 
+    if n~=0,
         [C, S] = pebl_getfield(options, 'fun', @(x)iscell(x) && size(x, 2)==1, 'r', 1);
         max_size = max(cellfun('size', C, 1));
         if n == max_size, n = inf; end;
@@ -440,6 +440,7 @@ function C = local_niftiframes(C)
     end
     % use spm_select to expand filelist
     C = cellstr(spm_select('ExtFPList',p,['^' regexptranslate('wildcard',[f,e])],frames));
+    if numel(C) == 1, C = C{1}; end;
 end
 
 % set quotes around files
