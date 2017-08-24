@@ -29,7 +29,7 @@ S = rng;
 rng('default');
 
 % remove mfilename from functions
-nfunc = {'pebl_xlsread', 'studyarray', mfilename};
+nfunc = {'pebl_demo', 'pebl_xlsread', 'studyarray', mfilename};
 func = func(~ismember(func,nfunc));
 
 % prepend 'test_' to each function
@@ -126,11 +126,11 @@ function test_pebl
     assert(pebl_eq(outputs7,outputs8));
     tmp = getenv('test');
     outputs9 = struct('env',{{{'setenv','test','test'}}});
-    outputs10 = pebl('init_env',[],@setenv,{'test','test'});
+    outputs10 = pebl('add_path',[],@setenv,{'test','test'});
     setenv('test',tmp);
     assert(pebl_eq(outputs9,outputs10));
     outputs11 = {cmd_help('echo'),help('strcmp'),''};
-    outputs12 = pebl('get_docstr',{'echo',@strcmp,''});
+    outputs12 = pebl('get_help',{'echo',@strcmp,''});
     assert(all(strcmp(outputs11,outputs12)));
     params = pebl('add_function',[],1,@minus);
     params = pebl('set_options',params,1,{10,5});
