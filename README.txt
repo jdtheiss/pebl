@@ -39,3 +39,4 @@ folder and run pebl('setup') from the command prompt. In addition to setting the
 tests on all of the pebl functions. If any errors are thrown ensure you are
 using the most up-to-date version. Assuming all tests pass, you may begin
 using pebl by its graphical user interface (GUI) or from the command prompt.
+To get interactive examples on how to use pebl, see pebl_demo.
