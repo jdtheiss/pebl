@@ -1,4 +1,4 @@
-function figurefun(func, A, varargin)
+function t = figurefun(func, A, varargin)
 % figurefun(FUN, A, 'param1', val1, ...)
 % Simulate user interactions with figures such as inputdlg, msgbox, etc. by
 % evaluating FUN for graphic objects found with A.
@@ -14,7 +14,7 @@ function figurefun(func, A, varargin)
 % see timer for more information
 %
 % Outputs:
-% None
+% t - timer object for stopping/deleting timer if necessary
 %
 % Example 1: set inputdlg text to "test" and simulate OK press
 % figurefun(@(x,y)set(y,'string','test'),{'string',''});
