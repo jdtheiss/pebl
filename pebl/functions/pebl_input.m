@@ -87,7 +87,7 @@ try
             end
         case 'char' % string
             ival = find(strcmpi(options,'string'),1);
-        case 'double' % string/number
+        case {'double','logical'} % string/number
             if isempty(value), 
                 ival = find(strcmpi(options,'string'),1); 
             else
@@ -126,7 +126,11 @@ for c = chc
         case {'String','Number','Evaluate'} % input
             % cellstr/char
             if (iscellstr(value) && size(value, 1) > 1) || ischar(value), 
-                value = char(value);
+                if strcmp(options{c}, 'Evaluate'), % genstr
+                    value = char(genstr(value));
+                else % char
+                    value = char(value);
+                end
             % not cell or one cell or columns
             elseif (~iscell(value) || numel(value) == 1) || size(value, 2) > 1, 
                 value = genstr(value);
