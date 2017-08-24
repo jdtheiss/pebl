@@ -15,7 +15,20 @@ function params = pebl(cmd, varargin)
 %   outputs - cell array of outputs from functions
 %
 % Example:
-%
+% params = pebl('add_function', [], 1, @disp);
+% params = pebl('set_options', params, 1, {'test'});
+% params = pebl('set_iter', params, 'loop', 3);
+% params = pebl('run_params', params)
+% 
+% params = 
+% 
+%          funcs: {@disp}
+%        options: {{1x1 cell}}
+%           loop: 3
+%        verbose: []
+%     print_type: ''
+%         output: {{3x1 cell}}
+% 
 % See pebl_demo for further demos.
 %         
 % Note the following commands are supported: 'setup', 'study_array',
@@ -23,6 +36,8 @@ function params = pebl(cmd, varargin)
 % 'get_help', 'print_options', 'load_params', 'save_params', and
 % 'run_params'. 
 % Type help pebl>subfunction to get help for desired subfunction.
+%
+% See also: pebl_feval
 %
 % Created by Justin Theiss
 
