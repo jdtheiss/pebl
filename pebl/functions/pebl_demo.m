@@ -101,6 +101,9 @@ figurefun(@(x,y)set(y, 'tooltipstring', sprintf(['This allows you to load,'...
          ' save, or run a pipline.\n'...
          ' Try pebl_demo(''load_save_run'') for more information'])),...
          {'string', {'load','save','run'}});
+% done button
+figurefun(@(x,y)set(y, 'tooltipstring', sprintf(['This button will close the'...
+         ' pebl gui and return any outputs'])), {'string','done'});
 % open pebl
 output = input('Type pebl then press enter\n');
 end
@@ -443,9 +446,6 @@ figurefun(@(x,y)uiwait(msgbox('Select iter')), {'string',{'loop','seq','iter'}})
 % enter 1:3, then run
 figurefun(@(x,y)uiwait(msgbox(['Enter 1:3 then select run from the load'...
          ' dropdown menu'])),{'name', 'iter'});
-% click done
-figurefun(@(x,y)uiwait(msgbox('Click done')),...
-         {'string', {'load','save','run'}, 'value', 3});
 % open pebl
 output = pebl;
 end
