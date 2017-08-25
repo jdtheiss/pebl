@@ -21,7 +21,7 @@ function output = pebl_demo(demo)
 % Created by Justin Theiss
 
 % init demo
-if ~exist('demo','var') || isempty(demo), demo = 'default'; end;
+if ~exist('demo','var') || isempty(demo), help('pebl_demo'); demo = 'default'; end;
 
 % ensure pebl is not open
 delete(findobj('name','pebl'));
