@@ -521,7 +521,7 @@ function varargout = local_system(func, varargin)
     varargout = cell(1, nargout);
 
     % ensure all options are strings
-    if ~iscell(options), options = {options}; end;
+    if ~iscell(options) || isempty(options), options = {options}; end;
     options = cellfun(@(x){num2str(x)}, options);
 
     % concatenate func and options with spacing
@@ -566,7 +566,7 @@ end
 function [matlabbatch, dep] = local_setbatch(matlabbatch, options)
     % ensure cells
     if ~iscell(matlabbatch), matlabbatch = {matlabbatch}; end;
-    if ~iscell(options), options = {options}; end;
+    if ~iscell(options) || isempty(options), options = {options}; end;
     if numel(options) < 2, options{2} = []; end;
     % for each option, get subsref struct
     for x = 1:2:numel(options)
