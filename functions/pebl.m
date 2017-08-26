@@ -65,6 +65,14 @@ function params = setup(params)
     if ~any(strfind(path, P)),
         path(path, P); savepath;
     end
+    % set path for cfg_ui/cfg_util
+    spm_path = fileparts(which('spm'));
+    if isempty(spm_path),
+        warning('pebl requires spm for matlabbatch use. Errors may occur during tests.');
+    elseif ~any(strfind(path,fullfile(spm_path,'matlabbatch')))
+        path(path, fullfile(spm_path,'matlabbatch'));
+        savepath;
+    end
     % msgbox regarding tests
     uiwait(msgbox('Running tests. Please ignore windows that display.', 'Running Tests'));
     % run tests
