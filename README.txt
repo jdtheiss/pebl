@@ -36,7 +36,7 @@ pebl is available for download and is updated on github
 folder and moved it to your desired location, go into the “pebl/functions”
 folder and run pebl('setup') from the command prompt. In addition to setting the
 "functions" directory to your matlab path, the 'setup' command will also run
-tests on all of the pebl functions. If any errors are thrown ensure you are
+tests on all of the pebl functions. If any errors are thrown, ensure you are
 using the most up-to-date version. Assuming all tests pass, you may begin
 using pebl by its graphical user interface (GUI) or from the command prompt.
 To get interactive examples on how to use pebl, see pebl_demo.
