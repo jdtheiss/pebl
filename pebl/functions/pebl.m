@@ -116,12 +116,14 @@ function params = load_editor(params)
         @(x,y)guidata(gcf,set_iter(guidata(gcf))),...
         @(x,y)guidata(gcf,add_function(guidata(gcf))),...
         @(x,y)guidata(gcf,set_options(guidata(gcf))));
-    s.popupmenu(1).string = {'verbose output','quiet output','save output'};
+    s.popupmenu(1).string = {'print options','verbose output','quiet output',...
+        'save output'};
     s.popupmenu(2).string = {'load','save','run'};
     s.popupmenu(1).callback = @(x,y)switchcase(get(x,'value'),...
-        1, @()guidata(gcf,print_options(guidata(gcf),'print_type','on')),...
-        2, @()guidata(gcf,print_options(guidata(gcf),'print_type','off')),...
-        3, @()guidata(gcf,print_options(guidata(gcf),'print_type','diary')),...
+        1, @()guidata(gcf,print_options(guidata(gcf),'print_type','current')),...
+        2, @()guidata(gcf,print_options(guidata(gcf),'print_type','on')),...
+        3, @()guidata(gcf,print_options(guidata(gcf),'print_type','off')),...
+        4, @()guidata(gcf,print_options(guidata(gcf),'print_type','diary')),...
         'nargout_n', 0);
     s.popupmenu(2).callback = @(x,y)switchcase(get(x,'value'),...
         1, @()guidata(gcf,load_params(guidata(gcf))),...
@@ -173,7 +175,7 @@ function funcs = local_getfunctions(funcs)
     % make funcs cellstr
     for x = 1:numel(funcs),
         if isa(funcs{x},'function_handle'),
-            funcs{x} = func2str(funcs{x});
+            funcs{x} = ['@', func2str(funcs{x})];
         elseif iscell(funcs{x}) || isstruct(funcs{x}),
             funcs{x} = 'matlabbatch'; 
         end
@@ -246,12 +248,14 @@ function params = listbox_callback(params, fig, x)
     if strcmp(get(fig,'selectiontype'),'alt'),
         % choose options
         chc = listdlg('PromptString','Choose option:','ListString',...
-            {'copy','delete','edit','help','insert'},'SelectionMode','single');
+            {'copy','delete','edit','help','insert','move'},...
+            'SelectionMode','single');
         if isempty(chc), return; end; 
         % switch option
         switch chc
             case 1 % copy
-                params = copy_function(params, idx);
+                to_idx = str2double(cell2mat(inputdlg('Enter index to copy to')));
+                params = copy_function(params, idx, to_idx);
             case 2 % delete
                 params = delete_function(params, idx);
             case 3 % edit
@@ -270,17 +274,21 @@ function params = listbox_callback(params, fig, x)
 end
 
 % copy function
-function params = copy_function(params, idx)
-% params = copy_function(params, idx)
+function params = copy_function(params, idx, to_idx)
+% params = copy_function(params, idx, to_idx)
 % Copy function at idx to end of function list
 % If no idx, idx is set to 1
+% If no to_idx, to_idx is set to numel(funcs) + 1
     
     % init idx
     if ~exist('idx','var')||isempty(idx), idx = 1; end;
+    if ~exist('to_idx','var')||isempty(to_idx)||isnan(to_idx), 
+        to_idx = numel(params.funcs)+1; 
+    end
     % copy func and options
-    params.funcs(end+1) = params.funcs(idx);
-    params.options(end+1) = params.options(idx);
-    params.idx = numel(params.funcs);
+    params.funcs = pebl_insert(2, params.funcs, to_idx, params.funcs(idx));
+    params.options = pebl_insert(2, params.options, to_idx, params.options(idx));
+    params.idx = max(1, min(numel(params.funcs), to_idx));
 end
 
 % delete function
@@ -297,6 +305,7 @@ function params = delete_function(params, idx)
     params.idx = numel(params.funcs);
 end
 
+% insert function
 function params = insert_function(params, idx, func)
 % params = insert_function(params, idx, func)
 % Insert function before idx
@@ -311,6 +320,9 @@ function params = insert_function(params, idx, func)
         params = add_function(params, idx);
     else
         params = add_function(params, idx, func);
+    end
+    if isempty(params.funcs{idx}),
+        params = delete_function(params, idx);
     end
 end
 
@@ -415,11 +427,15 @@ function params = add_function(params, idx, func)
     if ~iscell(options), options = {options}; end;
     % init idx
     if ~exist('idx','var') || isempty(idx), idx = numel(funcs) + 1; end;
+    % init strfuncs
+    strfuncs = local_getfunctions(funcs);
     % for each idx, set function
     for x = idx,
+        if x > numel(strfuncs), strfuncs{x} = ''; end;
         % input function
         if nargin < 3,
-            func = cell2mat(inputdlg('Enter @function, command, or matlabbatch:'));
+            func = cell2mat(inputdlg('Enter @function, command, or matlabbatch:',...
+                '',1,strfuncs(idx)));
         end
         if isempty(func), return; end;
         % init funcs/options
@@ -460,7 +476,6 @@ function params = set_options(params, idx, option)
     end
     % get string funcs
     strfuncs = local_getfunctions(funcs);
-    strfuncs = strcat('@', strfuncs);
     % for each idx, set options
     for x = idx,
         % if option input, set options{x}
@@ -599,7 +614,8 @@ function params = print_options(params, varargin)
 % set to 'pebl_diary.txt'.
 %
 % options:
-% 'print_type' - 'diary' (save all outputs), 'off' (no outputs)
+% 'print_type' - 'current' (prints current options), 'diary' (save all outputs),
+%   'off' (no outputs)
 % 'print_file' - if 'diary' print_type, set file to save output 
 % 'verbose' - directly set verbose to true (print_type 'on') or false 
 %   (print_type 'off')
@@ -616,6 +632,10 @@ function params = print_options(params, varargin)
     if ~exist('print_type','var'), print_type = ''; end;
     % switch print_type
     switch print_type
+        case 'current' % print current funcs and options
+            for n = 1:numel(params.funcs),
+                disp(cell2strtable([params.funcs(n), params.options{n}],'\t'));
+            end
         case 'diary' % use diary
             if nargout > 0 || ~exist('print_file','var'), 
                 % set diary on with filename
