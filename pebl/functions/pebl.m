@@ -31,10 +31,10 @@ function params = pebl(cmd, varargin)
 % 
 % See pebl_demo for further demos.
 %         
-% Note the following commands are supported: 'setup', 'study_array',
-% 'load_editor', 'set_iter', 'add_path', 'add_function', 'set_options',
-% 'get_help', 'print_options', 'load_params', 'save_params', and
-% 'run_params'. 
+% Note the following commands are supported: 'setup', 'load_editor', 
+% 'add_path', 'study_array', 'set_iter', 'add_function', 'set_options',
+% 'copy_function', 'delete_function', 'insert_function', 'get_help', 
+% 'print_options', 'load_params', 'save_params', and 'run_params'. 
 % Type help pebl>subfunction to get help for desired subfunction.
 %
 % See also: pebl_feval
@@ -78,21 +78,6 @@ function params = setup(params)
     % run tests
     pebl_test;
     uiwait(msgbox('Success! See pebl_demo to learn about pebl.'));
-end
-
-% load study array
-function params = study_array(params, array)
-% params = study_array(params, array)
-% Load/create study array using @studyarray and add to functions.
-% If array is input, sets functions to @deal with options array.
-% Otherwise, runs @studyarray.
-
-    % init array
-    if ~exist('array','var') || isempty(array),
-        array = studyarray;
-    end
-    params = insert_function(params, 1, @deal);
-    params = set_options(params, 1, array);
 end
 
 % create editor
@@ -167,7 +152,7 @@ function params = update_editor(params)
     params = struct2var(params,'idx');
 end
 
-% local make function name string
+% local get function as string
 function funcs = local_getfunctions(funcs)
 % funcs = local_getfunctions(funcs)
 % Creates a cell array of functions as strings (to be used in gui listbox)
@@ -235,133 +220,6 @@ function opts = local_getoptions(func, options, type)
     end
 end
 
-% listbox callback
-function params = listbox_callback(params, fig, x)
-% params = listbox_callback(params, fig, x)
-% Callback for right-clicking on a function in the gui listbox.
-% Options after right-click are copy, delete, edit, help, or insert.
-
-    % get idx
-    idx = get(x, 'value');
-    if isempty(idx), return; end;
-    % if right click
-    if strcmp(get(fig,'selectiontype'),'alt'),
-        % choose options
-        chc = listdlg('PromptString','Choose option:','ListString',...
-            {'copy','delete','edit','help','insert'},'SelectionMode','single');
-        if isempty(chc), return; end; 
-        % switch option
-        switch chc
-            case 1 % copy
-                to_idx = str2double(cell2mat(inputdlg('Enter index to copy to')));
-                params = copy_function(params, idx, to_idx);
-            case 2 % delete
-                params = delete_function(params, idx);
-            case 3 % edit
-                params = add_function(params, idx);
-            case 4 % help
-                helpstr = get_help(params.funcs, idx);
-                disp(helpstr{idx});
-            case 5 % insert
-                params = insert_function(params, idx);
-        end
-    end
-    % set idx to params
-    params = struct2var(params, 'idx');
-    % update params
-    params = update_editor(params);
-end
-
-% copy function
-function params = copy_function(params, idx, to_idx)
-% params = copy_function(params, idx, to_idx)
-% Copy function at idx to end of function list
-% If no idx, idx is set to 1
-% If no to_idx, to_idx is set to numel(funcs) + 1
-    
-    % init idx
-    if ~exist('idx','var')||isempty(idx), idx = 1; end;
-    if ~exist('to_idx','var')||isempty(to_idx)||isnan(to_idx), 
-        to_idx = numel(params.funcs)+1; 
-    end
-    % copy func and options
-    params.funcs = pebl_insert(2, params.funcs, to_idx, params.funcs(idx));
-    params.options = pebl_insert(2, params.options, to_idx, params.options(idx));
-    params.idx = max(1, min(numel(params.funcs), to_idx));
-end
-
-% delete function
-function params = delete_function(params, idx)
-% params = delete_function(params, idx)
-% Delete function at idx 
-% If no idx, idx is set to 1
-    
-    % init idx
-    if ~exist('idx','var')||isempty(idx), idx = 1; end;
-    % delete func and options
-    params.funcs(idx) = [];
-    params.options(idx) = [];
-    params.idx = numel(params.funcs);
-end
-
-% insert function
-function params = insert_function(params, idx, func)
-% params = insert_function(params, idx, func)
-% Insert function before idx
-% If no idx, idx is set to 1
-% If no func, function is input via inputdlg
-
-    % init idx
-    if ~exist('idx','var')||isempty(idx), idx = 1; end;
-    params.funcs = pebl_insert(2, params.funcs, idx, {{}});
-    params.options = pebl_insert(2, params.options, idx, {{}});
-    if ~exist('func','var')||isempty(func),
-        params = add_function(params, idx);
-    else
-        params = add_function(params, idx, func);
-    end
-    if isempty(params.funcs{idx}),
-        params = delete_function(params, idx);
-    end
-end
-
-% set iterations
-function params = set_iter(params, fields, values)
-% params = set_iter(params, field, value)
-% Set the number of iterations for @pebl_feval
-% Possible fields to set: 'loop', 'seq', 'iter'
-% Default values for corresponding fields: 1, [], []
-% The cells in 'values' should correspond to the cells in 'fields'
-
-    % load iter if not input
-    if nargin == 1,
-        % set default fields, values
-        fields = {'loop', 'seq', 'iter'};
-        values = {1, [], []};
-        % set values if in params
-        for x = 1:numel(fields),
-            if isfield(params, fields{x}),
-                values{x} = params.(fields{x});
-            end
-        end
-        % choose fields
-        chc = listdlg('PromptString',{'Choose @pebl_feval field(s) to set',''},...
-                      'ListString',fields);
-        % set fields
-        for x = chc,
-            % set value
-            params.(fields{x}) = eval(cell2mat(inputdlg(['Input value for ' fields{x}],...
-                                      fields{x}, 1, {genstr(values{x})})));
-        end
-    else % set fields
-        if ~iscell(fields), fields = {fields}; end;
-        if ~iscell(values), values = {values}; end;
-        for x = 1:numel(fields),
-            params.(fields{x}) = values{x};
-        end
-    end
-end
-
 % set environments
 function params = add_path(params, env_func, P)
 % params = add_path(params, env_func, P) 
@@ -405,6 +263,58 @@ function params = add_path(params, env_func, P)
     if ~exist('env','var'), env = {}; end;
     env{end+1} = {env_func, P{:}};
     params = struct2var(params, 'env');
+end
+
+% load study array
+function params = study_array(params, array)
+% params = study_array(params, array)
+% Load/create study array using @studyarray and add to functions.
+% If array is input, sets functions to @deal with options array.
+% Otherwise, runs @studyarray.
+
+    % init array
+    if ~exist('array','var') || isempty(array),
+        array = studyarray;
+    end
+    params = insert_function(params, 1, @deal);
+    params = set_options(params, 1, array);
+end
+
+% set iterations
+function params = set_iter(params, fields, values)
+% params = set_iter(params, field, value)
+% Set the number of iterations for @pebl_feval
+% Possible fields to set: 'loop', 'seq', 'iter'
+% Default values for corresponding fields: 1, [], []
+% The cells in 'values' should correspond to the cells in 'fields'
+
+    % load iter if not input
+    if nargin == 1,
+        % set default fields, values
+        fields = {'loop', 'seq', 'iter'};
+        values = {1, [], []};
+        % set values if in params
+        for x = 1:numel(fields),
+            if isfield(params, fields{x}),
+                values{x} = params.(fields{x});
+            end
+        end
+        % choose fields
+        chc = listdlg('PromptString',{'Choose @pebl_feval field(s) to set',''},...
+                      'ListString',fields);
+        % set fields
+        for x = chc,
+            % set value
+            params.(fields{x}) = eval(cell2mat(inputdlg(['Input value for ' fields{x}],...
+                                      fields{x}, 1, {genstr(values{x})})));
+        end
+    else % set fields
+        if ~iscell(fields), fields = {fields}; end;
+        if ~iscell(values), values = {values}; end;
+        for x = 1:numel(fields),
+            params.(fields{x}) = values{x};
+        end
+    end
 end
 
 % add function
@@ -527,6 +437,96 @@ function params = set_options(params, idx, option)
     params = update_editor(params);
 end
 
+% listbox callback
+function params = listbox_callback(params, fig, x)
+% params = listbox_callback(params, fig, x)
+% Callback for right-clicking on a function in the gui listbox.
+% Options after right-click are copy, delete, edit, insert, or help.
+
+    % get idx
+    idx = get(x, 'value');
+    if isempty(idx), return; end;
+    % if right click
+    if strcmp(get(fig,'selectiontype'),'alt'),
+        % choose options
+        chc = listdlg('PromptString','Choose option:','ListString',...
+            {'copy','delete','edit','insert','help'},'SelectionMode','single');
+        if isempty(chc), return; end; 
+        % switch option
+        switch chc
+            case 1 % copy
+                to_idx = str2double(cell2mat(inputdlg('Enter index to copy to')));
+                params = copy_function(params, idx, to_idx);
+            case 2 % delete
+                params = delete_function(params, idx);
+            case 3 % edit
+                params = add_function(params, idx);
+            case 4 % insert
+                params = insert_function(params, idx);
+            case 5 % help
+                helpstr = get_help(params.funcs, idx);
+                disp(helpstr{idx});
+        end
+    end
+    % set idx to params
+    params = struct2var(params, 'idx');
+    % update params
+    params = update_editor(params);
+end
+
+% copy function
+function params = copy_function(params, idx, to_idx)
+% params = copy_function(params, idx, to_idx)
+% Copy function at idx to end of function list
+% If no idx, idx is set to 1
+% If no to_idx, to_idx is set to numel(funcs) + 1
+    
+    % init idx
+    if ~exist('idx','var')||isempty(idx), idx = 1; end;
+    if ~exist('to_idx','var')||isempty(to_idx)||isnan(to_idx), 
+        to_idx = numel(params.funcs)+1; 
+    end
+    % copy func and options
+    params.funcs = pebl_insert(2, params.funcs, to_idx, params.funcs(idx));
+    params.options = pebl_insert(2, params.options, to_idx, params.options(idx));
+    params.idx = max(1, min(numel(params.funcs), to_idx));
+end
+
+% delete function
+function params = delete_function(params, idx)
+% params = delete_function(params, idx)
+% Delete function at idx 
+% If no idx, idx is set to 1
+    
+    % init idx
+    if ~exist('idx','var')||isempty(idx), idx = 1; end;
+    % delete func and options
+    params.funcs(idx) = [];
+    params.options(idx) = [];
+    params.idx = numel(params.funcs);
+end
+
+% insert function
+function params = insert_function(params, idx, func)
+% params = insert_function(params, idx, func)
+% Insert function before idx
+% If no idx, idx is set to 1
+% If no func, function is input via inputdlg
+
+    % init idx
+    if ~exist('idx','var')||isempty(idx), idx = 1; end;
+    params.funcs = pebl_insert(2, params.funcs, idx, {{}});
+    params.options = pebl_insert(2, params.options, idx, {{}});
+    if ~exist('func','var')||isempty(func),
+        params = add_function(params, idx);
+    else
+        params = add_function(params, idx, func);
+    end
+    if isempty(params.funcs{idx}),
+        params = delete_function(params, idx);
+    end
+end
+
 % get helpstring
 function helpstr = get_help(funcs, idx)
 % helpstr = get_help(funcs, idx)
@@ -561,48 +561,6 @@ function helpstr = get_help(funcs, idx)
                 end
         end
     end
-end
-
-% load params
-function params = load_params(params, file)
-% params = load_params(params, file)
-% Load paramters from .mat file.
-% If no file input, choose using @uigetfile.
-
-    % uigetfile if no file
-    if ~exist('file','var'),
-        % choose params file
-        [pfile,ppath] = uigetfile('*.mat','load parameters file');
-        if any(pfile) == 0, return; end;
-        file = fullfile(ppath,pfile);
-    end
-    % load params
-    load(file, 'params');
-    if ~exist('params','var'), params = []; end;
-    % set environments
-    if isfield(params,'env'), add_path(params, params.env); end;
-    % update editor
-    params = update_editor(params);
-end
-
-% save params
-function params = save_params(params, file)
-% params = save_params(params, file)
-% Save paramters to .mat file.
-% If no file input, choose using @uiputfile.
-
-    % uigetfile if no file
-    if ~exist('file','var'), 
-        % choose params file
-        [pfile,ppath] = uiputfile('*.mat','save parameters file');
-        if any(pfile) == 0, return; end;
-        file = fullfile(ppath,pfile);
-    end
-    % save params
-    if ~exist('params','var'), params = []; end;
-    save(file, 'params');
-    % update editor
-    params = update_editor(params);
 end
 
 % print outputs
@@ -657,6 +615,48 @@ function params = print_options(params, varargin)
     end 
     % set verbose_arg to params
     params = struct2var(params,{'verbose','print_type','print_file'});
+end
+
+% load params
+function params = load_params(params, file)
+% params = load_params(params, file)
+% Load paramters from .mat file.
+% If no file input, choose using @uigetfile.
+
+    % uigetfile if no file
+    if ~exist('file','var'),
+        % choose params file
+        [pfile,ppath] = uigetfile('*.mat','load parameters file');
+        if any(pfile) == 0, return; end;
+        file = fullfile(ppath,pfile);
+    end
+    % load params
+    load(file, 'params');
+    if ~exist('params','var'), params = []; end;
+    % set environments
+    if isfield(params,'env'), add_path(params, params.env); end;
+    % update editor
+    params = update_editor(params);
+end
+
+% save params
+function params = save_params(params, file)
+% params = save_params(params, file)
+% Save paramters to .mat file.
+% If no file input, choose using @uiputfile.
+
+    % uigetfile if no file
+    if ~exist('file','var'), 
+        % choose params file
+        [pfile,ppath] = uiputfile('*.mat','save parameters file');
+        if any(pfile) == 0, return; end;
+        file = fullfile(ppath,pfile);
+    end
+    % save params
+    if ~exist('params','var'), params = []; end;
+    save(file, 'params');
+    % update editor
+    params = update_editor(params);
 end
 
 % run functions
