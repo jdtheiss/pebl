@@ -248,8 +248,7 @@ function params = listbox_callback(params, fig, x)
     if strcmp(get(fig,'selectiontype'),'alt'),
         % choose options
         chc = listdlg('PromptString','Choose option:','ListString',...
-            {'copy','delete','edit','help','insert','move'},...
-            'SelectionMode','single');
+            {'copy','delete','edit','help','insert'},'SelectionMode','single');
         if isempty(chc), return; end; 
         % switch option
         switch chc
