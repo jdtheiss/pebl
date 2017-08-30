@@ -373,7 +373,7 @@ function [options, n] = local_eval(options, varargin)
         % set options based on output
         for x = find(o_idx),
             C{x} = subsref(options, S{x});
-            options = subsasgn(options, S{x}, eval(feval(C{x})));
+            options = pebl_setfield(options, 'S', S{x}, 'C', eval(feval(C{x})));
         end
         
         for x = find(~o_idx),
@@ -384,7 +384,7 @@ function [options, n] = local_eval(options, varargin)
                 dep = [];
             end
             C{x} = subsref(options, S{x});
-            options = subsasgn(options, S{x}, eval(feval(C{x})));
+            options = pebl_setfield(options, 'S', S{x}, 'C', eval(feval(C{x})));
         end
     end
     
