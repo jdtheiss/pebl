@@ -80,7 +80,7 @@ if ~exist('remove','var'), remove = false; end;
 
 % set (:end)/{:end} to number of previous struct
 for n = find(~cellfun('isempty',R)),
-    R1 = regexprep(R{n}, '[\{\(]\[?(\d*:?)*end(:?-?\d*)*\]?[\)\}].*', '');
+    R1 = regexprep(R{n}, '[\{\(]\[?(\d*:?)*end(\+?:?-?\d*)*\]?[\)\}].*', '');
     if strcmp(R1, R{n}), continue; end;
     if isempty(R1), R1 = '(:)'; end;
     e = numel(subsref(A, sub2str(R1)));
@@ -142,26 +142,8 @@ for n = 1:numel(S),
                 C{n} =  [];
                 A = subsasgn(A, S{n}, C{n});
             end
-        else % set field with subsasgn
-            % ensure cell if needed
-            if ~strcmp(S{n}(end).type, '.') && ~isempty(A),
-                % check for cell
-                try 
-                    cell_end = iscell(subsref(A, S{n}(1:end-1))); 
-                catch
-                    cell_end = false;
-                end
-                % if not cell, set penultimate to empty cells
-                if ~cell_end && iscell(C{n}), 
-                    A = subsasgn(A, S{n}(1:end-1), cell(size(C{n}))); 
-                elseif ~cell_end && strcmp(S{n}(end).type, '{}'),
-                    A = subsasgn(A, S{n}(1:end-1), cell(size(C(n))));
-                end
-                % use subsasgn
-                A = subsasgn(A, S{n}, C{n});
-            else % use eval
-                eval(sprintf('[A%s] = C{n};', R{n}));
-            end
+        else % set field with eavl
+            eval(sprintf('[A%s] = C{n};', R{n}));
         end 
     catch err
         if verbose, disp(err.message); end;
