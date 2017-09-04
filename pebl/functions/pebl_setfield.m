@@ -142,7 +142,19 @@ for n = 1:numel(S),
                 C{n} =  [];
                 A = subsasgn(A, S{n}, C{n});
             end
-        else % set field with eavl
+        else
+            % ensure cell
+            if ~isempty(A) && strcmp(S{n}(end).type,'{}'), 
+                try
+                    ck = iscell(subsref(A, S{n}));
+                catch
+                    ck = false;
+                end
+                if ~ck, 
+                    eval(sprintf('[A%s] = {};', sub2str(S{n}(1:end-1))));
+                end
+            end
+            % set field with eavl
             eval(sprintf('[A%s] = C{n};', R{n}));
         end 
     catch err
