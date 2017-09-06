@@ -146,7 +146,11 @@ for n = 1:numel(S),
             % ensure cell
             if ~isempty(A) && strcmp(S{n}(end).type,'{}'), 
                 try
-                    ck = iscell(subsref(A, S{n}));
+                    if ~isempty(S{n}(1:end-1)),
+                        ck = iscell(subsref(A, tmp));
+                    else
+                        ck = true;
+                    end
                 catch
                     ck = false;
                 end
