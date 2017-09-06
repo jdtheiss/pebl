@@ -419,7 +419,7 @@ function params = set_options(params, idx, option)
                 if y > numel(options{x}), 
                     options{x}{y} = option{y};
                 end
-                if strcmp(strfuncs{x}, '@matlabbatch'),
+                if strcmp(strfuncs{x}, 'matlabbatch'),
                     batch = funcs{x}; % set batch option
                 else
                     batch = {};
