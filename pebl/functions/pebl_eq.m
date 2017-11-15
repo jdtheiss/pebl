@@ -1,21 +1,23 @@
-function [C, reps] =  pebl_eq(A, B)
-% [C, reps] = pebl_eq(A, B)
+function [C, reps] =  pebl_eq(A, B, field_order)
+% [C, reps] = pebl_eq(A, B, field_order)
 % Checks if all components of A and B are equal.
 %
 % Inputs:
 % A - first element
 % B - element to compare with A
+% field_order - bool, compare structure field order as well as each item
+%   [default is true]
 % 
 % Outputs:
 % C - true/false all components are equal
 % reps - columns (A, B) with string representations indicating components
 % that were not equal
 %
-% Example:
+% Example 1:
 % A = struct('field1',{1},'field2',{2});
 % B = struct('field1',{'1'},'field2',{2});
 % 
-% [C, reps] = pebl_eq(A,B)
+% [C, reps] = pebl_eq(A, B)
 % 
 % C =
 % 
@@ -25,11 +27,31 @@ function [C, reps] =  pebl_eq(A, B)
 % 
 %     '.field1'    '.field1'  
 %
+% Example 2: compare struct arrays without comparing field order
+% A = struct('test1', 1, 'test2', 2);
+% B = struct('test2', 2, 'test1', 1);
+% 
+% [C, reps] = pebl_eq(A, B, false)
+%
+% C =
+% 
+%      1
+% 
+% 
+% reps = 
+% 
+%      {}
+%
 % Note: if a non-struct or non-cell object is input, the returned rep will
 % be unreliable.
 %
 % requires: pebl_getfield
 % Created by Justin Theiss
+
+% set default field_order
+if ~exist('field_order','var'),
+    field_order = true;
+end
 
 % init C, reps
 C = true;
@@ -68,17 +90,32 @@ for x = 1:numel(f_a), Avals = subsasgn(Avals,s_a{x},r); end;
 for x = 1:numel(f_b), Bvals = subsasgn(Bvals,s_b{x},r); end;
 
 % comparison functions
-cmp_funs = {@(v1,v2,r1,r2)ismember(r1,r2),... % compare reps unsorted
-            @(v1,v2,r1,r2)ismember(r2,r1),... % compare reps unsorted (opposite comparison)
-            @(v1,v2,r1,r2)strcmp(r1,r2),... % compare reps in order
-            @(v1,v2,r1,r2)cellfun(@(x,y)strcmp(class(x),class(y)),v1,v2),... % compare classes
-            @(v1,v2,r1,r2)cellfun(@(x,y)numel(size(x))==numel(size(y))&&all(size(x)==size(y)),v1,v2),... % compare size
-            @(v1,v2,r1,r2)cellfun(@(x,y)all(eq(x(:),y(:))),v1,v2)}; % compare all items
+cmp_fns = struct('unsorted_comparison1',...
+    @(v1,v2,r1,r2)ismember(r1,r2),...
+    'unsorted_comparison2',...
+    @(v1,v2,r1,r2)ismember(r2,r1),... 
+    'sorted_comparison',...
+    @(v1,v2,r1,r2)strcmp(r1,r2),...
+    'class_comparison',...
+    @(v1,v2,r1,r2)cellfun(@(x,y)strcmp(class(x),class(y)),v1,v2),...
+    'size_comparison',...
+    @(v1,v2,r1,r2)cellfun(@(x,y)numel(size(x))==numel(size(y))&&all(size(x)==size(y)),v1,v2),... 
+    'item_comparison',...
+    @(v1,v2,r1,r2)cellfun(@(x,y)all(eq(x(:),y(:))),v1,v2)); 
         
 % compare number of vals, reps, classes, size, items
-for f = 1:numel(cmp_funs),
-    % get comparison
-    ck = cmp_funs{f}(Avals, Bvals, Areps, Breps);
+for f = fieldnames(cmp_fns)',
+    % if not comparing field_order
+    if ~field_order && strcmp(f{1}, 'sorted_comparison'),
+        continue;
+    % sort Avals, Bvals to have corrresponding Areps, Breps
+    elseif strcmp(f{1}, 'class_comparison')
+        [Areps, Aidx] = sort(Areps);
+        [Breps, Bidx] = sort(Breps);
+        Avals = Avals(Aidx); Bvals = Bvals(Bidx);
+    end
+    % run comparison
+    ck = cmp_fns.(f{1})(Avals, Bvals, Areps, Breps);
     if isempty(ck), ck = false; end;
     % set C
     C = C && all(ck);
