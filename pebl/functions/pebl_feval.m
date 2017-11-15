@@ -168,8 +168,8 @@ if nargin==0, return; end;
 
 % init defaults
 vars = {'loop', 'seq', 'iter', 'stop_fn', 'n_out', 'verbose', 'throw_error',...
-        'save_batch', 'wait_bar', 'output'};
-vals = {1, [], [], [], [], [], true, [], false, {{}}};
+        'save_batch', 'wait_bar', 'output', 'generate'};
+vals = {1, [], [], [], [], [], true, [], false, {{}}, false};
 n_idx = ~ismember(vars, varargin(cellfun('isclass',varargin,'char')));
 defaults = cat(1, vars(n_idx), vals(n_idx));
 varargin = cat(2, varargin, defaults(:)');
@@ -199,6 +199,8 @@ for x = 1:numel(varargin)-1,
                 n_out = varargin{x+1};
             case 'output'
                 output = varargin{x+1};
+            case 'generate'
+                generate = varargin{x+1};
             otherwise % if not found, skip
                 continue; 
         end
@@ -266,10 +268,12 @@ for f = seq,
             try
                 % set options (for using outputs/dep)
                 [evaled_opts, n] = local_eval(options{f}, 'output', output,...
-                                              'func', funcs{f}, 'n', n);
+                                              'func', funcs{f}, 'n', n,...
+                                              'generate', generate);
                 % feval
                 clear results;
-                [results{1:o}] = feval(program, funcs{f}, evaled_opts, verbose, save_batch);
+                [results{1:o}] = feval(program, funcs{f}, evaled_opts,...
+                                       verbose, generate, save_batch);
                 % display outputs
                 local_print(results, verbose);
             catch err % display error
@@ -311,6 +315,13 @@ end
 if isempty(n_out), n_out = 1:max(cellfun('size',output,2)); end;
 output = cellfun(@(x){pebl_cat(2, x, cell(1, max(n_out)-size(x,2)))}, output);
 if all(n_out > 0), output = cellfun(@(x){x(:, n_out)}, output); end;
+if generate, % if outputs used, remove quotes
+    output = cat(1, output{:});
+    for x = 1:numel(output),
+        output = strrep(output, sprintf('''%s''', output{x}), output{x});
+    end
+    output = sprintf('%s\n', output{:});
+end
 end
 
 % print outputs or errors
@@ -478,7 +489,7 @@ end
 % matlab functions
 function varargout = local_feval(func, varargin)
     % set options and verbose
-    [options, verbose] = deal(varargin{1:2});
+    [options, verbose, generate] = deal(varargin{1:3});
     
     % init varargout
     varargout = cell(1, nargout);
@@ -498,8 +509,12 @@ function varargout = local_feval(func, varargin)
     % display function and options
     if verbose, disp(cell2strtable(any2str(func,options{:}),' ')); end;
     
-    % if no ouputs, use evalc output
-    if o == 0,
+    % if generate script, genstr options
+    if generate,
+        stropts = strjoin(cellfun(@(x){genstr(x)}, options), ',');
+        varargout{1} = sprintf('%s(%s)', func, stropts);
+    elseif o == 0, % if no ouputs, use evalc output
+        % evalc
         varargout{1} = evalc([func '(options{:});']);
         if isempty(verbose) || verbose, disp(varargout{1}); end;
         if nargout == 0, varargout = cell(1, nargout); end;
@@ -515,7 +530,7 @@ end
 % system commands
 function varargout = local_system(func, varargin)
     % set options and verbose
-    [options, verbose] = deal(varargin{1:2});
+    [options, verbose, generate] = deal(varargin{1:3});
     
     % init varargout
     varargout = cell(1, nargout);
@@ -526,12 +541,18 @@ function varargout = local_system(func, varargin)
 
     % concatenate func and options with spacing
     stropts = sprintf('%s ', func, options{:});
+    stropts = stropts(1:end-1);
     
     % display function and options
     if verbose, disp(stropts); end;
     
     % run system call
-    [sts, tmpout] = system(stropts);
+    if generate,
+        varargout{1} = sprintf('system(%s)', genstr(stropts));
+        return;
+    else
+        [sts, tmpout] = system(stropts);
+    end
     
     % if verbose isempty, display tmpout
     if isempty(verbose), disp(tmpout); end;
@@ -543,12 +564,9 @@ function varargout = local_system(func, varargin)
     if sts == 0,
         if nargout > 1,
             % attempt to separate output
-            tmpout = regexp(tmpout, '\n', 'split');
-            tmpout(cellfun('isempty',tmpout)) = [];
-            tmpout = regexp(tmpout, '\s+', 'split');
-            tmpout = pebl_cat(1, tmpout{:}); 
-            tmpout(cellfun('isempty',tmpout)) = {''};
-            tmpout = arrayfun(@(x){char(tmpout(:,x))}, 1:size(tmpout,2));
+            tmpout = regexp(regexp(tmpout, '\n', 'split'), '\s+', 'split');
+            tmpout = pebl_cat(1, tmpout{:});
+            tmpout = arrayfun(@(x){pebl_strjoin(tmpout(:, x), '\n')}, 1:size(tmpout, 2));
             % set to output
             if ~isempty(tmpout), [output{1:numel(tmpout)}] = tmpout{:}; end;
         else % otherwise set to tmpout
@@ -620,7 +638,7 @@ end
 % matlabbatch commands
 function varargout = local_batch(matlabbatch, varargin)
     % set options, verbose, and save_batch
-    [options, verbose, save_batch] = deal(varargin{1:3});
+    [options, verbose, generate, save_batch] = deal(varargin{1:4});
     
     % init varargout
     varargout = cell(1, nargout); 
@@ -632,17 +650,23 @@ function varargout = local_batch(matlabbatch, varargin)
     local_savebatch(save_batch, matlabbatch);
     
     % display functions of structure
-    if verbose,
+    if ~isempty(verbose) && verbose && ~generate,
         [C,~,R] = pebl_getfield(matlabbatch);
         cellfun(@(x,y)fprintf('%s: %s\n', x, genstr(y)), R, C);
     end
     
-    % run job
-    cjob = cfg_util('initjob',matlabbatch); 
-    if isempty(verbose) || verbose, 
-        cfg_util('run',cjob);
-    else % prevent display
-        evalc('cfg_util(''run'',cjob);');
+    % generate script
+    if generate,
+        varargout{1} = sprintf('cjob = cfg_util(''initjob'', %s);\n', genstr(matlabbatch));
+        varargout{1} = sprintf('%scfg_util(''run'', cjob);\n', varargout{1});
+        return;
+    else % run job
+        cjob = cfg_util('initjob',matlabbatch); 
+        if isempty(verbose) || verbose, 
+            cfg_util('run',cjob);
+        else % prevent display
+            evalc('cfg_util(''run'',cjob);');
+        end
     end
     
     % get outputs
