@@ -489,14 +489,11 @@ end
 % matlab functions
 function varargout = local_feval(func, varargin)
     % set options and verbose
-    [options, verbose, generate] = deal(varargin{1:3});
+    [options, verbose] = deal(varargin{1:2});
     
     % init varargout
     varargout = cell(1, nargout);
     
-    % set func to str if function_handle
-    if isa(func,'function_handle'), func = func2str(func); end;
-
     % if options is not cell or more inputs than nargin, set to cell
     try i = nargin(func); catch, i = 1; end;
     if ~iscell(options) || (i > 0 && numel(options) > i),
@@ -506,21 +503,20 @@ function varargout = local_feval(func, varargin)
     % get number of outputs
     try o = nargout(func); catch, o = 1; end;
     
+    % set func to str if function_handle
+    if isa(func,'function_handle'), func = func2str(func); end;
+    
     % display function and options
     if verbose, disp(cell2strtable(any2str(func,options{:}),' ')); end;
     
-    % if generate script, genstr options
-    if generate,
-        stropts = strjoin(cellfun(@(x){genstr(x)}, options), ',');
-        varargout{1} = sprintf('%s(%s)', func, stropts);
-    elseif o == 0, % if no ouputs, use evalc output
-        % evalc
+    % if no ouputs, use evalc output
+    if o == 0,
         varargout{1} = evalc([func '(options{:});']);
         if isempty(verbose) || verbose, disp(varargout{1}); end;
         if nargout == 0, varargout = cell(1, nargout); end;
     else  % multiple outputs
         if isempty(verbose) || verbose,
-            [varargout{1:nargout}] = feval(func, options{:}); 
+            [varargout{1:nargout}] = feval(str2func(func), options{:}); 
         else % prevent display
             [~,varargout{1:nargout}] = evalc([func '(options{:});']);
         end
